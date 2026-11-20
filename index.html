@@ -1,0 +1,666 @@
+HTML
+<!DOCTYPE html>
+<html lang="es" class="dark h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Air 3D Studio - Manipulación 3D con Manos</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Three.js (Motor 3D) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #030712; touch-action: none; }
+
+        .stage-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #030712;
+        }
+
+        /* Video espejo de la cámara */
+        #webcam {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            opacity: 0.65;
+            z-index: 1;
+        }
+
+        /* Canvas 2D espejo para esqueleto y puntos de pinza */
+        #hand_canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* Canvas 3D transparente encima de la cámara */
+        #three_canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* Capa de interfaz HUD */
+        #ui-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 1rem;
+        }
+
+        .pointer-events-auto { pointer-events: auto; }
+    </style>
+</head>
+<body class="text-white antialiased">
+
+    <div class="stage-container">
+        <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="hand_canvas"></canvas>
+        <canvas id="three_canvas"></canvas>
+
+        <!-- Pantalla de Inicio -->
+        <div id="start-overlay" class="relative z-20 bg-gray-900/95 border border-indigo-500/40 rounded-3xl p-6 max-w-sm mx-4 text-center shadow-2xl space-y-4">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-cyan-400 text-3xl">
+                <i class="fa-solid fa-cube"></i>
+            </div>
+            <h2 class="text-xl font-black tracking-wide">AIR 3D STUDIO</h2>
+            <p class="text-xs text-gray-300 leading-relaxed text-left space-y-1">
+                <span class="block"><strong class="text-cyan-400">1 Mano (Pinza):</strong> Mueve y voltea el objeto 3D.</span>
+                <span class="block"><strong class="text-indigo-400">2 Manos (Pinza):</strong> Separa o junta para agrandar/achicar y gira como un volante.</span>
+            </p>
+            <button id="launch-btn" class="w-full py-3.5 px-5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-camera"></i> Iniciar Cámara 3D
+            </button>
+            <p id="overlay-error" class="hidden text-xs font-mono text-red-400 bg-red-950/60 border border-red-800 rounded-xl p-2.5 text-left"></p>
+        </div>
+    </div>
+
+    <!-- HUD Superior e Inferior -->
+    <div id="ui-layer">
+        <!-- Barra Superior -->
+        <div class="flex flex-wrap justify-between items-start gap-2 pointer-events-auto">
+            <div class="bg-gray-900/85 backdrop-blur-md border border-gray-700/60 rounded-2xl px-4 py-2.5 shadow-xl max-w-md">
+                <div class="flex items-center gap-2">
+                    <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-gray-500"></span>
+                    <span id="gesture-badge" class="text-xs font-bold tracking-wider uppercase text-cyan-300">Esperando inicio</span>
+                </div>
+                <p id="status-text" class="text-[11px] font-mono text-gray-300 mt-0.5">
+                    Presiona "Iniciar Cámara 3D" para comenzar.
+                </p>
+            </div>
+
+            <!-- Controles de Modelo 3D y Reset -->
+            <div class="flex items-center gap-2">
+                <select id="shape-select" class="bg-gray-900/90 border border-gray-700 text-xs text-gray-100 font-semibold rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-lg">
+                    <option value="cube">Cubo Holográfico</option>
+                    <option value="crystal">Cristal 3D</option>
+                    <option value="torus">Nudo Toroidal</option>
+                    <option value="planet">Planeta Anillado</option>
+                </select>
+
+                <button id="reset-btn" title="Centrar y restaurar tamaño" class="bg-gray-900/90 hover:bg-gray-800 text-indigo-300 border border-indigo-500/40 text-xs font-bold py-2.5 px-3.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                    <i class="fa-solid fa-arrows-to-dot"></i>
+                    <span class="hidden sm:inline">Centrar</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Barra Inferior de Telemetría -->
+        <div class="flex flex-wrap justify-between items-end gap-2 pointer-events-auto w-full">
+            <div class="bg-gray-900/80 backdrop-blur border border-gray-800 rounded-xl px-3.5 py-2 flex items-center gap-4 text-[11px] font-mono">
+                <div>Escala: <span id="scale-display" class="text-emerald-400 font-bold">100%</span></div>
+                <div>Rotación: <span id="rot-display" class="text-cyan-400 font-bold">0°, 0°</span></div>
+            </div>
+
+            <label class="flex items-center gap-2 bg-gray-900/80 backdrop-blur border border-gray-800 rounded-xl px-3 py-2 cursor-pointer">
+                <span class="text-xs text-gray-300">Puntos de Mano</span>
+                <input type="checkbox" id="show-skeleton" checked class="w-4 h-4 text-indigo-500 rounded bg-gray-800 border-gray-600">
+            </label>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. REFERENCIAS DOM
+        // ==========================================
+        const video = document.getElementById("webcam");
+        const handCanvas = document.getElementById("hand_canvas");
+        const handCtx = handCanvas.getContext("2d");
+        const threeCanvas = document.getElementById("three_canvas");
+
+        const startOverlay = document.getElementById("start-overlay");
+        const launchBtn = document.getElementById("launch-btn");
+        const overlayError = document.getElementById("overlay-error");
+        const statusDot = document.getElementById("status-dot");
+        const gestureBadge = document.getElementById("gesture-badge");
+        const statusText = document.getElementById("status-text");
+        const shapeSelect = document.getElementById("shape-select");
+        const resetBtn = document.getElementById("reset-btn");
+        const scaleDisplay = document.getElementById("scale-display");
+        const rotDisplay = document.getElementById("rot-display");
+        const showSkeletonCheckbox = document.getElementById("show-skeleton");
+
+        // ==========================================
+        // 2. ESCENA 3D CON THREE.JS
+        // ==========================================
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.z = 5.5;
+
+        const renderer = new THREE.WebGLRenderer({
+            canvas: threeCanvas,
+            alpha: true,
+            antialias: true
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        // Iluminación de estudio para resaltar relieves al voltear el objeto
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+        scene.add(ambientLight);
+
+        const dirLight1 = new THREE.DirectionalLight(0x38bdf8, 1.8);
+        dirLight1.position.set(4, 6, 5);
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0xa855f7, 1.4);
+        dirLight2.position.set(-5, -4, 3);
+        scene.add(dirLight2);
+
+        // Contenedor principal del objeto manipulable
+        const objectGroup = new THREE.Group();
+        scene.add(objectGroup);
+
+        // Generador de modelos 3D con malla interna + aristas luminosas
+        function build3DShape(type) {
+            while (objectGroup.children.length > 0) {
+                const child = objectGroup.children[0];
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+                    else child.material.dispose();
+                }
+                objectGroup.remove(child);
+            }
+
+            if (type === "cube") {
+                // Cubo con caras diferenciadas para notar cada giro
+                const faceColors = [0x6366f1, 0x06b6d4, 0x8b5cf6, 0x10b981, 0x3b82f6, 0xf59e0b];
+                const materials = faceColors.map(color => new THREE.MeshStandardMaterial({
+                    color,
+                    roughness: 0.25,
+                    metalness: 0.35,
+                    transparent: true,
+                    opacity: 0.88
+                }));
+                const geo = new THREE.BoxGeometry(1.45, 1.45, 1.45);
+                const mesh = new THREE.Mesh(geo, materials);
+                const edges = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(geo),
+                    new THREE.LineBasicMaterial({ color: 0xffffff })
+                );
+                objectGroup.add(mesh, edges);
+            } else if (type === "crystal") {
+                const geo = new THREE.IcosahedronGeometry(1.15, 0);
+                const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+                    color: 0x06b6d4,
+                    roughness: 0.15,
+                    metalness: 0.6,
+                    transparent: true,
+                    opacity: 0.85
+                }));
+                const wire = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(geo),
+                    new THREE.LineBasicMaterial({ color: 0xe0f2fe })
+                );
+                objectGroup.add(mesh, wire);
+            } else if (type === "torus") {
+                const geo = new THREE.TorusKnotGeometry(0.82, 0.28, 120, 16);
+                const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+                    color: 0x818cf8,
+                    roughness: 0.2,
+                    metalness: 0.7
+                }));
+                const wire = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+                    color: 0x38bdf8,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.22
+                }));
+                objectGroup.add(mesh, wire);
+            } else if (type === "planet") {
+                const sphereGeo = new THREE.SphereGeometry(0.85, 32, 32);
+                const sphere = new THREE.Mesh(sphereGeo, new THREE.MeshStandardMaterial({
+                    color: 0x4f46e5,
+                    roughness: 0.35,
+                    metalness: 0.4
+                }));
+                const ringGeo = new THREE.RingGeometry(1.15, 1.65, 48);
+                const ring = new THREE.Mesh(ringGeo, new THREE.MeshStandardMaterial({
+                    color: 0x22d3ee,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.8
+                }));
+                ring.rotation.x = Math.PI / 2.4;
+                objectGroup.add(sphere, ring);
+            }
+        }
+
+        build3DShape("cube");
+
+        // ==========================================
+        // 3. ESTADO DE TRANSFORMACIÓN SUAVIZADA
+        // ==========================================
+        const targetPos = new THREE.Vector3(0, 0, 0);
+        const targetRot = new THREE.Euler(0.35, 0.45, 0);
+        let targetScale = 1.0;
+
+        // Estado del gesto activo ("none" | "one" | "two")
+        let gestureMode = "none";
+
+        // Referencias iniciales al momento de agarrar (evita saltos bruscos)
+        let grabAnchor = {
+            handPos: new THREE.Vector3(),
+            handAngles: { rx: 0, ry: 0, rz: 0 },
+            objPos: new THREE.Vector3(),
+            objRot: new THREE.Euler(),
+            twoDist: 1,
+            twoAngle: 0,
+            twoDepthDiff: 0,
+            objScale: 1
+        };
+
+        function resetObject() {
+            targetPos.set(0, 0, 0);
+            targetRot.set(0.35, 0.45, 0);
+            targetScale = 1.0;
+            gestureMode = "none";
+        }
+
+        resetBtn.addEventListener("click", resetObject);
+        shapeSelect.addEventListener("change", (e) => build3DShape(e.target.value));
+
+        window.addEventListener("resize", () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Conversión exacta de coordenadas normalizadas de cámara (0..1) a mundo 3D espejo
+        function landmarkToWorld(lm) {
+            const vFov = (camera.fov * Math.PI) / 180;
+            const visHeight = 2 * Math.tan(vFov / 2) * camera.position.z;
+            const visWidth = visHeight * camera.aspect;
+            return new THREE.Vector3(
+                (0.5 - lm.x) * visWidth,
+                (0.5 - lm.y) * visHeight,
+                0
+            );
+        }
+
+        // Calcular inclinación 3D de una mano a partir de sus articulaciones
+        function getHandAngles(landmarks) {
+            const wrist = landmarks[0];
+            const indexMcp = landmarks[5];
+            const middleMcp = landmarks[9];
+            const pinkyMcp = landmarks[17];
+
+            // Giro en el plano (roll)
+            const rz = Math.atan2(middleMcp.y - wrist.y, -(middleMcp.x - wrist.x)) - Math.PI / 2;
+            // Inclinación horizontal (yaw) usando profundidad entre índice y meñique
+            const ry = (pinkyMcp.z - indexMcp.z) * 7.5;
+            // Inclinación vertical (pitch) usando profundidad entre muñeca y nudillo medio
+            const rx = (middleMcp.z - wrist.z) * 7.5;
+
+            return { rx, ry, rz };
+        }
+
+        // ==========================================
+        // 4. DETECCIÓN DE MANOS (MEDIAPIPE)
+        // ==========================================
+        let handLandmarker = null;
+        let lastVideoTime = -1;
+        let isLoopRunning = false;
+
+        function showError(msg) {
+            overlayError.textContent = msg;
+            overlayError.classList.remove("hidden");
+            statusText.textContent = msg;
+            statusDot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
+        }
+
+        async function startSystem() {
+            overlayError.classList.add("hidden");
+            launchBtn.disabled = true;
+            launchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Abriendo cámara...';
+
+            if (window.location.protocol === "file:") {
+                launchBtn.disabled = false;
+                launchBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Reintentar';
+                showError('Abriste el archivo directo (file://). Ábrelo usando Live Server (localhost) o HTTPS para activar la cámara.');
+                return;
+            }
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                launchBtn.disabled = false;
+                launchBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Reintentar';
+                showError("Tu navegador no permite acceso a la cámara en este contexto.");
+                return;
+            }
+
+            try {
+                let stream;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+                        audio: false
+                    });
+                } catch (e) {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                }
+
+                video.srcObject = stream;
+                await video.play();
+
+                startOverlay.classList.add("hidden");
+                statusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+                gestureBadge.textContent = "Cargando IA...";
+                statusText.textContent = "Cámara abierta. Descargando detector de manos...";
+
+                if (!isLoopRunning) {
+                    isLoopRunning = true;
+                    requestAnimationFrame(mainLoop);
+                }
+
+                await loadHandTracking();
+            } catch (err) {
+                launchBtn.disabled = false;
+                launchBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Reintentar Cámara';
+                showError(`Error de cámara (${err.name}): ${err.message}`);
+            }
+        }
+
+        launchBtn.addEventListener("click", startSystem);
+
+        async function loadHandTracking() {
+            try {
+                const visionModule = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
+                const { HandLandmarker, FilesetResolver } = visionModule;
+
+                const vision = await FilesetResolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+                );
+
+                handLandmarker = await HandLandmarker.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+                        delegate: "GPU"
+                    },
+                    runningMode: "VIDEO",
+                    numHands: 2,
+                    minHandDetectionConfidence: 0.55,
+                    minHandPresenceConfidence: 0.55,
+                    minTrackingConfidence: 0.55
+                });
+
+                gestureBadge.textContent = "Listo para agarrar";
+                statusText.textContent = "Haz pinza (pulgar + índice) con 1 o 2 manos.";
+            } catch (err) {
+                gestureBadge.textContent = "Error de IA";
+                statusText.textContent = `No se pudo cargar el detector de manos: ${err.message}`;
+            }
+        }
+
+        // ==========================================
+        // 5. PROCESAMIENTO DE GESTOS Y RENDER 3D
+        // ==========================================
+        function mainLoop() {
+            if (video.readyState >= 2 && video.videoWidth > 0) {
+                if (handCanvas.width !== video.videoWidth) {
+                    handCanvas.width = video.videoWidth;
+                    handCanvas.height = video.videoHeight;
+                }
+
+                if (handLandmarker && lastVideoTime !== video.currentTime) {
+                    lastVideoTime = video.currentTime;
+                    const results = handLandmarker.detectForVideo(video, performance.now());
+
+                    handCtx.save();
+                    handCtx.clearRect(0, 0, handCanvas.width, handCanvas.height);
+                    processHands(results);
+                    handCtx.restore();
+                }
+            }
+
+            // Si nadie está agarrando el objeto, gira suavemente en reposo
+            if (gestureMode === "none") {
+                targetRot.y += 0.005;
+            }
+
+            // Interpolación suave (elimina vibraciones de la cámara)
+            objectGroup.position.lerp(targetPos, 0.22);
+            objectGroup.rotation.x += (targetRot.x - objectGroup.rotation.x) * 0.22;
+            objectGroup.rotation.y += (targetRot.y - objectGroup.rotation.y) * 0.22;
+            objectGroup.rotation.z += (targetRot.z - objectGroup.rotation.z) * 0.22;
+
+            const currentS = objectGroup.scale.x;
+            const nextS = currentS + (targetScale - currentS) * 0.22;
+            objectGroup.scale.set(nextS, nextS, nextS);
+
+            // Actualizar telemetría en pantalla
+            scaleDisplay.textContent = `${Math.round(nextS * 100)}%`;
+            const degX = Math.round(((objectGroup.rotation.x * 180) / Math.PI) % 360);
+            const degY = Math.round(((objectGroup.rotation.y * 180) / Math.PI) % 360);
+            rotDisplay.textContent = `${degX}°, ${degY}°`;
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(mainLoop);
+        }
+
+        function processHands(results) {
+            const w = handCanvas.width;
+            const h = handCanvas.height;
+            const activePinches = [];
+
+            if (results.landmarks) {
+                for (let i = 0; i < results.landmarks.length; i++) {
+                    const landmarks = results.landmarks[i];
+
+                    if (showSkeletonCheckbox.checked) {
+                        drawSkeleton(landmarks, w, h);
+                    }
+
+                    const thumbTip = landmarks[4];
+                    const indexTip = landmarks[8];
+
+                    // Distancia normalizada independiente de la resolución de cámara
+                    const pinchNormDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
+                    const isPinching = pinchNormDist < 0.065;
+
+                    const centerNorm = {
+                        x: (thumbTip.x + indexTip.x) / 2,
+                        y: (thumbTip.y + indexTip.y) / 2,
+                        z: (thumbTip.z + indexTip.z) / 2
+                    };
+
+                    const px = centerNorm.x * w;
+                    const py = centerNorm.y * h;
+
+                    if (isPinching) {
+                        // Aro brillante indicando pinza cerrada (agarre activo)
+                        drawRing(px, py, "#38bdf8", 18, 4);
+                        activePinches.push({
+                            world: landmarkToWorld(centerNorm),
+                            norm: centerNorm,
+                            angles: getHandAngles(landmarks),
+                            px: { x: px, y: py }
+                        });
+                    } else {
+                        // Punto guía entre pulgar e índice cuando la mano está abierta
+                        drawRing(px, py, "rgba(255,255,255,0.45)", 10, 2);
+                    }
+                }
+            }
+
+            // --- MODO 2 MANOS: AGRANDAR / ACHICAR + VOLTEAR + MOVER ---
+            if (activePinches.length >= 2) {
+                // Ordenar de izquierda a derecha en pantalla espejo para consistencia
+                const sorted = activePinches.slice(0, 2).sort((a, b) => a.world.x - b.world.x);
+                const hLeft = sorted[0];
+                const hRight = sorted[1];
+
+                // Línea de energía conectando ambas manos con el objeto
+                drawLine(hLeft.px, hRight.px, "#818cf8", 3);
+
+                const midWorld = new THREE.Vector3().addVectors(hLeft.world, hRight.world).multiplyScalar(0.5);
+                const distWorld = hLeft.world.distanceTo(hRight.world);
+                const angle2D = Math.atan2(hRight.world.y - hLeft.world.y, hRight.world.x - hLeft.world.x);
+                const depthDiff = (hRight.norm.z - hLeft.norm.z);
+
+                if (gestureMode !== "two") {
+                    gestureMode = "two";
+                    grabAnchor.handPos.copy(midWorld);
+                    grabAnchor.objPos.copy(targetPos);
+                    grabAnchor.twoDist = Math.max(distWorld, 0.25);
+                    grabAnchor.twoAngle = angle2D;
+                    grabAnchor.twoDepthDiff = depthDiff;
+                    grabAnchor.objScale = targetScale;
+                    grabAnchor.objRot.copy(targetRot);
+
+                    gestureBadge.textContent = "2 Manos: Escala y Giro 3D";
+                    gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-indigo-400";
+                } else {
+                    // 1. Mover al punto medio entre ambas manos
+                    const deltaMove = new THREE.Vector3().subVectors(midWorld, grabAnchor.handPos);
+                    targetPos.copy(grabAnchor.objPos).add(deltaMove);
+
+                    // 2. Agrandar o achicar proporcionalmente a la separación
+                    const ratio = distWorld / grabAnchor.twoDist;
+                    targetScale = Math.min(3.2, Math.max(0.3, grabAnchor.objScale * ratio));
+
+                    // 3. Voltear en 3D (giro tipo volante + profundidad entre manos)
+                    const deltaZ = angle2D - grabAnchor.twoAngle;
+                    const deltaY = (depthDiff - grabAnchor.twoDepthDiff) * 5.0;
+                    targetRot.z = grabAnchor.objRot.z + deltaZ;
+                    targetRot.y = grabAnchor.objRot.y + deltaY;
+                }
+                return;
+            }
+
+            // --- MODO 1 MANO: MOVER Y VOLTEAR ---
+            if (activePinches.length === 1) {
+                const hand = activePinches[0];
+
+                if (gestureMode !== "one") {
+                    gestureMode = "one";
+                    grabAnchor.handPos.copy(hand.world);
+                    grabAnchor.handAngles = { ...hand.angles };
+                    grabAnchor.objPos.copy(targetPos);
+                    grabAnchor.objRot.copy(targetRot);
+
+                    gestureBadge.textContent = "1 Mano: Moviendo y Volteando";
+                    gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
+                } else {
+                    // 1. Desplazamiento directo siguiendo la pinza
+                    const deltaMove = new THREE.Vector3().subVectors(hand.world, grabAnchor.handPos);
+                    targetPos.copy(grabAnchor.objPos).add(deltaMove);
+
+                    // 2. Voltear según el giro de la muñeca + desplazamiento suave
+                    const dRx = (hand.angles.rx - grabAnchor.handAngles.rx) * 1.4;
+                    const dRy = (hand.angles.ry - grabAnchor.handAngles.ry) * 1.4;
+                    const dRz = (hand.angles.rz - grabAnchor.handAngles.rz) * 1.2;
+
+                    targetRot.x = grabAnchor.objRot.x + dRx - deltaMove.y * 0.45;
+                    targetRot.y = grabAnchor.objRot.y + dRy + deltaMove.x * 0.45;
+                    targetRot.z = grabAnchor.objRot.z + dRz;
+                }
+                return;
+            }
+
+            // --- SIN PINZA ACTIVA ---
+            if (gestureMode !== "none") {
+                gestureMode = "none";
+                gestureBadge.textContent = "Objeto Suelto";
+                gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
+            }
+        }
+
+        // ==========================================
+        // 6. DIBUJO DE PUNTOS Y ESQUELETO DE MANO
+        // ==========================================
+        function drawRing(x, y, color, radius, lineWidth) {
+            handCtx.beginPath();
+            handCtx.arc(x, y, radius, 0, Math.PI * 2);
+            handCtx.strokeStyle = color;
+            handCtx.lineWidth = lineWidth;
+            handCtx.stroke();
+        }
+
+        function drawLine(p1, p2, color, width) {
+            handCtx.beginPath();
+            handCtx.moveTo(p1.x, p1.y);
+            handCtx.lineTo(p2.x, p2.y);
+            handCtx.strokeStyle = color;
+            handCtx.lineWidth = width;
+            handCtx.setLineDash([8, 6]);
+            handCtx.stroke();
+            handCtx.setLineDash([]);
+        }
+
+        function drawSkeleton(landmarks, w, h) {
+            handCtx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+            handCtx.lineWidth = 1.5;
+
+            const connections = [
+                [0,1],[1,2],[2,3],[3,4],
+                [0,5],[5,6],[6,7],[7,8],
+                [5,9],[9,10],[10,11],[11,12],
+                [9,13],[13,14],[14,15],[15,16],
+                [13,17],[17,18],[18,19],[19,20],
+                [0,17]
+            ];
+
+            for (const [a, b] of connections) {
+                handCtx.beginPath();
+                handCtx.moveTo(landmarks[a].x * w, landmarks[a].y * h);
+                handCtx.lineTo(landmarks[b].x * w, landmarks[b].y * h);
+                handCtx.stroke();
+            }
+
+            for (let i = 0; i < landmarks.length; i++) {
+                const isTip = i === 4 || i === 8;
+                handCtx.beginPath();
+                handCtx.arc(landmarks[i].x * w, landmarks[i].y * h, isTip ? 5 : 2.5, 0, Math.PI * 2);
+                handCtx.fillStyle = isTip ? "#facc15" : "#38bdf8";
+                handCtx.fill();
+            }
+        }
+    </script>
+</body>
+</html>
