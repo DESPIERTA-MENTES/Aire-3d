@@ -36,7 +36,7 @@
             z-index: 1;
         }
 
-        /* Canvas 2D en coordenadas reales de pantalla (sin scaleX para alineación 1:1 con Three.js) */
+        /* Canvas 2D en coordenadas reales de pantalla */
         #hand_canvas {
             position: absolute;
             inset: 0;
@@ -111,8 +111,9 @@
                 <p class="text-[11px] font-mono text-cyan-400/80">Interfaz Holográfica Gestual y de Voz</p>
             </div>
             <div class="text-xs text-gray-300 leading-relaxed text-left space-y-1.5 bg-gray-950/70 p-3.5 rounded-2xl border border-gray-800">
-                <p><strong class="text-cyan-400">1 o 2 Pinzas:</strong> Mover, voltear y agrandar/achicar.</p>
-                <p><strong class="text-indigo-400">2 Palmas Abiertas:</strong> Separa para despiece explosivo; junta para ensamblar.</p>
+                <p><strong class="text-cyan-400">1 Pinza + Giro de Muñeca:</strong> Mueve y rota el objeto 3D según el giro de tu muñeca.</p>
+                <p><strong class="text-indigo-400">2 Pinzas:</strong> Separa/junta para escalar y gira ambas muñecas para rotar.</p>
+                <p><strong class="text-sky-400">2 Palmas Abiertas:</strong> Separa para despiece explosivo; junta para ensamblar.</p>
                 <p><strong class="text-rose-400">Dedo Índice:</strong> Láser de inspección técnica sobre cada pieza.</p>
                 <p><strong class="text-emerald-400">Deslizar Mano (Swipe):</strong> Cambia al siguiente archivo 3D del carrusel.</p>
                 <p><strong class="text-amber-400">Palma sobre Puño:</strong> Desintegra y cierra el modelo actual.</p>
@@ -304,7 +305,7 @@
         }
 
         // ==========================================
-        // 3. PROYECCIÓN EXACTA PANTALLA <-> CÁMARA (OBJECT-FIT COVER)
+        // 3. PROYECCIÓN EXACTA PANTALLA <-> CÁMARA
         // ==========================================
         function normToScreenPx(lm) {
             const sw = handCanvas.width || window.innerWidth;
@@ -318,7 +319,6 @@
             const offsetX = (sw - rw) / 2;
             const offsetY = (sh - rh) / 2;
 
-            // Compensar espejo horizontal (1 - lm.x) y recorte cover
             return {
                 x: offsetX + (1 - lm.x) * rw,
                 y: offsetY + lm.y * rh
@@ -348,7 +348,65 @@
         }
 
         // ==========================================
-        // 4. THREE.JS, LOADERS, ANILLOS Y ESCÁNER
+        // 4. ORIENTACIÓN 3D DE MUÑECA Y PALMA (QUATERNION)
+        // ==========================================
+        function landmarkToPalmSpace(lm) {
+            const aspect = (video.videoWidth && video.videoHeight)
+                ? (video.videoWidth / video.videoHeight)
+                : (window.innerWidth / window.innerHeight);
+            return new THREE.Vector3(
+                (0.5 - lm.x) * aspect,
+                0.5 - lm.y,
+                lm.z * 1.85
+            );
+        }
+
+        // Calcula un Quaternion 3D exacto de la inclinación y giro de la muñeca/mano
+        function getHandQuaternion(landmarks) {
+            const pWrist = landmarkToPalmSpace(landmarks[0]);
+            const pIndex = landmarkToPalmSpace(landmarks[5]);
+            const pMiddle = landmarkToPalmSpace(landmarks[9]);
+            const pPinky = landmarkToPalmSpace(landmarks[17]);
+
+            // Eje Y de la mano: desde la muñeca hacia el nudillo central
+            const yAxis = new THREE.Vector3().subVectors(pMiddle, pWrist).normalize();
+
+            // Vector transversal entre nudillo meñique e índice
+            const across = new THREE.Vector3().subVectors(pIndex, pPinky);
+
+            // Eje Z perpendicular a la palma
+            const zAxis = new THREE.Vector3().crossVectors(across, yAxis);
+            if (zAxis.lengthSq() < 1e-6) {
+                zAxis.set(0, 0, 1);
+            } else {
+                zAxis.normalize();
+            }
+
+            // Eje X ortonormal
+            const xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis).normalize();
+
+            const basisMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+            return new THREE.Quaternion().setFromRotationMatrix(basisMatrix);
+        }
+
+        // Amplifica suavemente el ángulo de giro de la muñeca para comodidad ergonómica
+        function scaleQuaternionAngle(quat, factor) {
+            const q = quat.clone().normalize();
+            if (q.w < 0) {
+                q.set(-q.x, -q.y, -q.z, -q.w);
+            }
+            const clampedW = Math.min(1, Math.max(-1, q.w));
+            const halfAngle = Math.acos(clampedW);
+            const sinHalf = Math.sin(halfAngle);
+            if (sinHalf < 1e-5) {
+                return new THREE.Quaternion();
+            }
+            const axis = new THREE.Vector3(q.x / sinHalf, q.y / sinHalf, q.z / sinHalf);
+            return new THREE.Quaternion().setFromAxisAngle(axis, halfAngle * 2 * factor);
+        }
+
+        // ==========================================
+        // 5. THREE.JS, LOADERS, ANILLOS Y ESCÁNER
         // ==========================================
         let THREE = null;
         let GLTFLoader = null;
@@ -358,7 +416,7 @@
 
         let scene, camera, renderer, objectGroup, modelSlot, telemetryGroup, scannerBar, clock, raycaster;
         let animationMixer = null;
-        let targetPos, targetRot, grabAnchor;
+        let targetPos, targetQuat, grabAnchor;
         let targetScale = 1.0;
         let targetExplode = 0.0;
         let currentExplode = 0.0;
@@ -446,16 +504,18 @@
             buildScannerSweep();
 
             targetPos = new THREE.Vector3(0, 0, 0);
-            targetRot = new THREE.Euler(0.28, 0.4, 0);
+            targetQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.28, 0.4, 0));
 
             grabAnchor = {
                 handPos: new THREE.Vector3(),
-                handAngles: { rx: 0, ry: 0, rz: 0 },
+                handQuat: new THREE.Quaternion(),
                 objPos: new THREE.Vector3(),
-                objRot: new THREE.Euler(),
+                objQuat: new THREE.Quaternion(),
                 twoDist: 1,
                 twoAngle: 0,
                 twoDepthDiff: 0,
+                twoLeftQuat: new THREE.Quaternion(),
+                twoRightQuat: new THREE.Quaternion(),
                 objScale: 1,
                 explodeDist: 0.5,
                 explodeStart: 0
@@ -560,12 +620,19 @@
                 } else {
                     if (mesh.userData.origMaterial) {
                         mesh.material = mesh.userData.origMaterial;
+                        mesh.userData.origMaterial = null;
                     }
                     if (mesh.userData.blueprintWire) {
                         mesh.userData.blueprintWire.visible = false;
                     }
                 }
             });
+
+            if (hasActiveModel) {
+                statusText.textContent = enabled
+                    ? "Modo Plano / Blueprint activado."
+                    : "Modo Plano desactivado (texturas restauradas).";
+            }
         }
 
         function setScannerMode(enabled) {
@@ -580,7 +647,7 @@
         scannerBtn.addEventListener("click", () => setScannerMode(!isScannerMode));
 
         // ==========================================
-        // 5. MODELOS MULTI-PIEZA Y DESPIECE EN ESPACIO REAL
+        // 6. MODELOS MULTI-PIEZA Y DESPIECE EN ESPACIO REAL
         // ==========================================
         function clearCurrentModel() {
             if (!modelSlot) return;
@@ -746,7 +813,6 @@
             objectGroup.visible = true;
             hasActiveModel = true;
 
-            // Reiniciar transformaciones del contenedor antes de medir
             objectGroup.position.set(0, 0, 0);
             objectGroup.rotation.set(0, 0, 0);
             objectGroup.scale.set(1, 1, 1);
@@ -775,7 +841,6 @@
             modelSlot.add(pivotWrapper);
             objectGroup.updateMatrixWorld(true);
 
-            // Calcular vector de despiece compensando cualquier escala interna de nodos padres del .glb
             let partIndex = 1;
             const slotCenterWorld = new THREE.Vector3();
             modelSlot.getWorldPosition(slotCenterWorld);
@@ -800,7 +865,6 @@
                         radialWorld.normalize().multiplyScalar(1.35);
                     }
 
-                    // Convertir el vector de expansión al espacio local del padre inmediato de la malla
                     const parentWorldScale = new THREE.Vector3(1, 1, 1);
                     if (child.parent) {
                         child.parent.getWorldScale(parentWorldScale);
@@ -831,7 +895,7 @@
             if (scannerBar) scannerBar.visible = isScannerMode;
 
             targetPos.set(0, 0, 0);
-            targetRot.set(0.25, 0.35, 0);
+            targetQuat.setFromEuler(new THREE.Euler(0.25, 0.35, 0));
             targetScale = 1.0;
             targetExplode = 0.0;
             currentExplode = 0.0;
@@ -846,7 +910,7 @@
         }
 
         // ==========================================
-        // 6. CARRUSEL AÉREO DE MODELOS
+        // 7. CARRUSEL AÉREO DE MODELOS
         // ==========================================
         function refreshCarouselSelect() {
             shapeSelect.innerHTML = "";
@@ -981,7 +1045,7 @@
         });
 
         // ==========================================
-        // 7. DESINTEGRACIÓN STARK Y RESET
+        // 8. DESINTEGRACIÓN STARK Y RESET
         // ==========================================
         function spawnHologramBurst(originPos) {
             if (!THREE || !scene) return;
@@ -1053,7 +1117,7 @@
                 return;
             }
             targetPos.set(0, 0, 0);
-            targetRot.set(0.25, 0.35, 0);
+            targetQuat.setFromEuler(new THREE.Euler(0.25, 0.35, 0));
             targetScale = 1.0;
             targetExplode = 0.0;
             gestureMode = "none";
@@ -1070,7 +1134,7 @@
         });
 
         // ==========================================
-        // 8. COMANDOS DE VOZ J.A.R.V.I.S.
+        // 9. COMANDOS DE VOZ J.A.R.V.I.S.
         // ==========================================
         let jarvisRecognition = null;
         let isJarvisListening = false;
@@ -1121,15 +1185,36 @@
         }
 
         function executeVoiceCommand(cmd) {
+            const isDeactivate =
+                cmd.includes("desactiva") ||
+                cmd.includes("quitar") ||
+                cmd.includes("quita") ||
+                cmd.includes("apaga") ||
+                cmd.includes("deten") ||
+                cmd.includes("detén") ||
+                cmd.includes("salir") ||
+                cmd.includes("cancelar") ||
+                cmd.includes("sin ");
+
             if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("holograma")) {
-                setBlueprintMode(true);
-                jarvisSpeak("Modo plano activado.");
-            } else if (cmd.includes("sólido") || cmd.includes("normal") || cmd.includes("textura")) {
+                if (isDeactivate) {
+                    setBlueprintMode(false);
+                    jarvisSpeak("Modo plano desactivado.");
+                } else {
+                    setBlueprintMode(true);
+                    jarvisSpeak("Modo plano activado.");
+                }
+            } else if (cmd.includes("sólido") || cmd.includes("solido") || cmd.includes("normal") || cmd.includes("textura")) {
                 setBlueprintMode(false);
-                jarvisSpeak("Texturas originales restauradas.");
-            } else if (cmd.includes("escáner") || cmd.includes("escanear")) {
-                setScannerMode(!isScannerMode);
-                jarvisSpeak(isScannerMode ? "Escáner láser iniciado." : "Escáner detenido.");
+                jarvisSpeak("Modo plano desactivado. Texturas restauradas.");
+            } else if (cmd.includes("escáner") || cmd.includes("escaner") || cmd.includes("escanear")) {
+                if (isDeactivate) {
+                    setScannerMode(false);
+                    jarvisSpeak("Escáner desactivado.");
+                } else {
+                    setScannerMode(true);
+                    jarvisSpeak("Escáner láser iniciado.");
+                }
             } else if (cmd.includes("explotar") || cmd.includes("desarmar") || cmd.includes("despiece") || cmd.includes("abrir piezas")) {
                 if (!hasActiveModel) loadCarouselItem(currentCarouselIndex, false);
                 targetExplode = 0.9;
@@ -1170,7 +1255,7 @@
         });
 
         // ==========================================
-        // 9. CLASIFICADOR DE POSTURAS TOLERANTE A ÁNGULOS
+        // 10. CLASIFICADOR DE POSTURAS Y LÁSER
         // ==========================================
         function dist2D(a, b) {
             return Math.hypot(a.x - b.x, a.y - b.y);
@@ -1181,13 +1266,11 @@
             const thumbTip = landmarks[4];
             const indexTip = landmarks[8];
 
-            // Comparamos punta (TIP) contra articulación media (PIP) respecto a la muñeca:
-            // es inmune al acortamiento por inclinación de la palma hacia la cámara.
             const fingerJoints = [
-                { tip: 8, pip: 6, mcp: 5 },   // Índice
-                { tip: 12, pip: 10, mcp: 9 }, // Medio
-                { tip: 16, pip: 14, mcp: 13 },// Anular
-                { tip: 20, pip: 18, mcp: 17 } // Meñique
+                { tip: 8, pip: 6, mcp: 5 },
+                { tip: 12, pip: 10, mcp: 9 },
+                { tip: 16, pip: 14, mcp: 13 },
+                { tip: 20, pip: 18, mcp: 17 }
             ];
 
             let curledCount = 0;
@@ -1205,28 +1288,18 @@
                 if (dTip > dPip * 1.08 && dTip > dMcp * 1.25) openFingerCount++;
             }
 
-            // 1. Puño cerrado: al menos 3 dedos doblados hacia la palma
-            if (curledCount >= 3) {
-                return "fist";
-            }
+            if (curledCount >= 3) return "fist";
 
-            // 2. Pinza: pulgar e índice tocándose
             const pinchDist = dist2D(thumbTip, indexTip);
-            if (pinchDist < 0.068) {
-                return "pinch";
-            }
+            if (pinchDist < 0.068) return "pinch";
 
-            // 3. Puntero Láser (Dedo Índice): índice estirado y notablemente más largo que medio, anular y meñique
             const indexRatio = ratios[0];
             const avgOtherRatio = (ratios[1] + ratios[2] + ratios[3]) / 3;
             if (indexRatio > 1.14 && indexRatio > avgOtherRatio + 0.16 && ratios[1] < 1.12 && ratios[2] < 1.12) {
                 return "point";
             }
 
-            // 4. Palma abierta: al menos 3 dedos extendidos
-            if (openFingerCount >= 3) {
-                return "open";
-            }
+            if (openFingerCount >= 3) return "open";
 
             return "neutral";
         }
@@ -1246,9 +1319,6 @@
             return { palmCenterDist, minTipDist };
         }
 
-        // ==========================================
-        // 10. LÁSER DE INSPECCIÓN CON PROYECCIÓN EXACTA
-        // ==========================================
         function updateLaserInspection(indexTipPx) {
             if (!THREE || !raycaster || !hasActiveModel || inspectableMeshes.length === 0) {
                 clearLaserHighlight();
@@ -1267,7 +1337,6 @@
                 selectedMesh = hits[0].object;
                 hitPoint3D = hits[0].point;
             } else {
-                // Asistencia de proximidad (35px) para seleccionar piezas pequeñas o finas fácilmente
                 let bestDistPx = 38;
                 const tempBox = new THREE.Box3();
                 const tempCenter = new THREE.Vector3();
@@ -1303,7 +1372,6 @@
                     playScanBeep();
                 }
 
-                // Proyectar punto 3D a coordenadas reales de pantalla
                 const projected = hitPoint3D.clone().project(camera);
                 const hitCanvasX = ((projected.x + 1) * 0.5) * handCanvas.width;
                 const hitCanvasY = ((-projected.y + 1) * 0.5) * handCanvas.height;
@@ -1328,7 +1396,6 @@
                 inspectedPartBadge.querySelector("span").textContent = selectedMesh.name;
             } else {
                 clearLaserHighlight();
-                // Proyectar rayo hacia el centro del objeto si aún no toca una pieza
                 const objProj = objectGroup.position.clone().project(camera);
                 const objScreenX = ((objProj.x + 1) * 0.5) * handCanvas.width;
                 const objScreenY = ((-objProj.y + 1) * 0.5) * handCanvas.height;
@@ -1357,19 +1424,6 @@
             }
             laserHitInfo = null;
             inspectedPartBadge.classList.add("hidden");
-        }
-
-        function getHandAngles(landmarks) {
-            const wrist = landmarks[0];
-            const indexMcp = landmarks[5];
-            const middleMcp = landmarks[9];
-            const pinkyMcp = landmarks[17];
-
-            const rz = Math.atan2(middleMcp.y - wrist.y, -(middleMcp.x - wrist.x)) - Math.PI / 2;
-            const ry = (pinkyMcp.z - indexMcp.z) * 7.5;
-            const rx = (middleMcp.z - wrist.z) * 7.5;
-
-            return { rx, ry, rz };
         }
 
         // ==========================================
@@ -1479,6 +1533,7 @@
         // 12. BUCLE PRINCIPAL DE RENDER Y GESTOS
         // ==========================================
         let prevRotY = 0;
+        const idleSpinQuat = new THREE ? new THREE.Quaternion() : null;
 
         function mainLoop() {
             if (handCanvas.width !== window.innerWidth || handCanvas.height !== window.innerHeight) {
@@ -1530,20 +1585,23 @@
                         const s = objectGroup.scale.x * 0.72;
                         objectGroup.scale.set(s, s, s);
                     } else {
+                        // Giro suave automático solo cuando no se está manipulando ni inspeccionando
                         if (gestureMode === "none" && !highlightedMesh) {
-                            targetRot.y += 0.0045;
+                            const stepSpin = new THREE.Quaternion().setFromAxisAngle(
+                                new THREE.Vector3(0, 1, 0),
+                                0.0045
+                            );
+                            targetQuat.premultiply(stepSpin);
                         }
 
-                        objectGroup.position.lerp(targetPos, 0.22);
-                        objectGroup.rotation.x += (targetRot.x - objectGroup.rotation.x) * 0.22;
-                        objectGroup.rotation.y += (targetRot.y - objectGroup.rotation.y) * 0.22;
-                        objectGroup.rotation.z += (targetRot.z - objectGroup.rotation.z) * 0.22;
+                        objectGroup.position.lerp(targetPos, 0.24);
+                        objectGroup.quaternion.slerp(targetQuat, 0.26);
 
                         const currentS = objectGroup.scale.x;
                         const nextS = currentS + (targetScale - currentS) * 0.22;
                         objectGroup.scale.set(nextS, nextS, nextS);
 
-                        // Interpolar Vista Explosiva (despiece radial en espacio real)
+                        // Interpolar Vista Explosiva
                         currentExplode += (targetExplode - currentExplode) * 0.18;
                         for (const mesh of inspectableMeshes) {
                             if (mesh.userData.origPos && mesh.userData.localExplodeDelta) {
@@ -1554,7 +1612,7 @@
                             }
                         }
 
-                        // Animación de anillos orbitales de telemetría
+                        // Anillos orbitales de telemetría
                         if (telemetryGroup) {
                             telemetryGroup.visible = showRingsCheckbox.checked;
                             if (telemetryGroup.visible) {
@@ -1600,6 +1658,7 @@
                 for (let i = 0; i < results.landmarks.length; i++) {
                     const landmarks = results.landmarks[i];
                     const pose = classifyHandPose(landmarks);
+                    const handQuat = getHandQuaternion(landmarks);
 
                     if (showSkeletonCheckbox.checked) {
                         drawSkeleton(landmarks, pose);
@@ -1607,7 +1666,7 @@
 
                     const palmNorm = landmarks[9];
                     const palmPx = normToScreenPx(palmNorm);
-                    detectedHands.push({ pose, palmNorm, palmPx, landmarks });
+                    detectedHands.push({ pose, palmNorm, palmPx, landmarks, quat: handQuat });
 
                     if (pose === "fist") {
                         drawRing(palmPx.x, palmPx.y, "#f97316", 28, 4);
@@ -1617,7 +1676,8 @@
                         openHands.push({
                             world: normToWorld(palmNorm),
                             norm: palmNorm,
-                            px: palmPx
+                            px: palmPx,
+                            quat: handQuat
                         });
                     } else if (pose === "point") {
                         const indexTip = landmarks[8];
@@ -1639,7 +1699,7 @@
                         activePinches.push({
                             world: normToWorld(centerNorm),
                             norm: centerNorm,
-                            angles: getHandAngles(landmarks),
+                            quat: handQuat,
                             px
                         });
                     }
@@ -1742,7 +1802,7 @@
             if (!hasActiveModel || isDismissing) return;
 
             // ==========================================================
-            // 3. MODO 2 PINZAS: ESCALAR + VOLTEAR + MOVER
+            // 3. MODO 2 PINZAS: ESCALAR + GIRO DE AMBAS MUÑECAS + MOVER
             // ==========================================================
             if (activePinches.length >= 2) {
                 const sorted = activePinches.slice(0, 2).sort((a, b) => a.world.x - b.world.x);
@@ -1763,22 +1823,33 @@
                     grabAnchor.twoDist = Math.max(distWorld, 0.25);
                     grabAnchor.twoAngle = angle2D;
                     grabAnchor.twoDepthDiff = depthDiff;
+                    grabAnchor.twoLeftQuat.copy(hLeft.quat);
+                    grabAnchor.twoRightQuat.copy(hRight.quat);
                     grabAnchor.objScale = targetScale;
-                    grabAnchor.objRot.copy(targetRot);
+                    grabAnchor.objQuat.copy(targetQuat);
 
-                    gestureBadge.textContent = "2 Pinzas: Escala y Giro 3D";
+                    gestureBadge.textContent = "2 Pinzas: Escala y Giro de Muñecas";
                     gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-indigo-400";
                 } else {
+                    // 1. Mover según punto medio
                     const deltaMove = new THREE.Vector3().subVectors(midWorld, grabAnchor.handPos);
                     targetPos.copy(grabAnchor.objPos).add(deltaMove);
 
+                    // 2. Escalar según distancia entre manos
                     const ratio = distWorld / grabAnchor.twoDist;
                     targetScale = Math.min(3.5, Math.max(0.25, grabAnchor.objScale * ratio));
 
+                    // 3. Combinar rotación de ambas muñecas + ángulo tipo volante + profundidad
+                    const deltaLeft = hLeft.quat.clone().multiply(grabAnchor.twoLeftQuat.clone().invert());
+                    const deltaRight = hRight.quat.clone().multiply(grabAnchor.twoRightQuat.clone().invert());
+                    const avgWristDelta = deltaLeft.clone().slerp(deltaRight, 0.5);
+                    const boostedWrist = scaleQuaternionAngle(avgWristDelta, 1.25);
+
                     const deltaZ = angle2D - grabAnchor.twoAngle;
-                    const deltaY = (depthDiff - grabAnchor.twoDepthDiff) * 5.0;
-                    targetRot.z = grabAnchor.objRot.z + deltaZ;
-                    targetRot.y = grabAnchor.objRot.y + deltaY;
+                    const deltaY = -(depthDiff - grabAnchor.twoDepthDiff) * 4.5;
+                    const twoHandTwist = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, deltaY, deltaZ));
+
+                    targetQuat.copy(twoHandTwist).multiply(boostedWrist).multiply(grabAnchor.objQuat).normalize();
                 }
                 return;
             }
@@ -1812,7 +1883,7 @@
             }
 
             // ==========================================================
-            // 5. MODO 1 PINZA: MOVER Y VOLTEAR
+            // 5. MODO 1 PINZA: MOVER + GIRAR SEGÚN ROTACIÓN DE MUÑECA
             // ==========================================================
             if (activePinches.length === 1) {
                 const hand = activePinches[0];
@@ -1820,23 +1891,21 @@
                 if (gestureMode !== "one") {
                     gestureMode = "one";
                     grabAnchor.handPos.copy(hand.world);
-                    grabAnchor.handAngles = { ...hand.angles };
+                    grabAnchor.handQuat.copy(hand.quat);
                     grabAnchor.objPos.copy(targetPos);
-                    grabAnchor.objRot.copy(targetRot);
+                    grabAnchor.objQuat.copy(targetQuat);
 
-                    gestureBadge.textContent = "1 Pinza: Moviendo y Volteando";
+                    gestureBadge.textContent = "1 Pinza: Rotación por Muñeca";
                     gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
                 } else {
+                    // Desplazamiento en pantalla
                     const deltaMove = new THREE.Vector3().subVectors(hand.world, grabAnchor.handPos);
                     targetPos.copy(grabAnchor.objPos).add(deltaMove);
 
-                    const dRx = (hand.angles.rx - grabAnchor.handAngles.rx) * 1.4;
-                    const dRy = (hand.angles.ry - grabAnchor.handAngles.ry) * 1.4;
-                    const dRz = (hand.angles.rz - grabAnchor.handAngles.rz) * 1.2;
-
-                    targetRot.x = grabAnchor.objRot.x + dRx - deltaMove.y * 0.45;
-                    targetRot.y = grabAnchor.objRot.y + dRy + deltaMove.x * 0.45;
-                    targetRot.z = grabAnchor.objRot.z + dRz;
+                    // Rotación 3D directa derivada del giro de la muñeca (Pitch, Yaw, Roll)
+                    const deltaWristQuat = hand.quat.clone().multiply(grabAnchor.handQuat.clone().invert());
+                    const amplifiedWristQuat = scaleQuaternionAngle(deltaWristQuat, 1.45);
+                    targetQuat.copy(amplifiedWristQuat).multiply(grabAnchor.objQuat).normalize();
                 }
                 return;
             }
