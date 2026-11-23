@@ -91,12 +91,14 @@
         <canvas id="three_canvas"></canvas>
         <div class="hud-vignette"></div>
 
+        <!-- Aviso visual al arrastrar archivos 3D -->
         <div id="drag-overlay" class="hidden fixed inset-4 z-30 border-2 border-dashed border-cyan-400 bg-cyan-950/75 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center text-center p-6 pointer-events-none">
             <i class="fa-solid fa-cloud-arrow-up text-5xl text-cyan-400 mb-3 animate-bounce"></i>
             <p class="text-lg font-bold text-white">Suelta tus archivos 3D para añadirlos al carrusel</p>
             <p class="text-xs text-cyan-200 font-mono mt-1">Soporta selección múltiple: .GLB, .GLTF, .OBJ, .STL</p>
         </div>
 
+        <!-- Pantalla de Inicio -->
         <div id="start-overlay" class="relative z-20 bg-gray-900/95 border border-cyan-500/40 rounded-3xl p-6 max-w-md mx-4 text-center shadow-2xl space-y-4">
             <div class="w-16 h-16 mx-auto rounded-2xl bg-cyan-500/15 border border-cyan-400/40 flex items-center justify-center text-cyan-400 text-3xl">
                 <i class="fa-solid fa-atom"></i>
@@ -107,10 +109,10 @@
             </div>
             <div class="text-xs text-gray-300 leading-relaxed text-left space-y-1.5 bg-gray-950/70 p-3.5 rounded-2xl border border-gray-800">
                 <p><strong class="text-sky-400">Palma Abierta:</strong> Gira tu muñeca para rotar el objeto sin moverlo. Desliza rápido para cambiar de modelo.</p>
-                <p><strong class="text-cyan-400">1 Pinza:</strong> Agarra el objeto para arrastrarlo por la pantalla.</p>
-                <p><strong class="text-indigo-400">2 Pinzas:</strong> Separa/junta para escalar.</p>
-                <p><strong class="text-emerald-400">2 Palmas Abiertas:</strong> Separa para despiece explosivo.</p>
-                <p><strong class="text-rose-400">Dedo Índice:</strong> Láser de inspección técnica.</p>
+                <p><strong class="text-cyan-400">1 Pinza:</strong> Agarra el objeto para arrastrarlo y girarlo por la pantalla.</p>
+                <p><strong class="text-indigo-400">2 Pinzas:</strong> Separa o junta para agrandar/achicar y rotar.</p>
+                <p><strong class="text-emerald-400">2 Palmas Abiertas:</strong> Separa para despiece explosivo; junta para ensamblar.</p>
+                <p><strong class="text-rose-400">Dedo Índice:</strong> Láser de inspección técnica sobre cada pieza.</p>
                 <p><strong class="text-amber-400">Palma sobre Puño:</strong> Desintegra y cierra el modelo actual.</p>
             </div>
             <button id="launch-btn" class="w-full py-3.5 px-5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
@@ -120,6 +122,7 @@
         </div>
     </div>
 
+    <!-- HUD Superior e Inferior -->
     <div id="ui-layer">
         <div class="flex flex-wrap justify-between items-start gap-2 pointer-events-auto">
             <div class="bg-gray-950/85 backdrop-blur-md border border-cyan-500/30 rounded-2xl px-3.5 py-2.5 shadow-xl max-w-md space-y-1">
@@ -203,7 +206,6 @@
         </div>
     </div>
 
-    <!-- Script Principal Único -->
     <script>
         // ==========================================
         // 1. REFERENCIAS DOM
@@ -840,7 +842,7 @@
         }
 
         function executeVoiceCommand(cmd) {
-            const isDeactivate = cmd.includes("desactiva") || cmd.includes("quitar") || cmd.includes("quita") || cmd.includes("apagar") || cmd.includes("deten") || cmd.includes("salir") || cmd.includes("sin ");
+            const isDeactivate = cmd.includes("desactiva") || cmd.includes("quitar") || cmd.includes("quita") || cmd.includes("apagar") || cmd.includes("deten") || cmd.includes("detén") || cmd.includes("salir") || cmd.includes("sin ");
             if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("holograma") || cmd.includes("esquema") || cmd.includes("estructura")) {
                 if (isDeactivate) { setBlueprintMode(false); jarvisSpeak("Modo plano desactivado."); }
                 else { setBlueprintMode(true); jarvisSpeak("Modo plano activado."); }
@@ -864,6 +866,7 @@
                 triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 }); jarvisSpeak("Cerrando proyección.");
             }
         }
+
         jarvisVoiceBtn.addEventListener("click", () => {
             if (!jarvisRecognition) setupJarvisVoice();
             if (!jarvisRecognition) return;
@@ -876,6 +879,7 @@
         // 10. CLASIFICADOR DE POSTURAS
         // ==========================================
         function dist2D(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
         function classifyHandPose(landmarks) {
             const wrist = landmarks[0], thumbTip = landmarks[4], indexTip = landmarks[8];
             const fingerJoints = [{ tip: 8, pip: 6, mcp: 5 }, { tip: 12, pip: 10, mcp: 9 }, { tip: 16, pip: 14, mcp: 13 }, { tip: 20, pip: 18, mcp: 17 }];
@@ -893,6 +897,7 @@
             if (openFingerCount >= 3) return "open";
             return "neutral";
         }
+
         function getHandImpactDistance(openHand, fistHand) {
             const palmCenterDist = dist2D(openHand.palmNorm, fistHand.palmNorm);
             const openTips = [4, 8, 12, 16, 20].map(idx => openHand.landmarks[idx]);
@@ -901,6 +906,7 @@
             for (const tip of openTips) { for (const target of fistTargets) { const d = dist2D(tip, target); if (d < minTipDist) minTipDist = d; } }
             return { palmCenterDist, minTipDist };
         }
+
         function updateLaserInspection(indexTipPx) {
             if (!THREE || !raycaster || !hasActiveModel || inspectableMeshes.length === 0) { clearLaserHighlight(); return; }
             const ndc = screenPxToNDC(indexTipPx);
@@ -939,6 +945,7 @@
                 laserHitInfo = { fingerPx: indexTipPx, hitPx: { x: indexTipPx.x + Math.cos(angleToObj) * 110, y: indexTipPx.y + Math.sin(angleToObj) * 110 }, partName: null };
             }
         }
+
         function clearLaserHighlight() {
             if (highlightedMesh) {
                 if (isBlueprintMode) setBlueprintMode(true);
@@ -949,31 +956,66 @@
         }
 
         // ==========================================
-        // 11. INICIO SISTEMA CÁMARA
+        // 11. INICIO SISTEMA CÁMARA Y BUCLE PRINCIPAL
         // ==========================================
-        let handLandmarker = null, lastVideoTime = -1, isLoopRunning = false;
+        let handLandmarker = null, lastVideoTime = -1, isLoopRunning = false, prevRotY = 0;
         const starkGesture = { armed: false, armedAt: 0, lastPalmDist: 1 };
         const swipeTracker = { samples: [], missedFrames: 0, lastSwipeAt: 0 };
 
-        function showError(msg) { overlayError.textContent = msg; overlayError.classList.remove("hidden"); statusText.textContent = msg; statusDot.className = "w-2.5 h-2.5 rounded-full bg-red-500"; }
+        function showError(msg) {
+            overlayError.textContent = msg;
+            overlayError.classList.remove("hidden");
+            statusText.textContent = msg;
+            statusDot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
+        }
 
         async function startSystem() {
-            overlayError.classList.add("hidden"); launchBtn.disabled = true; launchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Iniciando...';
+            overlayError.classList.add("hidden");
+            launchBtn.disabled = true;
+            launchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Iniciando...';
             await initSfx();
-            if (window.location.protocol === "file:") { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError('Abre el archivo con Live Server o HTTPS.'); return; }
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError("Cámara bloqueada o sin soporte."); return; }
+
+            if (window.location.protocol === "file:") {
+                launchBtn.disabled = false;
+                launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar';
+                showError('Abre el archivo con Live Server (localhost) o HTTPS.');
+                return;
+            }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                launchBtn.disabled = false;
+                launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar';
+                showError("Cámara bloqueada o sin soporte.");
+                return;
+            }
+
             try {
                 await threeReadyPromise;
                 let stream;
-                try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }); }
-                catch (e) { stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); }
-                video.srcObject = stream; await video.play();
-                handCanvas.width = window.innerWidth; handCanvas.height = window.innerHeight;
-                startOverlay.classList.add("hidden"); statusDot.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse";
-                gestureBadge.textContent = "Calibrando IA..."; statusText.textContent = "Descargando sensores...";
-                if (!isLoopRunning) { isLoopRunning = true; requestAnimationFrame(mainLoop); }
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+                } catch (e) {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                }
+                video.srcObject = stream;
+                await video.play();
+
+                handCanvas.width = window.innerWidth;
+                handCanvas.height = window.innerHeight;
+                startOverlay.classList.add("hidden");
+                statusDot.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse";
+                gestureBadge.textContent = "Calibrando IA...";
+                statusText.textContent = "Descargando sensores...";
+
+                if (!isLoopRunning) {
+                    isLoopRunning = true;
+                    requestAnimationFrame(mainLoop);
+                }
                 await loadHandTracking();
-            } catch (err) { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError(`Error: ${err.message}`); }
+            } catch (err) {
+                launchBtn.disabled = false;
+                launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar';
+                showError(`Error: ${err.message}`);
+            }
         }
         launchBtn.addEventListener("click", startSystem);
 
@@ -986,8 +1028,119 @@
                     baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task", delegate: "GPU" },
                     runningMode: "VIDEO", numHands: 2, minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5
                 });
-                gestureBadge.textContent = "Sistemas En Línea"; statusText.textContent = `Proyectando: ${modelCarousel[currentCarouselIndex].name}`;
-            } catch (err) { gestureBadge.textContent = "Error de IA"; statusText.textContent = `Fallo en sensores: ${err.message}`; }
+                gestureBadge.textContent = "Sistemas En Línea";
+                statusText.textContent = `Proyectando: ${modelCarousel[currentCarouselIndex].name}`;
+            } catch (err) {
+                gestureBadge.textContent = "Error de IA";
+                statusText.textContent = `Fallo en sensores: ${err.message}`;
+            }
+        }
+
+        function mainLoop() {
+            if (handCanvas.width !== window.innerWidth || handCanvas.height !== window.innerHeight) {
+                handCanvas.width = window.innerWidth;
+                handCanvas.height = window.innerHeight;
+            }
+
+            if (video.readyState >= 2 && video.videoWidth > 0) {
+                if (handLandmarker && lastVideoTime !== video.currentTime) {
+                    lastVideoTime = video.currentTime;
+                    const results = handLandmarker.detectForVideo(video, performance.now());
+
+                    handCtx.clearRect(0, 0, handCanvas.width, handCanvas.height);
+                    processHands(results);
+                    drawSwipeTrail();
+                    drawLaserAndHudCallouts();
+                    drawShockwaves();
+                }
+            }
+
+            if (renderer && scene && camera && objectGroup) {
+                const delta = clock.getDelta();
+                const elapsed = clock.getElapsedTime();
+
+                if (animationMixer) animationMixer.update(delta);
+
+                if (burstParticles && burstLife > 0) {
+                    burstLife -= delta * 2.2;
+                    const posAttr = burstParticles.geometry.attributes.position;
+                    for (let i = 0; i < burstVelocities.length; i++) {
+                        posAttr.array[i * 3] += burstVelocities[i].x * delta;
+                        posAttr.array[i * 3 + 1] += burstVelocities[i].y * delta;
+                        posAttr.array[i * 3 + 2] += burstVelocities[i].z * delta;
+                    }
+                    posAttr.needsUpdate = true;
+                    burstParticles.material.opacity = Math.max(0, burstLife);
+
+                    if (burstLife <= 0) {
+                        scene.remove(burstParticles);
+                        burstParticles.geometry.dispose();
+                        burstParticles.material.dispose();
+                        burstParticles = null;
+                    }
+                }
+
+                if (hasActiveModel) {
+                    if (isDismissing) {
+                        objectGroup.rotation.y += 0.36;
+                        const s = objectGroup.scale.x * 0.72;
+                        objectGroup.scale.set(s, s, s);
+                    } else {
+                        if (gestureMode === "none" && !highlightedMesh) {
+                            const stepSpin = new THREE.Quaternion().setFromAxisAngle(
+                                new THREE.Vector3(0, 1, 0),
+                                0.0045
+                            );
+                            targetQuat.premultiply(stepSpin);
+                        }
+
+                        objectGroup.position.lerp(targetPos, 0.24);
+                        objectGroup.quaternion.slerp(targetQuat, 0.26);
+
+                        const currentS = objectGroup.scale.x;
+                        const nextS = currentS + (targetScale - currentS) * 0.22;
+                        objectGroup.scale.set(nextS, nextS, nextS);
+
+                        currentExplode += (targetExplode - currentExplode) * 0.18;
+                        for (const mesh of inspectableMeshes) {
+                            if (mesh.userData.origPos && mesh.userData.localExplodeDelta) {
+                                mesh.position.copy(mesh.userData.origPos).addScaledVector(
+                                    mesh.userData.localExplodeDelta,
+                                    currentExplode
+                                );
+                            }
+                        }
+
+                        if (telemetryGroup) {
+                            telemetryGroup.visible = showRingsCheckbox.checked;
+                            if (telemetryGroup.visible) {
+                                const angularVel = Math.abs(objectGroup.rotation.y - prevRotY) * 18;
+                                prevRotY = objectGroup.rotation.y;
+                                const { ring2, ticksGroup } = telemetryGroup.userData;
+                                ring2.rotation.z += (0.01 + angularVel * 0.15);
+                                ticksGroup.rotation.y -= (0.008 + angularVel * 0.1);
+                                const ringExpand = 1 + currentExplode * 0.35;
+                                telemetryGroup.scale.set(ringExpand, 1, ringExpand);
+                            }
+                        }
+
+                        if (scannerBar && isScannerMode) {
+                            scannerBar.visible = true;
+                            scannerBar.position.y = Math.sin(elapsed * 2.6) * 1.15;
+                        }
+
+                        scaleDisplay.textContent = `${Math.round(nextS * 100)}%`;
+                        explodeDisplay.textContent = `${Math.round(currentExplode * 100)}%`;
+                        const degX = Math.round(((objectGroup.rotation.x * 180) / Math.PI) % 360);
+                        const degY = Math.round(((objectGroup.rotation.y * 180) / Math.PI) % 360);
+                        rotDisplay.textContent = `${degX}°, ${degY}°`;
+                    }
+                }
+
+                renderer.render(scene, camera);
+            }
+
+            requestAnimationFrame(mainLoop);
         }
 
         // ==========================================
