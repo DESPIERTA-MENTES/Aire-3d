@@ -203,6 +203,7 @@
         </div>
     </div>
 
+    <!-- Script Principal Único -->
     <script>
         // ==========================================
         // 1. REFERENCIAS DOM
@@ -313,19 +314,13 @@
             const offsetX = (sw - rw) / 2;
             const offsetY = (sh - rh) / 2;
 
-            return {
-                x: offsetX + (1 - lm.x) * rw,
-                y: offsetY + lm.y * rh
-            };
+            return { x: offsetX + (1 - lm.x) * rw, y: offsetY + lm.y * rh };
         }
 
         function screenPxToNDC(px) {
             const sw = handCanvas.width || window.innerWidth;
             const sh = handCanvas.height || window.innerHeight;
-            return {
-                x: (px.x / sw) * 2 - 1,
-                y: -(px.y / sh) * 2 + 1
-            };
+            return { x: (px.x / sw) * 2 - 1, y: -(px.y / sh) * 2 + 1 };
         }
 
         function normToWorld(lm) {
@@ -334,25 +329,15 @@
             const vFov = (camera.fov * Math.PI) / 180;
             const visHeight = 2 * Math.tan(vFov / 2) * camera.position.z;
             const visWidth = visHeight * camera.aspect;
-            return new THREE.Vector3(
-                ndc.x * (visWidth / 2),
-                ndc.y * (visHeight / 2),
-                0
-            );
+            return new THREE.Vector3(ndc.x * (visWidth / 2), ndc.y * (visHeight / 2), 0);
         }
 
         // ==========================================
         // 4. ORIENTACIÓN 3D DE MUÑECA Y PALMA
         // ==========================================
         function landmarkToPalmSpace(lm) {
-            const aspect = (video.videoWidth && video.videoHeight)
-                ? (video.videoWidth / video.videoHeight)
-                : (window.innerWidth / window.innerHeight);
-            return new THREE.Vector3(
-                (0.5 - lm.x) * aspect,
-                0.5 - lm.y,
-                lm.z * 1.85
-            );
+            const aspect = (video.videoWidth && video.videoHeight) ? (video.videoWidth / video.videoHeight) : (window.innerWidth / window.innerHeight);
+            return new THREE.Vector3((0.5 - lm.x) * aspect, 0.5 - lm.y, lm.z * 1.85);
         }
 
         function getHandQuaternion(landmarks) {
@@ -364,8 +349,7 @@
             const yAxis = new THREE.Vector3().subVectors(pMiddle, pWrist).normalize();
             const across = new THREE.Vector3().subVectors(pIndex, pPinky);
             const zAxis = new THREE.Vector3().crossVectors(across, yAxis);
-            if (zAxis.lengthSq() < 1e-6) zAxis.set(0, 0, 1);
-            else zAxis.normalize();
+            if (zAxis.lengthSq() < 1e-6) zAxis.set(0, 0, 1); else zAxis.normalize();
             const xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis).normalize();
 
             const basisMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
@@ -393,10 +377,7 @@
         let targetScale = 1.0, targetExplode = 0.0, currentExplode = 0.0;
 
         let gestureMode = "none";
-        let hasActiveModel = false;
-        let isDismissing = false;
-        let isBlueprintMode = false;
-        let isScannerMode = false;
+        let hasActiveModel = false, isDismissing = false, isBlueprintMode = false, isScannerMode = false;
 
         let inspectableMeshes = [], highlightedMesh = null, laserHitInfo = null;
         let burstParticles = null, burstVelocities = [], burstLife = 0, shockwaves = [];
@@ -443,7 +424,6 @@
 
             objectGroup = new THREE.Group();
             scene.add(objectGroup);
-
             modelSlot = new THREE.Group();
             objectGroup.add(modelSlot);
 
@@ -454,10 +434,8 @@
             targetQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.28, 0.4, 0));
 
             grabAnchor = {
-                handPos: new THREE.Vector3(),
-                handQuat: new THREE.Quaternion(),
-                objPos: new THREE.Vector3(),
-                objQuat: new THREE.Quaternion(),
+                handPos: new THREE.Vector3(), handQuat: new THREE.Quaternion(),
+                objPos: new THREE.Vector3(), objQuat: new THREE.Quaternion(),
                 twoDist: 1, twoAngle: 0, twoDepthDiff: 0,
                 twoLeftQuat: new THREE.Quaternion(), twoRightQuat: new THREE.Quaternion(),
                 objScale: 1, explodeDist: 0.5, explodeStart: 0
@@ -492,15 +470,9 @@
 
         function buildScannerSweep() {
             scannerBar = new THREE.Group();
-            const plane = new THREE.Mesh(
-                new THREE.PlaneGeometry(2.7, 2.7),
-                new THREE.MeshBasicMaterial({ color: 0x06b6d4, side: THREE.DoubleSide, transparent: true, opacity: 0.14, depthWrite: false })
-            );
+            const plane = new THREE.Mesh(new THREE.PlaneGeometry(2.7, 2.7), new THREE.MeshBasicMaterial({ color: 0x06b6d4, side: THREE.DoubleSide, transparent: true, opacity: 0.14, depthWrite: false }));
             plane.rotation.x = Math.PI / 2;
-            const border = new THREE.LineSegments(
-                new THREE.EdgesGeometry(new THREE.BoxGeometry(2.7, 0.015, 2.7)),
-                new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.85 })
-            );
+            const border = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(2.7, 0.015, 2.7)), new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.85 }));
             scannerBar.add(plane, border);
             scannerBar.visible = false;
             objectGroup.add(scannerBar);
@@ -519,19 +491,13 @@
                         transparent: true, opacity: 0.28, shininess: 90, depthWrite: false
                     });
                     if (!mesh.userData.blueprintWire) {
-                        const wire = new THREE.LineSegments(
-                            new THREE.EdgesGeometry(mesh.geometry, 22),
-                            new THREE.LineBasicMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.75 })
-                        );
+                        const wire = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry, 22), new THREE.LineBasicMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.75 }));
                         mesh.userData.blueprintWire = wire;
                         mesh.add(wire);
                     }
                     mesh.userData.blueprintWire.visible = true;
                 } else {
-                    if (mesh.userData.origMaterial) {
-                        mesh.material = mesh.userData.origMaterial;
-                        mesh.userData.origMaterial = null;
-                    }
+                    if (mesh.userData.origMaterial) { mesh.material = mesh.userData.origMaterial; mesh.userData.origMaterial = null; }
                     if (mesh.userData.blueprintWire) mesh.userData.blueprintWire.visible = false;
                 }
             });
@@ -579,8 +545,7 @@
                 for (let i = 0; i < 8; i++) {
                     const angle = (i / 8) * Math.PI * 2;
                     const coil = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.28, 0.26), new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.75, roughness: 0.25 }));
-                    coil.position.set(Math.cos(angle) * 0.85, Math.sin(angle) * 0.85, 0.05);
-                    coil.rotation.z = angle; coil.name = `Bobina Electromagnética #${i + 1}`; root.add(coil);
+                    coil.position.set(Math.cos(angle) * 0.85, Math.sin(angle) * 0.85, 0.05); coil.rotation.z = angle; coil.name = `Bobina Electromagnética #${i + 1}`; root.add(coil);
                 }
                 const lens = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.72, 32), new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: 0x06b6d4, emissiveIntensity: 0.4, side: THREE.DoubleSide, transparent: true, opacity: 0.75 }));
                 lens.position.z = 0.24; lens.name = "Difusor Óptico Frontal"; root.add(lens);
@@ -622,7 +587,7 @@
             hasActiveModel = true;
 
             objectGroup.position.set(0, 0, 0);
-            objectGroup.rotation.set(0, 0, 0);
+            objectGroup.quaternion.set(0, 0, 0, 1);
             objectGroup.scale.set(1, 1, 1);
 
             const pivotWrapper = new THREE.Group();
@@ -635,10 +600,8 @@
 
             const maxDim = Math.max(size.x, size.y, size.z);
             if (maxDim > 0 && isFinite(maxDim)) {
-                const targetSize = 2.15;
-                const fitScale = targetSize / maxDim;
+                const fitScale = 2.15 / maxDim;
                 rawObject.scale.multiplyScalar(fitScale);
-
                 rawObject.updateMatrixWorld(true);
                 const scaledBox = new THREE.Box3().setFromObject(rawObject);
                 const scaledCenter = new THREE.Vector3();
@@ -663,11 +626,8 @@
                     meshBox.getCenter(meshCenterWorld);
 
                     const radialWorld = meshCenterWorld.clone().sub(slotCenterWorld);
-                    if (radialWorld.lengthSq() < 0.002) {
-                        radialWorld.set((Math.random() - 0.5) * 0.6, 0.35, 0.45);
-                    } else {
-                        radialWorld.normalize().multiplyScalar(1.35);
-                    }
+                    if (radialWorld.lengthSq() < 0.002) radialWorld.set((Math.random() - 0.5) * 0.6, 0.35, 0.45);
+                    else radialWorld.normalize().multiplyScalar(1.35);
 
                     const parentWorldScale = new THREE.Vector3(1, 1, 1);
                     if (child.parent) child.parent.getWorldScale(parentWorldScale);
@@ -696,16 +656,12 @@
 
             targetPos.set(0, 0, 0);
             targetQuat.setFromEuler(new THREE.Euler(0.25, 0.35, 0));
-            targetScale = 1.0;
-            targetExplode = 0.0;
-            currentExplode = 0.0;
-            gestureMode = "none";
+            targetScale = 1.0; targetExplode = 0.0; currentExplode = 0.0; gestureMode = "none";
 
             objectGroup.scale.set(0.05, 0.05, 0.05);
             if (playFx) playSummonSound();
 
-            gestureBadge.textContent = "Holograma Activo";
-            gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
+            gestureBadge.textContent = "Holograma Activo"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
             statusText.textContent = `Proyectando: ${title} (${inspectableMeshes.length} piezas)`;
         }
 
@@ -884,7 +840,7 @@
         }
 
         function executeVoiceCommand(cmd) {
-            const isDeactivate = cmd.includes("desactiva") || cmd.includes("quitar") || cmd.includes("quita") || cmd.includes("apaga") || cmd.includes("deten") || cmd.includes("salir") || cmd.includes("sin ");
+            const isDeactivate = cmd.includes("desactiva") || cmd.includes("quitar") || cmd.includes("quita") || cmd.includes("apagar") || cmd.includes("deten") || cmd.includes("salir") || cmd.includes("sin ");
             if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("holograma") || cmd.includes("esquema") || cmd.includes("estructura")) {
                 if (isDeactivate) { setBlueprintMode(false); jarvisSpeak("Modo plano desactivado."); }
                 else { setBlueprintMode(true); jarvisSpeak("Modo plano activado."); }
@@ -904,7 +860,7 @@
                 cycleCarousel(-1); jarvisSpeak("Modelo anterior.");
             } else if (cmd.includes("centrar") || cmd.includes("reiniciar") || cmd.includes("restaurar")) {
                 resetObject(); jarvisSpeak("Holograma centrado.");
-            } else if (cmd.includes("cerrar") || cmd.includes("eliminar") || cmd.includes("apagar") || cmd.includes("borrar")) {
+            } else if (cmd.includes("cerrar") || cmd.includes("eliminar") || (cmd.includes("apagar") && !cmd.includes("plano") && !cmd.includes("escáner")) || cmd.includes("borrar")) {
                 triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 }); jarvisSpeak("Cerrando proyección.");
             }
         }
@@ -1124,7 +1080,6 @@
                     }
                 }
 
-                // Rotación libre con palma abierta si no se está haciendo swipe
                 if (!isSwiping && hasActiveModel && !isDismissing) {
                     if (gestureMode !== "spin") {
                         gestureMode = "spin";
