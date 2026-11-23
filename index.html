@@ -25,7 +25,6 @@
             background: radial-gradient(circle at center, #091124 0%, #02040a 100%);
         }
 
-        /* Video espejo de la cámara */
         #webcam {
             position: absolute;
             width: 100%;
@@ -36,7 +35,6 @@
             z-index: 1;
         }
 
-        /* Canvas 2D en coordenadas reales de pantalla */
         #hand_canvas {
             position: absolute;
             inset: 0;
@@ -46,7 +44,6 @@
             pointer-events: none;
         }
 
-        /* Canvas 3D transparente encima de la cámara */
         #three_canvas {
             position: absolute;
             inset: 0;
@@ -94,14 +91,12 @@
         <canvas id="three_canvas"></canvas>
         <div class="hud-vignette"></div>
 
-        <!-- Aviso visual al arrastrar archivos 3D -->
         <div id="drag-overlay" class="hidden fixed inset-4 z-30 border-2 border-dashed border-cyan-400 bg-cyan-950/75 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center text-center p-6 pointer-events-none">
             <i class="fa-solid fa-cloud-arrow-up text-5xl text-cyan-400 mb-3 animate-bounce"></i>
             <p class="text-lg font-bold text-white">Suelta tus archivos 3D para añadirlos al carrusel</p>
             <p class="text-xs text-cyan-200 font-mono mt-1">Soporta selección múltiple: .GLB, .GLTF, .OBJ, .STL</p>
         </div>
 
-        <!-- Pantalla de Inicio -->
         <div id="start-overlay" class="relative z-20 bg-gray-900/95 border border-cyan-500/40 rounded-3xl p-6 max-w-md mx-4 text-center shadow-2xl space-y-4">
             <div class="w-16 h-16 mx-auto rounded-2xl bg-cyan-500/15 border border-cyan-400/40 flex items-center justify-center text-cyan-400 text-3xl">
                 <i class="fa-solid fa-atom"></i>
@@ -111,11 +106,11 @@
                 <p class="text-[11px] font-mono text-cyan-400/80">Interfaz Holográfica Gestual y de Voz</p>
             </div>
             <div class="text-xs text-gray-300 leading-relaxed text-left space-y-1.5 bg-gray-950/70 p-3.5 rounded-2xl border border-gray-800">
-                <p><strong class="text-cyan-400">1 Pinza + Giro de Muñeca:</strong> Mueve y rota el objeto 3D según el giro de tu muñeca.</p>
-                <p><strong class="text-indigo-400">2 Pinzas:</strong> Separa/junta para escalar y gira ambas muñecas para rotar.</p>
-                <p><strong class="text-sky-400">2 Palmas Abiertas:</strong> Separa para despiece explosivo; junta para ensamblar.</p>
-                <p><strong class="text-rose-400">Dedo Índice:</strong> Láser de inspección técnica sobre cada pieza.</p>
-                <p><strong class="text-emerald-400">Deslizar Mano (Swipe):</strong> Cambia al siguiente archivo 3D del carrusel.</p>
+                <p><strong class="text-sky-400">Palma Abierta:</strong> Gira tu muñeca para rotar el objeto sin moverlo. Desliza rápido para cambiar de modelo.</p>
+                <p><strong class="text-cyan-400">1 Pinza:</strong> Agarra el objeto para arrastrarlo por la pantalla.</p>
+                <p><strong class="text-indigo-400">2 Pinzas:</strong> Separa/junta para escalar.</p>
+                <p><strong class="text-emerald-400">2 Palmas Abiertas:</strong> Separa para despiece explosivo.</p>
+                <p><strong class="text-rose-400">Dedo Índice:</strong> Láser de inspección técnica.</p>
                 <p><strong class="text-amber-400">Palma sobre Puño:</strong> Desintegra y cierra el modelo actual.</p>
             </div>
             <button id="launch-btn" class="w-full py-3.5 px-5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
@@ -125,7 +120,6 @@
         </div>
     </div>
 
-    <!-- HUD Superior e Inferior -->
     <div id="ui-layer">
         <div class="flex flex-wrap justify-between items-start gap-2 pointer-events-auto">
             <div class="bg-gray-950/85 backdrop-blur-md border border-cyan-500/30 rounded-2xl px-3.5 py-2.5 shadow-xl max-w-md space-y-1">
@@ -149,7 +143,7 @@
             <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <input type="file" id="model-file-input" accept=".glb,.gltf,.obj,.stl" multiple class="hidden">
 
-                <button id="upload-model-btn" title="Cargar uno o varios archivos 3D al carrusel" class="bg-emerald-600/90 hover:bg-emerald-500 active:scale-95 text-white border border-emerald-400/50 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition cursor-pointer">
+                <button id="upload-model-btn" title="Cargar archivos 3D" class="bg-emerald-600/90 hover:bg-emerald-500 active:scale-95 text-white border border-emerald-400/50 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition cursor-pointer">
                     <i class="fa-solid fa-folder-plus"></i>
                     <span>Cargar 3D</span>
                 </button>
@@ -160,27 +154,27 @@
                     </button>
                     <select id="shape-select" class="bg-transparent text-xs text-gray-100 font-semibold py-2 px-1.5 focus:outline-none cursor-pointer max-w-[140px] sm:max-w-[180px] truncate">
                     </select>
-                    <button id="next-model-btn" title="Siguiente modelo (Swipe)" class="px-2.5 py-2 text-cyan-400 hover:bg-gray-800 transition cursor-pointer">
+                    <button id="next-model-btn" title="Siguiente modelo" class="px-2.5 py-2 text-cyan-400 hover:bg-gray-800 transition cursor-pointer">
                         <i class="fa-solid fa-chevron-right text-xs"></i>
                     </button>
                 </div>
 
-                <button id="blueprint-btn" title="Alternar Modo Plano / Rayos X" class="bg-gray-950/90 hover:bg-gray-800 text-cyan-300 border border-cyan-500/40 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                <button id="blueprint-btn" title="Modo Plano" class="bg-gray-950/90 hover:bg-gray-800 text-cyan-300 border border-cyan-500/40 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
                     <i class="fa-solid fa-border-all"></i>
                     <span class="hidden md:inline">Blueprint</span>
                 </button>
 
-                <button id="scanner-btn" title="Activar barrido de escáner láser" class="bg-gray-950/90 hover:bg-gray-800 text-sky-300 border border-sky-500/40 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                <button id="scanner-btn" title="Escáner láser" class="bg-gray-950/90 hover:bg-gray-800 text-sky-300 border border-sky-500/40 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
                     <i class="fa-solid fa-barcode"></i>
                     <span class="hidden md:inline">Escáner</span>
                 </button>
 
-                <button id="jarvis-voice-btn" title="Activar control por voz J.A.R.V.I.S." class="bg-gray-950/90 hover:bg-gray-800 text-indigo-300 border border-indigo-500/40 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                <button id="jarvis-voice-btn" title="Voz J.A.R.V.I.S." class="bg-gray-950/90 hover:bg-gray-800 text-indigo-300 border border-indigo-500/40 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
                     <i id="jarvis-mic-icon" class="fa-solid fa-microphone"></i>
                     <span class="hidden sm:inline">J.A.R.V.I.S.</span>
                 </button>
 
-                <button id="reset-btn" title="Centrar y ensamblar objeto" class="bg-gray-950/90 hover:bg-gray-800 text-amber-300 border border-amber-500/40 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                <button id="reset-btn" title="Centrar objeto" class="bg-gray-950/90 hover:bg-gray-800 text-amber-300 border border-amber-500/40 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
                     <i class="fa-solid fa-arrows-to-dot"></i>
                 </button>
             </div>
@@ -198,7 +192,7 @@
 
             <div class="flex items-center gap-2">
                 <label class="flex items-center gap-2 bg-gray-950/85 backdrop-blur border border-gray-800 rounded-xl px-3 py-2 cursor-pointer">
-                    <span class="text-xs text-gray-300">Anillos HUD</span>
+                    <span class="text-xs text-gray-300">Anillos</span>
                     <input type="checkbox" id="show-rings" checked class="w-4 h-4 text-cyan-500 rounded bg-gray-800 border-gray-600">
                 </label>
                 <label class="flex items-center gap-2 bg-gray-950/85 backdrop-blur border border-gray-800 rounded-xl px-3 py-2 cursor-pointer">
@@ -348,7 +342,7 @@
         }
 
         // ==========================================
-        // 4. ORIENTACIÓN 3D DE MUÑECA Y PALMA (QUATERNION)
+        // 4. ORIENTACIÓN 3D DE MUÑECA Y PALMA
         // ==========================================
         function landmarkToPalmSpace(lm) {
             const aspect = (video.videoWidth && video.videoHeight)
@@ -361,65 +355,42 @@
             );
         }
 
-        // Calcula un Quaternion 3D exacto de la inclinación y giro de la muñeca/mano
         function getHandQuaternion(landmarks) {
             const pWrist = landmarkToPalmSpace(landmarks[0]);
             const pIndex = landmarkToPalmSpace(landmarks[5]);
             const pMiddle = landmarkToPalmSpace(landmarks[9]);
             const pPinky = landmarkToPalmSpace(landmarks[17]);
 
-            // Eje Y de la mano: desde la muñeca hacia el nudillo central
             const yAxis = new THREE.Vector3().subVectors(pMiddle, pWrist).normalize();
-
-            // Vector transversal entre nudillo meñique e índice
             const across = new THREE.Vector3().subVectors(pIndex, pPinky);
-
-            // Eje Z perpendicular a la palma
             const zAxis = new THREE.Vector3().crossVectors(across, yAxis);
-            if (zAxis.lengthSq() < 1e-6) {
-                zAxis.set(0, 0, 1);
-            } else {
-                zAxis.normalize();
-            }
-
-            // Eje X ortonormal
+            if (zAxis.lengthSq() < 1e-6) zAxis.set(0, 0, 1);
+            else zAxis.normalize();
             const xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis).normalize();
 
             const basisMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
             return new THREE.Quaternion().setFromRotationMatrix(basisMatrix);
         }
 
-        // Amplifica suavemente el ángulo de giro de la muñeca para comodidad ergonómica
         function scaleQuaternionAngle(quat, factor) {
             const q = quat.clone().normalize();
-            if (q.w < 0) {
-                q.set(-q.x, -q.y, -q.z, -q.w);
-            }
+            if (q.w < 0) q.set(-q.x, -q.y, -q.z, -q.w);
             const clampedW = Math.min(1, Math.max(-1, q.w));
             const halfAngle = Math.acos(clampedW);
             const sinHalf = Math.sin(halfAngle);
-            if (sinHalf < 1e-5) {
-                return new THREE.Quaternion();
-            }
+            if (sinHalf < 1e-5) return new THREE.Quaternion();
             const axis = new THREE.Vector3(q.x / sinHalf, q.y / sinHalf, q.z / sinHalf);
             return new THREE.Quaternion().setFromAxisAngle(axis, halfAngle * 2 * factor);
         }
 
         // ==========================================
-        // 5. THREE.JS, LOADERS, ANILLOS Y ESCÁNER
+        // 5. THREE.JS, LOADERS Y ANILLOS
         // ==========================================
-        let THREE = null;
-        let GLTFLoader = null;
-        let DRACOLoader = null;
-        let OBJLoader = null;
-        let STLLoader = null;
-
+        let THREE = null, GLTFLoader = null, DRACOLoader = null, OBJLoader = null, STLLoader = null;
         let scene, camera, renderer, objectGroup, modelSlot, telemetryGroup, scannerBar, clock, raycaster;
         let animationMixer = null;
         let targetPos, targetQuat, grabAnchor;
-        let targetScale = 1.0;
-        let targetExplode = 0.0;
-        let currentExplode = 0.0;
+        let targetScale = 1.0, targetExplode = 0.0, currentExplode = 0.0;
 
         let gestureMode = "none";
         let hasActiveModel = false;
@@ -427,14 +398,8 @@
         let isBlueprintMode = false;
         let isScannerMode = false;
 
-        let inspectableMeshes = [];
-        let highlightedMesh = null;
-        let laserHitInfo = null;
-
-        let burstParticles = null;
-        let burstVelocities = [];
-        let burstLife = 0;
-        let shockwaves = [];
+        let inspectableMeshes = [], highlightedMesh = null, laserHitInfo = null;
+        let burstParticles = null, burstVelocities = [], burstLife = 0, shockwaves = [];
 
         const modelCarousel = [
             { id: "builtin:reactor", name: "Reactor Arc Mark VI", type: "builtin", shape: "reactor" },
@@ -452,13 +417,8 @@
                 import("https://esm.sh/three@0.160.0/examples/jsm/loaders/OBJLoader.js"),
                 import("https://esm.sh/three@0.160.0/examples/jsm/loaders/STLLoader.js")
             ]);
-
-            THREE = threeMod;
-            GLTFLoader = gltfMod.GLTFLoader;
-            DRACOLoader = dracoMod.DRACOLoader;
-            OBJLoader = objMod.OBJLoader;
-            STLLoader = stlMod.STLLoader;
-
+            THREE = threeMod; GLTFLoader = gltfMod.GLTFLoader; DRACOLoader = dracoMod.DRACOLoader;
+            OBJLoader = objMod.OBJLoader; STLLoader = stlMod.STLLoader;
             initThreeScene();
         })();
 
@@ -469,11 +429,7 @@
             clock = new THREE.Clock();
             raycaster = new THREE.Raycaster();
 
-            renderer = new THREE.WebGLRenderer({
-                canvas: threeCanvas,
-                alpha: true,
-                antialias: true
-            });
+            renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, alpha: true, antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -481,18 +437,9 @@
             renderer.toneMappingExposure = 1.25;
 
             scene.add(new THREE.HemisphereLight(0xffffff, 0x1e293b, 1.35));
-
-            const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.8);
-            dirLight1.position.set(4, 6, 6);
-            scene.add(dirLight1);
-
-            const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 1.2);
-            dirLight2.position.set(-5, -3, 4);
-            scene.add(dirLight2);
-
-            const backLight = new THREE.DirectionalLight(0xa855f7, 0.9);
-            backLight.position.set(0, 4, -6);
-            scene.add(backLight);
+            const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.8); dirLight1.position.set(4, 6, 6); scene.add(dirLight1);
+            const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 1.2); dirLight2.position.set(-5, -3, 4); scene.add(dirLight2);
+            const backLight = new THREE.DirectionalLight(0xa855f7, 0.9); backLight.position.set(0, 4, -6); scene.add(backLight);
 
             objectGroup = new THREE.Group();
             scene.add(objectGroup);
@@ -511,14 +458,9 @@
                 handQuat: new THREE.Quaternion(),
                 objPos: new THREE.Vector3(),
                 objQuat: new THREE.Quaternion(),
-                twoDist: 1,
-                twoAngle: 0,
-                twoDepthDiff: 0,
-                twoLeftQuat: new THREE.Quaternion(),
-                twoRightQuat: new THREE.Quaternion(),
-                objScale: 1,
-                explodeDist: 0.5,
-                explodeStart: 0
+                twoDist: 1, twoAngle: 0, twoDepthDiff: 0,
+                twoLeftQuat: new THREE.Quaternion(), twoRightQuat: new THREE.Quaternion(),
+                objScale: 1, explodeDist: 0.5, explodeStart: 0
             };
 
             refreshCarouselSelect();
@@ -528,38 +470,21 @@
         function buildTelemetryRings() {
             telemetryGroup = new THREE.Group();
             telemetryGroup.position.y = -1.25;
-
-            const ring1 = new THREE.Mesh(
-                new THREE.RingGeometry(1.32, 1.37, 64),
-                new THREE.MeshBasicMaterial({ color: 0x22d3ee, side: THREE.DoubleSide, transparent: true, opacity: 0.55 })
-            );
+            const ring1 = new THREE.Mesh(new THREE.RingGeometry(1.32, 1.37, 64), new THREE.MeshBasicMaterial({ color: 0x22d3ee, side: THREE.DoubleSide, transparent: true, opacity: 0.55 }));
             ring1.rotation.x = Math.PI / 2;
-
             const ring2Geo = new THREE.RingGeometry(1.52, 1.56, 48, 1, 0, Math.PI * 1.35);
-            const ring2 = new THREE.Mesh(
-                ring2Geo,
-                new THREE.MeshBasicMaterial({ color: 0x818cf8, side: THREE.DoubleSide, transparent: true, opacity: 0.65 })
-            );
+            const ring2 = new THREE.Mesh(ring2Geo, new THREE.MeshBasicMaterial({ color: 0x818cf8, side: THREE.DoubleSide, transparent: true, opacity: 0.65 }));
             ring2.rotation.x = Math.PI / 2;
-
-            const ring3 = new THREE.Mesh(
-                new THREE.RingGeometry(1.72, 1.74, 64),
-                new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.3 })
-            );
+            const ring3 = new THREE.Mesh(new THREE.RingGeometry(1.72, 1.74, 64), new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.3 }));
             ring3.rotation.x = Math.PI / 2;
-
             const ticksGroup = new THREE.Group();
             for (let i = 0; i < 12; i++) {
                 const angle = (i / 12) * Math.PI * 2;
-                const tick = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.03, 0.01, 0.14),
-                    new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7 })
-                );
+                const tick = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.01, 0.14), new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7 }));
                 tick.position.set(Math.cos(angle) * 1.44, 0, Math.sin(angle) * 1.44);
                 tick.rotation.y = -angle;
                 ticksGroup.add(tick);
             }
-
             telemetryGroup.userData = { ring1, ring2, ring3, ticksGroup };
             telemetryGroup.add(ring1, ring2, ring3, ticksGroup);
             objectGroup.add(telemetryGroup);
@@ -569,21 +494,13 @@
             scannerBar = new THREE.Group();
             const plane = new THREE.Mesh(
                 new THREE.PlaneGeometry(2.7, 2.7),
-                new THREE.MeshBasicMaterial({
-                    color: 0x06b6d4,
-                    side: THREE.DoubleSide,
-                    transparent: true,
-                    opacity: 0.14,
-                    depthWrite: false
-                })
+                new THREE.MeshBasicMaterial({ color: 0x06b6d4, side: THREE.DoubleSide, transparent: true, opacity: 0.14, depthWrite: false })
             );
             plane.rotation.x = Math.PI / 2;
-
             const border = new THREE.LineSegments(
                 new THREE.EdgesGeometry(new THREE.BoxGeometry(2.7, 0.015, 2.7)),
                 new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.85 })
             );
-
             scannerBar.add(plane, border);
             scannerBar.visible = false;
             objectGroup.add(scannerBar);
@@ -596,17 +513,10 @@
 
             inspectableMeshes.forEach((mesh) => {
                 if (enabled) {
-                    if (!mesh.userData.origMaterial) {
-                        mesh.userData.origMaterial = mesh.material;
-                    }
+                    if (!mesh.userData.origMaterial) mesh.userData.origMaterial = mesh.material;
                     mesh.material = new THREE.MeshPhongMaterial({
-                        color: 0x06b6d4,
-                        emissive: 0x0891b2,
-                        emissiveIntensity: 0.45,
-                        transparent: true,
-                        opacity: 0.28,
-                        shininess: 90,
-                        depthWrite: false
+                        color: 0x06b6d4, emissive: 0x0891b2, emissiveIntensity: 0.45,
+                        transparent: true, opacity: 0.28, shininess: 90, depthWrite: false
                     });
                     if (!mesh.userData.blueprintWire) {
                         const wire = new THREE.LineSegments(
@@ -622,17 +532,10 @@
                         mesh.material = mesh.userData.origMaterial;
                         mesh.userData.origMaterial = null;
                     }
-                    if (mesh.userData.blueprintWire) {
-                        mesh.userData.blueprintWire.visible = false;
-                    }
+                    if (mesh.userData.blueprintWire) mesh.userData.blueprintWire.visible = false;
                 }
             });
-
-            if (hasActiveModel) {
-                statusText.textContent = enabled
-                    ? "Modo Plano / Blueprint activado."
-                    : "Modo Plano desactivado (texturas restauradas).";
-            }
+            if (hasActiveModel) statusText.textContent = enabled ? "Modo Plano / Blueprint activado." : "Modo Plano desactivado (texturas restauradas).";
         }
 
         function setScannerMode(enabled) {
@@ -647,163 +550,68 @@
         scannerBtn.addEventListener("click", () => setScannerMode(!isScannerMode));
 
         // ==========================================
-        // 6. MODELOS MULTI-PIEZA Y DESPIECE EN ESPACIO REAL
+        // 6. MODELOS MULTI-PIEZA
         // ==========================================
         function clearCurrentModel() {
             if (!modelSlot) return;
-            highlightedMesh = null;
-            laserHitInfo = null;
-            inspectedPartBadge.classList.add("hidden");
-
-            if (animationMixer) {
-                animationMixer.stopAllAction();
-                animationMixer = null;
-            }
+            highlightedMesh = null; laserHitInfo = null; inspectedPartBadge.classList.add("hidden");
+            if (animationMixer) { animationMixer.stopAllAction(); animationMixer = null; }
             modelSlot.traverse((child) => {
                 if (child.geometry) child.geometry.dispose();
                 if (child.material) {
                     const mats = Array.isArray(child.material) ? child.material : [child.material];
-                    mats.forEach((m) => {
-                        if (m.map) m.map.dispose();
-                        m.dispose();
-                    });
+                    mats.forEach((m) => { if (m.map) m.map.dispose(); m.dispose(); });
                 }
             });
-            while (modelSlot.children.length > 0) {
-                modelSlot.remove(modelSlot.children[0]);
-            }
+            while (modelSlot.children.length > 0) modelSlot.remove(modelSlot.children[0]);
             inspectableMeshes = [];
         }
 
         function buildProceduralMultiPartModel(shape) {
             const root = new THREE.Group();
-
             if (shape === "reactor") {
-                const core = new THREE.Mesh(
-                    new THREE.OctahedronGeometry(0.42, 1),
-                    new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.9, roughness: 0.15 })
-                );
-                core.name = "Núcleo de Paladio";
-                root.add(core);
-
-                const torus = new THREE.Mesh(
-                    new THREE.TorusGeometry(0.85, 0.11, 20, 48),
-                    new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.25 })
-                );
-                torus.name = "Anillo Contenedor";
-                root.add(torus);
-
-                const backplate = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.75, 0.62, 0.18, 32),
-                    new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 })
-                );
-                backplate.rotation.x = Math.PI / 2;
-                backplate.position.z = -0.28;
-                backplate.name = "Placa Base de Titanio";
-                root.add(backplate);
-
+                const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 1), new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.9, roughness: 0.15 }));
+                core.name = "Núcleo de Paladio"; root.add(core);
+                const torus = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.11, 20, 48), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.25 }));
+                torus.name = "Anillo Contenedor"; root.add(torus);
+                const backplate = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.62, 0.18, 32), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 }));
+                backplate.rotation.x = Math.PI / 2; backplate.position.z = -0.28; backplate.name = "Placa Base de Titanio"; root.add(backplate);
                 for (let i = 0; i < 8; i++) {
                     const angle = (i / 8) * Math.PI * 2;
-                    const coil = new THREE.Mesh(
-                        new THREE.BoxGeometry(0.18, 0.28, 0.26),
-                        new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.75, roughness: 0.25 })
-                    );
+                    const coil = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.28, 0.26), new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.75, roughness: 0.25 }));
                     coil.position.set(Math.cos(angle) * 0.85, Math.sin(angle) * 0.85, 0.05);
-                    coil.rotation.z = angle;
-                    coil.name = `Bobina Electromagnética #${i + 1}`;
-                    root.add(coil);
+                    coil.rotation.z = angle; coil.name = `Bobina Electromagnética #${i + 1}`; root.add(coil);
                 }
-
-                const lens = new THREE.Mesh(
-                    new THREE.RingGeometry(0.45, 0.72, 32),
-                    new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: 0x06b6d4, emissiveIntensity: 0.4, side: THREE.DoubleSide, transparent: true, opacity: 0.75 })
-                );
-                lens.position.z = 0.24;
-                lens.name = "Difusor Óptico Frontal";
-                root.add(lens);
-
+                const lens = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.72, 32), new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: 0x06b6d4, emissiveIntensity: 0.4, side: THREE.DoubleSide, transparent: true, opacity: 0.75 }));
+                lens.position.z = 0.24; lens.name = "Difusor Óptico Frontal"; root.add(lens);
             } else if (shape === "drone") {
-                const body = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.55, 24, 24),
-                    new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.25 })
-                );
-                body.scale.set(1.2, 0.65, 1.2);
-                body.name = "Chasis Central Blindado";
-                root.add(body);
-
-                const eye = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.22, 20, 20),
-                    new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.9 })
-                );
-                eye.position.set(0, 0, 0.58);
-                eye.name = "Sensor Óptico Infrarrojo";
-                root.add(eye);
-
-                const offsets = [[-0.85, 0.2, -0.75], [0.85, 0.2, -0.75], [-0.85, 0.2, 0.75], [0.85, 0.2, 0.75]];
-                offsets.forEach(([x, y, z], idx) => {
-                    const pod = new THREE.Mesh(
-                        new THREE.CylinderGeometry(0.24, 0.24, 0.14, 24),
-                        new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.6, roughness: 0.25 })
-                    );
-                    pod.position.set(x, y, z);
-                    pod.name = `Propulsor Repulsor #${idx + 1}`;
-                    root.add(pod);
+                const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 24, 24), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.25 }));
+                body.scale.set(1.2, 0.65, 1.2); body.name = "Chasis Central Blindado"; root.add(body);
+                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 20), new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.9 }));
+                eye.position.set(0, 0, 0.58); eye.name = "Sensor Óptico Infrarrojo"; root.add(eye);
+                [[-0.85, 0.2, -0.75], [0.85, 0.2, -0.75], [-0.85, 0.2, 0.75], [0.85, 0.2, 0.75]].forEach(([x, y, z], idx) => {
+                    const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.14, 24), new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.6, roughness: 0.25 }));
+                    pod.position.set(x, y, z); pod.name = `Propulsor Repulsor #${idx + 1}`; root.add(pod);
                 });
-
             } else if (shape === "quantum") {
-                const inner = new THREE.Mesh(
-                    new THREE.IcosahedronGeometry(0.48, 0),
-                    new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7e22ce, emissiveIntensity: 0.6, roughness: 0.2 })
-                );
-                inner.name = "Singularidad Central";
-                root.add(inner);
-
-                const shell = new THREE.Mesh(
-                    new THREE.DodecahedronGeometry(0.88, 0),
-                    new THREE.MeshStandardMaterial({ color: 0x38bdf8, wireframe: true })
-                );
-                shell.name = "Jaula Geodésica";
-                root.add(shell);
-
+                const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(0.48, 0), new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7e22ce, emissiveIntensity: 0.6, roughness: 0.2 }));
+                inner.name = "Singularidad Central"; root.add(inner);
+                const shell = new THREE.Mesh(new THREE.DodecahedronGeometry(0.88, 0), new THREE.MeshStandardMaterial({ color: 0x38bdf8, wireframe: true }));
+                shell.name = "Jaula Geodésica"; root.add(shell);
                 for (let i = 0; i < 6; i++) {
-                    const node = new THREE.Mesh(
-                        new THREE.BoxGeometry(0.22, 0.22, 0.22),
-                        new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.7, roughness: 0.2 })
-                    );
-                    const axis = i % 3;
-                    const sign = i < 3 ? 1 : -1;
-                    node.position.set(
-                        axis === 0 ? sign * 1.05 : 0,
-                        axis === 1 ? sign * 1.05 : 0,
-                        axis === 2 ? sign * 1.05 : 0
-                    );
-                    node.name = `Estabilizador Cuántico #${i + 1}`;
-                    root.add(node);
+                    const node = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.7, roughness: 0.2 }));
+                    const axis = i % 3; const sign = i < 3 ? 1 : -1;
+                    node.position.set(axis === 0 ? sign * 1.05 : 0, axis === 1 ? sign * 1.05 : 0, axis === 2 ? sign * 1.05 : 0);
+                    node.name = `Estabilizador Cuántico #${i + 1}`; root.add(node);
                 }
             } else {
-                const core = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.45, 24, 24),
-                    new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.7 })
-                );
-                core.name = "Núcleo Térmico";
-                root.add(core);
-
-                const planet = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.78, 32, 32),
-                    new THREE.MeshStandardMaterial({ color: 0x4f46e5, roughness: 0.35, metalness: 0.4, transparent: true, opacity: 0.85 })
-                );
-                planet.name = "Corteza Planetaria";
-                root.add(planet);
-
-                const ring = new THREE.Mesh(
-                    new THREE.RingGeometry(1.05, 1.55, 48),
-                    new THREE.MeshStandardMaterial({ color: 0x22d3ee, side: THREE.DoubleSide, transparent: true, opacity: 0.8 })
-                );
-                ring.rotation.x = Math.PI / 2.4;
-                ring.name = "Anillo de Partículas";
-                root.add(ring);
+                const core = new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 24), new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.7 }));
+                core.name = "Núcleo Térmico"; root.add(core);
+                const planet = new THREE.Mesh(new THREE.SphereGeometry(0.78, 32, 32), new THREE.MeshStandardMaterial({ color: 0x4f46e5, roughness: 0.35, metalness: 0.4, transparent: true, opacity: 0.85 }));
+                planet.name = "Corteza Planetaria"; root.add(planet);
+                const ring = new THREE.Mesh(new THREE.RingGeometry(1.05, 1.55, 48), new THREE.MeshStandardMaterial({ color: 0x22d3ee, side: THREE.DoubleSide, transparent: true, opacity: 0.8 }));
+                ring.rotation.x = Math.PI / 2.4; ring.name = "Anillo de Partículas"; root.add(ring);
             }
-
             return root;
         }
 
@@ -847,13 +655,9 @@
 
             modelSlot.traverse((child) => {
                 if (child.isMesh) {
-                    if (!child.name || child.name.trim() === "") {
-                        child.name = `Componente #${partIndex}`;
-                    }
+                    if (!child.name || child.name.trim() === "") child.name = `Componente #${partIndex}`;
                     partIndex++;
-
                     child.userData.origPos = child.position.clone();
-
                     const meshBox = new THREE.Box3().setFromObject(child);
                     const meshCenterWorld = new THREE.Vector3();
                     meshBox.getCenter(meshCenterWorld);
@@ -866,13 +670,9 @@
                     }
 
                     const parentWorldScale = new THREE.Vector3(1, 1, 1);
-                    if (child.parent) {
-                        child.parent.getWorldScale(parentWorldScale);
-                    }
+                    if (child.parent) child.parent.getWorldScale(parentWorldScale);
                     const parentWorldQuat = new THREE.Quaternion();
-                    if (child.parent) {
-                        child.parent.getWorldQuaternion(parentWorldQuat);
-                    }
+                    if (child.parent) child.parent.getWorldQuaternion(parentWorldQuat);
 
                     const localDir = radialWorld.clone().applyQuaternion(parentWorldQuat.invert());
                     localDir.set(
@@ -910,14 +710,13 @@
         }
 
         // ==========================================
-        // 7. CARRUSEL AÉREO DE MODELOS
+        // 7. CARRUSEL AÉREO
         // ==========================================
         function refreshCarouselSelect() {
             shapeSelect.innerHTML = "";
             modelCarousel.forEach((item, idx) => {
                 const opt = document.createElement("option");
-                opt.value = idx;
-                opt.textContent = item.name;
+                opt.value = idx; opt.textContent = item.name;
                 if (idx === currentCarouselIndex) opt.selected = true;
                 shapeSelect.appendChild(opt);
             });
@@ -927,10 +726,8 @@
         async function loadCarouselItem(index, playFx = true) {
             await threeReadyPromise;
             if (modelCarousel.length === 0) return;
-
             currentCarouselIndex = (index + modelCarousel.length) % modelCarousel.length;
             refreshCarouselSelect();
-
             const item = modelCarousel[currentCarouselIndex];
             if (item.type === "builtin") {
                 const obj = buildProceduralMultiPartModel(item.shape);
@@ -940,15 +737,10 @@
             }
         }
 
-        function cycleCarousel(step = 1) {
-            loadCarouselItem(currentCarouselIndex + step, true);
-        }
-
+        function cycleCarousel(step = 1) { loadCarouselItem(currentCarouselIndex + step, true); }
         prevModelBtn.addEventListener("click", () => cycleCarousel(-1));
         nextModelBtn.addEventListener("click", () => cycleCarousel(1));
-        shapeSelect.addEventListener("change", (e) => {
-            loadCarouselItem(parseInt(e.target.value, 10), true);
-        });
+        shapeSelect.addEventListener("change", (e) => loadCarouselItem(parseInt(e.target.value, 10), true));
 
         async function loadFileItemToStage(item, playFx) {
             const file = item.file;
@@ -962,29 +754,17 @@
                     const dracoLoader = new DRACOLoader();
                     dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
                     loader.setDRACOLoader(dracoLoader);
-
-                    loader.load(
-                        blobUrl,
-                        (gltf) => {
-                            mountNormalizedModel(gltf.scene, file.name, gltf.animations, playFx);
-                            URL.revokeObjectURL(blobUrl);
-                            dracoLoader.dispose();
-                        },
-                        undefined,
-                        (err) => {
-                            URL.revokeObjectURL(blobUrl);
-                            dracoLoader.dispose();
-                            statusText.textContent = `Error en ${file.name}: ${err.message || "Archivo inválido"}`;
-                        }
-                    );
+                    loader.load(blobUrl, (gltf) => {
+                        mountNormalizedModel(gltf.scene, file.name, gltf.animations, playFx);
+                        URL.revokeObjectURL(blobUrl); dracoLoader.dispose();
+                    }, undefined, (err) => {
+                        URL.revokeObjectURL(blobUrl); dracoLoader.dispose();
+                        statusText.textContent = `Error en ${file.name}: ${err.message || "Archivo inválido"}`;
+                    });
                 } else if (ext === "obj") {
                     const loader = new OBJLoader();
                     loader.load(blobUrl, (obj) => {
-                        obj.traverse((child) => {
-                            if (child.isMesh && !child.material) {
-                                child.material = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3, metalness: 0.45 });
-                            }
-                        });
+                        obj.traverse((child) => { if (child.isMesh && !child.material) child.material = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3, metalness: 0.45 }); });
                         mountNormalizedModel(obj, file.name, [], playFx);
                         URL.revokeObjectURL(blobUrl);
                     });
@@ -992,10 +772,7 @@
                     const loader = new STLLoader();
                     loader.load(blobUrl, (geometry) => {
                         geometry.computeVertexNormals();
-                        const mesh = new THREE.Mesh(
-                            geometry,
-                            new THREE.MeshStandardMaterial({ color: 0x818cf8, roughness: 0.28, metalness: 0.5 })
-                        );
+                        const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0x818cf8, roughness: 0.28, metalness: 0.5 }));
                         mountNormalizedModel(mesh, file.name, [], playFx);
                         URL.revokeObjectURL(blobUrl);
                     });
@@ -1009,642 +786,257 @@
         async function enqueue3DFiles(fileList) {
             if (!fileList || fileList.length === 0) return;
             await threeReadyPromise;
-
             const validExts = ["glb", "gltf", "obj", "stl"];
             let firstAddedIndex = -1;
-
             for (const file of fileList) {
                 const ext = file.name.split(".").pop().toLowerCase();
                 if (validExts.includes(ext)) {
-                    modelCarousel.push({
-                        id: `file:${file.name}:${Date.now()}`,
-                        name: file.name,
-                        type: "file",
-                        file
-                    });
+                    modelCarousel.push({ id: `file:${file.name}:${Date.now()}`, name: file.name, type: "file", file });
                     if (firstAddedIndex === -1) firstAddedIndex = modelCarousel.length - 1;
                 }
             }
-
-            if (firstAddedIndex !== -1) {
-                await loadCarouselItem(firstAddedIndex, true);
-            } else {
-                statusText.textContent = "Formato no soportado. Usa .glb, .gltf, .obj o .stl";
-            }
+            if (firstAddedIndex !== -1) await loadCarouselItem(firstAddedIndex, true);
+            else statusText.textContent = "Formato no soportado. Usa .glb, .gltf, .obj o .stl";
         }
 
         uploadModelBtn.addEventListener("click", () => modelFileInput.click());
         modelFileInput.addEventListener("change", (e) => enqueue3DFiles(e.target.files));
-
         window.addEventListener("dragover", (e) => { e.preventDefault(); dragOverlay.classList.remove("hidden"); });
         window.addEventListener("dragleave", (e) => { if (e.relatedTarget === null) dragOverlay.classList.add("hidden"); });
-        window.addEventListener("drop", (e) => {
-            e.preventDefault();
-            dragOverlay.classList.add("hidden");
-            enqueue3DFiles(e.dataTransfer.files);
-        });
+        window.addEventListener("drop", (e) => { e.preventDefault(); dragOverlay.classList.add("hidden"); enqueue3DFiles(e.dataTransfer.files); });
 
         // ==========================================
         // 8. DESINTEGRACIÓN STARK Y RESET
         // ==========================================
         function spawnHologramBurst(originPos) {
             if (!THREE || !scene) return;
-            if (burstParticles) {
-                scene.remove(burstParticles);
-                burstParticles.geometry.dispose();
-                burstParticles.material.dispose();
-                burstParticles = null;
-            }
-
+            if (burstParticles) { scene.remove(burstParticles); burstParticles.geometry.dispose(); burstParticles.material.dispose(); burstParticles = null; }
             const count = 120;
             const positions = new Float32Array(count * 3);
             burstVelocities = [];
-
             for (let i = 0; i < count; i++) {
                 positions[i * 3] = originPos.x + (Math.random() - 0.5) * 0.6;
                 positions[i * 3 + 1] = originPos.y + (Math.random() - 0.5) * 0.6;
                 positions[i * 3 + 2] = originPos.z + (Math.random() - 0.5) * 0.6;
-
                 const theta = Math.random() * Math.PI * 2;
                 const phi = Math.acos(2 * Math.random() - 1);
                 const speed = 2.8 + Math.random() * 5.0;
-                burstVelocities.push(new THREE.Vector3(
-                    Math.sin(phi) * Math.cos(theta) * speed,
-                    Math.sin(phi) * Math.sin(theta) * speed,
-                    Math.cos(phi) * speed
-                ));
+                burstVelocities.push(new THREE.Vector3(Math.sin(phi) * Math.cos(theta) * speed, Math.sin(phi) * Math.sin(theta) * speed, Math.cos(phi) * speed));
             }
-
             const geo = new THREE.BufferGeometry();
             geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-            burstParticles = new THREE.Points(
-                geo,
-                new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.12, transparent: true, opacity: 1.0, blending: THREE.AdditiveBlending, depthWrite: false })
-            );
+            burstParticles = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.12, transparent: true, opacity: 1.0, blending: THREE.AdditiveBlending, depthWrite: false }));
             burstLife = 1.0;
             scene.add(burstParticles);
         }
 
         function triggerStarkDismissal(impactPx) {
             if (!hasActiveModel || isDismissing) return;
-            isDismissing = true;
-            gestureMode = "none";
-            playDismissSound();
-
-            if (impactPx) {
-                shockwaves.push({ x: impactPx.x, y: impactPx.y, radius: 18, alpha: 1.0 });
-            }
+            isDismissing = true; gestureMode = "none"; playDismissSound();
+            if (impactPx) shockwaves.push({ x: impactPx.x, y: impactPx.y, radius: 18, alpha: 1.0 });
             spawnHologramBurst(objectGroup.position);
-
-            gestureBadge.textContent = "Holograma Cerrado";
-            gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400";
+            gestureBadge.textContent = "Holograma Cerrado"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400";
             statusText.textContent = "Desliza una mano abierta (Swipe) para invocar el siguiente modelo.";
-
             setTimeout(() => {
-                clearCurrentModel();
-                objectGroup.visible = false;
-                hasActiveModel = false;
-                isDismissing = false;
-                scaleDisplay.textContent = "--";
-                explodeDisplay.textContent = "--";
-                rotDisplay.textContent = "--";
+                clearCurrentModel(); objectGroup.visible = false; hasActiveModel = false; isDismissing = false;
+                scaleDisplay.textContent = "--"; explodeDisplay.textContent = "--"; rotDisplay.textContent = "--";
             }, 250);
         }
 
         function resetObject() {
-            if (!hasActiveModel) {
-                loadCarouselItem(currentCarouselIndex, true);
-                return;
-            }
-            targetPos.set(0, 0, 0);
-            targetQuat.setFromEuler(new THREE.Euler(0.25, 0.35, 0));
-            targetScale = 1.0;
-            targetExplode = 0.0;
-            gestureMode = "none";
-            playLockSound();
+            if (!hasActiveModel) { loadCarouselItem(currentCarouselIndex, true); return; }
+            targetPos.set(0, 0, 0); targetQuat.setFromEuler(new THREE.Euler(0.25, 0.35, 0));
+            targetScale = 1.0; targetExplode = 0.0; gestureMode = "none"; playLockSound();
         }
 
         resetBtn.addEventListener("click", resetObject);
-
         window.addEventListener("resize", () => {
             if (!camera || !renderer) return;
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
+            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            if (handCanvas.width !== window.innerWidth || handCanvas.height !== window.innerHeight) {
+                handCanvas.width = window.innerWidth;
+                handCanvas.height = window.innerHeight;
+            }
         });
 
         // ==========================================
         // 9. COMANDOS DE VOZ J.A.R.V.I.S.
         // ==========================================
-        let jarvisRecognition = null;
-        let isJarvisListening = false;
-
+        let jarvisRecognition = null, isJarvisListening = false;
         function setupJarvisVoice() {
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRec) {
-                statusText.textContent = "Tu navegador no soporta reconocimiento de voz.";
-                return;
-            }
-
-            jarvisRecognition = new SpeechRec();
-            jarvisRecognition.lang = "es-ES";
-            jarvisRecognition.continuous = true;
-            jarvisRecognition.interimResults = true;
-
-            jarvisRecognition.onstart = () => {
-                voiceTranscript.classList.remove("hidden");
-                jarvisVoiceBtn.classList.add("bg-indigo-600", "text-white", "jarvis-active");
-                jarvisMicIcon.className = "fa-solid fa-microphone-lines animate-pulse";
-            };
-
+            if (!SpeechRec) { statusText.textContent = "Navegador sin soporte de voz."; return; }
+            jarvisRecognition = new SpeechRec(); jarvisRecognition.lang = "es-ES"; jarvisRecognition.continuous = true; jarvisRecognition.interimResults = true;
+            jarvisRecognition.onstart = () => { voiceTranscript.classList.remove("hidden"); jarvisVoiceBtn.classList.add("bg-indigo-600", "text-white", "jarvis-active"); jarvisMicIcon.className = "fa-solid fa-microphone-lines animate-pulse"; };
             jarvisRecognition.onresult = (event) => {
                 const last = event.results[event.results.length - 1];
                 const text = last[0].transcript.trim().toLowerCase();
                 voiceTranscript.innerHTML = `<i class="fa-solid fa-waveform-lines mr-1"></i> "${text}"`;
-
                 if (!last.isFinal) return;
                 executeVoiceCommand(text);
             };
-
-            jarvisRecognition.onerror = (e) => {
-                if (e.error === "not-allowed") {
-                    isJarvisListening = false;
-                    statusText.textContent = "Permiso de micrófono denegado para comandos de voz.";
-                }
-            };
-
+            jarvisRecognition.onerror = (e) => { if (e.error === "not-allowed") { isJarvisListening = false; statusText.textContent = "Permiso de micro denegado."; } };
             jarvisRecognition.onend = () => {
-                if (isJarvisListening) {
-                    try { jarvisRecognition.start(); } catch (e) {}
-                } else {
-                    voiceTranscript.classList.add("hidden");
-                    jarvisVoiceBtn.classList.remove("bg-indigo-600", "text-white", "jarvis-active");
-                    jarvisMicIcon.className = "fa-solid fa-microphone";
-                }
+                if (isJarvisListening) { try { jarvisRecognition.start(); } catch (e) {} }
+                else { voiceTranscript.classList.add("hidden"); jarvisVoiceBtn.classList.remove("bg-indigo-600", "text-white", "jarvis-active"); jarvisMicIcon.className = "fa-solid fa-microphone"; }
             };
         }
 
         function executeVoiceCommand(cmd) {
-            const isDeactivate =
-                cmd.includes("desactiva") ||
-                cmd.includes("quitar") ||
-                cmd.includes("quita") ||
-                cmd.includes("apaga") ||
-                cmd.includes("deten") ||
-                cmd.includes("detén") ||
-                cmd.includes("salir") ||
-                cmd.includes("cancelar") ||
-                cmd.includes("sin ");
-
-            if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("holograma")) {
-                if (isDeactivate) {
-                    setBlueprintMode(false);
-                    jarvisSpeak("Modo plano desactivado.");
-                } else {
-                    setBlueprintMode(true);
-                    jarvisSpeak("Modo plano activado.");
-                }
+            const isDeactivate = cmd.includes("desactiva") || cmd.includes("quitar") || cmd.includes("quita") || cmd.includes("apaga") || cmd.includes("deten") || cmd.includes("salir") || cmd.includes("sin ");
+            if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("holograma") || cmd.includes("esquema") || cmd.includes("estructura")) {
+                if (isDeactivate) { setBlueprintMode(false); jarvisSpeak("Modo plano desactivado."); }
+                else { setBlueprintMode(true); jarvisSpeak("Modo plano activado."); }
             } else if (cmd.includes("sólido") || cmd.includes("solido") || cmd.includes("normal") || cmd.includes("textura")) {
-                setBlueprintMode(false);
-                jarvisSpeak("Modo plano desactivado. Texturas restauradas.");
-            } else if (cmd.includes("escáner") || cmd.includes("escaner") || cmd.includes("escanear")) {
-                if (isDeactivate) {
-                    setScannerMode(false);
-                    jarvisSpeak("Escáner desactivado.");
-                } else {
-                    setScannerMode(true);
-                    jarvisSpeak("Escáner láser iniciado.");
-                }
-            } else if (cmd.includes("explotar") || cmd.includes("desarmar") || cmd.includes("despiece") || cmd.includes("abrir piezas")) {
+                setBlueprintMode(false); jarvisSpeak("Texturas restauradas.");
+            } else if (cmd.includes("escáner") || cmd.includes("escaner") || cmd.includes("escanear") || cmd.includes("barrido")) {
+                if (isDeactivate) { setScannerMode(false); jarvisSpeak("Escáner desactivado."); }
+                else { setScannerMode(true); jarvisSpeak("Escáner iniciado."); }
+            } else if (cmd.includes("explotar") || cmd.includes("desarmar") || cmd.includes("despiece") || cmd.includes("abrir piezas") || cmd.includes("separar")) {
                 if (!hasActiveModel) loadCarouselItem(currentCarouselIndex, false);
-                targetExplode = 0.9;
-                playSummonSound();
-                jarvisSpeak("Desplegando componentes.");
-            } else if (cmd.includes("armar") || cmd.includes("ensamblar") || cmd.includes("juntar")) {
-                targetExplode = 0.0;
-                playLockSound();
-                jarvisSpeak("Componentes ensamblados.");
+                targetExplode = 0.9; playSummonSound(); jarvisSpeak("Desplegando componentes.");
+            } else if (cmd.includes("armar") || cmd.includes("ensamblar") || cmd.includes("juntar") || cmd.includes("unir")) {
+                targetExplode = 0.0; playLockSound(); jarvisSpeak("Componentes ensamblados.");
             } else if (cmd.includes("siguiente") || cmd.includes("cambiar")) {
-                cycleCarousel(1);
-                jarvisSpeak("Cargando siguiente modelo.");
+                cycleCarousel(1); jarvisSpeak("Cargando siguiente modelo.");
             } else if (cmd.includes("anterior")) {
-                cycleCarousel(-1);
-                jarvisSpeak("Modelo anterior.");
+                cycleCarousel(-1); jarvisSpeak("Modelo anterior.");
             } else if (cmd.includes("centrar") || cmd.includes("reiniciar") || cmd.includes("restaurar")) {
-                resetObject();
-                jarvisSpeak("Holograma centrado.");
-            } else if (cmd.includes("cerrar") || cmd.includes("eliminar") || cmd.includes("apagar")) {
-                triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 });
-                jarvisSpeak("Cerrando proyección.");
+                resetObject(); jarvisSpeak("Holograma centrado.");
+            } else if (cmd.includes("cerrar") || cmd.includes("eliminar") || cmd.includes("apagar") || cmd.includes("borrar")) {
+                triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 }); jarvisSpeak("Cerrando proyección.");
             }
         }
-
         jarvisVoiceBtn.addEventListener("click", () => {
             if (!jarvisRecognition) setupJarvisVoice();
             if (!jarvisRecognition) return;
-
             isJarvisListening = !isJarvisListening;
-            if (isJarvisListening) {
-                try {
-                    jarvisRecognition.start();
-                    jarvisSpeak("Sistemas en línea.");
-                } catch (e) {}
-            } else {
-                jarvisRecognition.stop();
-            }
+            if (isJarvisListening) { try { jarvisRecognition.start(); jarvisSpeak("Sistemas en línea."); } catch (e) {} }
+            else { jarvisRecognition.stop(); }
         });
 
         // ==========================================
-        // 10. CLASIFICADOR DE POSTURAS Y LÁSER
+        // 10. CLASIFICADOR DE POSTURAS
         // ==========================================
-        function dist2D(a, b) {
-            return Math.hypot(a.x - b.x, a.y - b.y);
-        }
-
+        function dist2D(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
         function classifyHandPose(landmarks) {
-            const wrist = landmarks[0];
-            const thumbTip = landmarks[4];
-            const indexTip = landmarks[8];
-
-            const fingerJoints = [
-                { tip: 8, pip: 6, mcp: 5 },
-                { tip: 12, pip: 10, mcp: 9 },
-                { tip: 16, pip: 14, mcp: 13 },
-                { tip: 20, pip: 18, mcp: 17 }
-            ];
-
-            let curledCount = 0;
-            let openFingerCount = 0;
-            const ratios = [];
-
+            const wrist = landmarks[0], thumbTip = landmarks[4], indexTip = landmarks[8];
+            const fingerJoints = [{ tip: 8, pip: 6, mcp: 5 }, { tip: 12, pip: 10, mcp: 9 }, { tip: 16, pip: 14, mcp: 13 }, { tip: 20, pip: 18, mcp: 17 }];
+            let curledCount = 0, openFingerCount = 0; const ratios = [];
             for (const f of fingerJoints) {
-                const dTip = dist2D(landmarks[f.tip], wrist);
-                const dPip = dist2D(landmarks[f.pip], wrist);
-                const dMcp = dist2D(landmarks[f.mcp], wrist);
-                const ratio = dTip / Math.max(dPip, 0.001);
-                ratios.push(ratio);
-
+                const dTip = dist2D(landmarks[f.tip], wrist), dPip = dist2D(landmarks[f.pip], wrist), dMcp = dist2D(landmarks[f.mcp], wrist);
+                const ratio = dTip / Math.max(dPip, 0.001); ratios.push(ratio);
                 if (dTip < dPip * 1.03 || dTip < dMcp * 1.15) curledCount++;
                 if (dTip > dPip * 1.08 && dTip > dMcp * 1.25) openFingerCount++;
             }
-
             if (curledCount >= 3) return "fist";
-
-            const pinchDist = dist2D(thumbTip, indexTip);
-            if (pinchDist < 0.068) return "pinch";
-
-            const indexRatio = ratios[0];
-            const avgOtherRatio = (ratios[1] + ratios[2] + ratios[3]) / 3;
-            if (indexRatio > 1.14 && indexRatio > avgOtherRatio + 0.16 && ratios[1] < 1.12 && ratios[2] < 1.12) {
-                return "point";
-            }
-
+            if (dist2D(thumbTip, indexTip) < 0.068) return "pinch";
+            const indexRatio = ratios[0], avgOtherRatio = (ratios[1] + ratios[2] + ratios[3]) / 3;
+            if (indexRatio > 1.14 && indexRatio > avgOtherRatio + 0.16 && ratios[1] < 1.12 && ratios[2] < 1.12) return "point";
             if (openFingerCount >= 3) return "open";
-
             return "neutral";
         }
-
         function getHandImpactDistance(openHand, fistHand) {
             const palmCenterDist = dist2D(openHand.palmNorm, fistHand.palmNorm);
             const openTips = [4, 8, 12, 16, 20].map(idx => openHand.landmarks[idx]);
             const fistTargets = [0, 5, 9, 13, 17].map(idx => fistHand.landmarks[idx]);
-
             let minTipDist = palmCenterDist;
-            for (const tip of openTips) {
-                for (const target of fistTargets) {
-                    const d = dist2D(tip, target);
-                    if (d < minTipDist) minTipDist = d;
-                }
-            }
+            for (const tip of openTips) { for (const target of fistTargets) { const d = dist2D(tip, target); if (d < minTipDist) minTipDist = d; } }
             return { palmCenterDist, minTipDist };
         }
-
         function updateLaserInspection(indexTipPx) {
-            if (!THREE || !raycaster || !hasActiveModel || inspectableMeshes.length === 0) {
-                clearLaserHighlight();
-                return;
-            }
-
+            if (!THREE || !raycaster || !hasActiveModel || inspectableMeshes.length === 0) { clearLaserHighlight(); return; }
             const ndc = screenPxToNDC(indexTipPx);
             raycaster.setFromCamera(new THREE.Vector2(ndc.x, ndc.y), camera);
-
             const hits = raycaster.intersectObjects(inspectableMeshes, false);
-
-            let selectedMesh = null;
-            let hitPoint3D = null;
-
-            if (hits.length > 0) {
-                selectedMesh = hits[0].object;
-                hitPoint3D = hits[0].point;
-            } else {
-                let bestDistPx = 38;
-                const tempBox = new THREE.Box3();
-                const tempCenter = new THREE.Vector3();
-
+            let selectedMesh = null, hitPoint3D = null;
+            if (hits.length > 0) { selectedMesh = hits[0].object; hitPoint3D = hits[0].point; }
+            else {
+                let bestDistPx = 38; const tempBox = new THREE.Box3(), tempCenter = new THREE.Vector3();
                 for (const mesh of inspectableMeshes) {
-                    tempBox.setFromObject(mesh);
-                    tempBox.getCenter(tempCenter);
+                    tempBox.setFromObject(mesh); tempBox.getCenter(tempCenter);
                     const proj = tempCenter.clone().project(camera);
-                    const sx = ((proj.x + 1) * 0.5) * handCanvas.width;
-                    const sy = ((-proj.y + 1) * 0.5) * handCanvas.height;
+                    const sx = ((proj.x + 1) * 0.5) * handCanvas.width, sy = ((-proj.y + 1) * 0.5) * handCanvas.height;
                     const d = Math.hypot(sx - indexTipPx.x, sy - indexTipPx.y);
-                    if (d < bestDistPx) {
-                        bestDistPx = d;
-                        selectedMesh = mesh;
-                        hitPoint3D = tempCenter.clone();
-                    }
+                    if (d < bestDistPx) { bestDistPx = d; selectedMesh = mesh; hitPoint3D = tempCenter.clone(); }
                 }
             }
-
             if (selectedMesh && hitPoint3D) {
                 if (highlightedMesh !== selectedMesh) {
-                    clearLaserHighlight();
-                    highlightedMesh = selectedMesh;
-                    if (!selectedMesh.userData.preHighlightMat) {
-                        selectedMesh.userData.preHighlightMat = selectedMesh.material;
-                    }
-                    selectedMesh.material = new THREE.MeshStandardMaterial({
-                        color: 0xf43f5e,
-                        emissive: 0xe11d48,
-                        emissiveIntensity: 0.85,
-                        roughness: 0.2
-                    });
+                    clearLaserHighlight(); highlightedMesh = selectedMesh;
+                    if (!selectedMesh.userData.preHighlightMat) selectedMesh.userData.preHighlightMat = selectedMesh.material;
+                    selectedMesh.material = new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.85, roughness: 0.2 });
                     playScanBeep();
                 }
-
                 const projected = hitPoint3D.clone().project(camera);
-                const hitCanvasX = ((projected.x + 1) * 0.5) * handCanvas.width;
-                const hitCanvasY = ((-projected.y + 1) * 0.5) * handCanvas.height;
-
-                const tris = selectedMesh.geometry.index
-                    ? Math.round(selectedMesh.geometry.index.count / 3)
-                    : Math.round(selectedMesh.geometry.attributes.position.count / 3);
-
-                const box = new THREE.Box3().setFromObject(selectedMesh);
-                const sz = new THREE.Vector3();
-                box.getSize(sz);
-
-                laserHitInfo = {
-                    fingerPx: indexTipPx,
-                    hitPx: { x: hitCanvasX, y: hitCanvasY },
-                    partName: selectedMesh.name,
-                    tris,
-                    dims: `${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)}m`
-                };
-
-                inspectedPartBadge.classList.remove("hidden");
-                inspectedPartBadge.querySelector("span").textContent = selectedMesh.name;
+                const hitCanvasX = ((projected.x + 1) * 0.5) * handCanvas.width, hitCanvasY = ((-projected.y + 1) * 0.5) * handCanvas.height;
+                const tris = selectedMesh.geometry.index ? Math.round(selectedMesh.geometry.index.count / 3) : Math.round(selectedMesh.geometry.attributes.position.count / 3);
+                const box = new THREE.Box3().setFromObject(selectedMesh); const sz = new THREE.Vector3(); box.getSize(sz);
+                laserHitInfo = { fingerPx: indexTipPx, hitPx: { x: hitCanvasX, y: hitCanvasY }, partName: selectedMesh.name, tris, dims: `${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)}m` };
+                inspectedPartBadge.classList.remove("hidden"); inspectedPartBadge.querySelector("span").textContent = selectedMesh.name;
             } else {
                 clearLaserHighlight();
                 const objProj = objectGroup.position.clone().project(camera);
-                const objScreenX = ((objProj.x + 1) * 0.5) * handCanvas.width;
-                const objScreenY = ((-objProj.y + 1) * 0.5) * handCanvas.height;
+                const objScreenX = ((objProj.x + 1) * 0.5) * handCanvas.width, objScreenY = ((-objProj.y + 1) * 0.5) * handCanvas.height;
                 const angleToObj = Math.atan2(objScreenY - indexTipPx.y, objScreenX - indexTipPx.x);
-
-                laserHitInfo = {
-                    fingerPx: indexTipPx,
-                    hitPx: {
-                        x: indexTipPx.x + Math.cos(angleToObj) * 110,
-                        y: indexTipPx.y + Math.sin(angleToObj) * 110
-                    },
-                    partName: null
-                };
+                laserHitInfo = { fingerPx: indexTipPx, hitPx: { x: indexTipPx.x + Math.cos(angleToObj) * 110, y: indexTipPx.y + Math.sin(angleToObj) * 110 }, partName: null };
             }
         }
-
         function clearLaserHighlight() {
             if (highlightedMesh) {
-                if (isBlueprintMode) {
-                    setBlueprintMode(true);
-                } else if (highlightedMesh.userData.preHighlightMat) {
-                    highlightedMesh.material = highlightedMesh.userData.preHighlightMat;
-                }
-                highlightedMesh.userData.preHighlightMat = null;
-                highlightedMesh = null;
+                if (isBlueprintMode) setBlueprintMode(true);
+                else if (highlightedMesh.userData.preHighlightMat) highlightedMesh.material = highlightedMesh.userData.preHighlightMat;
+                highlightedMesh.userData.preHighlightMat = null; highlightedMesh = null;
             }
-            laserHitInfo = null;
-            inspectedPartBadge.classList.add("hidden");
+            laserHitInfo = null; inspectedPartBadge.classList.add("hidden");
         }
 
         // ==========================================
-        // 11. CÁMARA Y DETECCIÓN MEDIAPIPE
+        // 11. INICIO SISTEMA CÁMARA
         // ==========================================
-        let handLandmarker = null;
-        let lastVideoTime = -1;
-        let isLoopRunning = false;
-
+        let handLandmarker = null, lastVideoTime = -1, isLoopRunning = false;
         const starkGesture = { armed: false, armedAt: 0, lastPalmDist: 1 };
         const swipeTracker = { samples: [], missedFrames: 0, lastSwipeAt: 0 };
 
-        function showError(msg) {
-            overlayError.textContent = msg;
-            overlayError.classList.remove("hidden");
-            statusText.textContent = msg;
-            statusDot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
-        }
+        function showError(msg) { overlayError.textContent = msg; overlayError.classList.remove("hidden"); statusText.textContent = msg; statusDot.className = "w-2.5 h-2.5 rounded-full bg-red-500"; }
 
         async function startSystem() {
-            overlayError.classList.add("hidden");
-            launchBtn.disabled = true;
-            launchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Iniciando sistemas...';
-
+            overlayError.classList.add("hidden"); launchBtn.disabled = true; launchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Iniciando...';
             await initSfx();
-
-            if (window.location.protocol === "file:") {
-                launchBtn.disabled = false;
-                launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar';
-                showError('Abriste el archivo directo (file://). Ábrelo usando Live Server (localhost) o HTTPS.');
-                return;
-            }
-
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                launchBtn.disabled = false;
-                launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar';
-                showError("Tu navegador no permite acceso a la cámara en este contexto.");
-                return;
-            }
-
+            if (window.location.protocol === "file:") { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError('Abre el archivo con Live Server o HTTPS.'); return; }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError("Cámara bloqueada o sin soporte."); return; }
             try {
                 await threeReadyPromise;
-
                 let stream;
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
-                        audio: false
-                    });
-                } catch (e) {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                }
-
-                video.srcObject = stream;
-                await video.play();
-
-                startOverlay.classList.add("hidden");
-                statusDot.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse";
-                gestureBadge.textContent = "Calibrando IA...";
-                statusText.textContent = "Descargando sensores ópticos de manos...";
-
-                if (!isLoopRunning) {
-                    isLoopRunning = true;
-                    requestAnimationFrame(mainLoop);
-                }
-
+                try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }); }
+                catch (e) { stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); }
+                video.srcObject = stream; await video.play();
+                handCanvas.width = window.innerWidth; handCanvas.height = window.innerHeight;
+                startOverlay.classList.add("hidden"); statusDot.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse";
+                gestureBadge.textContent = "Calibrando IA..."; statusText.textContent = "Descargando sensores...";
+                if (!isLoopRunning) { isLoopRunning = true; requestAnimationFrame(mainLoop); }
                 await loadHandTracking();
-            } catch (err) {
-                launchBtn.disabled = false;
-                launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar';
-                showError(`Error de cámara (${err.name}): ${err.message}`);
-            }
+            } catch (err) { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError(`Error: ${err.message}`); }
         }
-
         launchBtn.addEventListener("click", startSystem);
 
         async function loadHandTracking() {
             try {
                 const visionModule = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
                 const { HandLandmarker, FilesetResolver } = visionModule;
-
-                const vision = await FilesetResolver.forVisionTasks(
-                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
-                );
-
+                const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
                 handLandmarker = await HandLandmarker.createFromOptions(vision, {
-                    baseOptions: {
-                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
-                        delegate: "GPU"
-                    },
-                    runningMode: "VIDEO",
-                    numHands: 2,
-                    minHandDetectionConfidence: 0.5,
-                    minHandPresenceConfidence: 0.5,
-                    minTrackingConfidence: 0.5
+                    baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task", delegate: "GPU" },
+                    runningMode: "VIDEO", numHands: 2, minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5
                 });
-
-                gestureBadge.textContent = "Sistemas En Línea";
-                statusText.textContent = `Proyectando: ${modelCarousel[currentCarouselIndex].name}`;
-            } catch (err) {
-                gestureBadge.textContent = "Error de IA";
-                statusText.textContent = `Fallo en sensores de mano: ${err.message}`;
-            }
+                gestureBadge.textContent = "Sistemas En Línea"; statusText.textContent = `Proyectando: ${modelCarousel[currentCarouselIndex].name}`;
+            } catch (err) { gestureBadge.textContent = "Error de IA"; statusText.textContent = `Fallo en sensores: ${err.message}`; }
         }
 
         // ==========================================
-        // 12. BUCLE PRINCIPAL DE RENDER Y GESTOS
+        // 12. GESTOS EN TIEMPO REAL
         // ==========================================
-        let prevRotY = 0;
-        const idleSpinQuat = new THREE ? new THREE.Quaternion() : null;
-
-        function mainLoop() {
-            if (handCanvas.width !== window.innerWidth || handCanvas.height !== window.innerHeight) {
-                handCanvas.width = window.innerWidth;
-                handCanvas.height = window.innerHeight;
-            }
-
-            if (video.readyState >= 2 && video.videoWidth > 0) {
-                if (handLandmarker && lastVideoTime !== video.currentTime) {
-                    lastVideoTime = video.currentTime;
-                    const results = handLandmarker.detectForVideo(video, performance.now());
-
-                    handCtx.clearRect(0, 0, handCanvas.width, handCanvas.height);
-                    processHands(results);
-                    drawSwipeTrail();
-                    drawLaserAndHudCallouts();
-                    drawShockwaves();
-                }
-            }
-
-            if (renderer && scene && camera && objectGroup) {
-                const delta = clock.getDelta();
-                const elapsed = clock.getElapsedTime();
-
-                if (animationMixer) animationMixer.update(delta);
-
-                if (burstParticles && burstLife > 0) {
-                    burstLife -= delta * 2.2;
-                    const posAttr = burstParticles.geometry.attributes.position;
-                    for (let i = 0; i < burstVelocities.length; i++) {
-                        posAttr.array[i * 3] += burstVelocities[i].x * delta;
-                        posAttr.array[i * 3 + 1] += burstVelocities[i].y * delta;
-                        posAttr.array[i * 3 + 2] += burstVelocities[i].z * delta;
-                    }
-                    posAttr.needsUpdate = true;
-                    burstParticles.material.opacity = Math.max(0, burstLife);
-
-                    if (burstLife <= 0) {
-                        scene.remove(burstParticles);
-                        burstParticles.geometry.dispose();
-                        burstParticles.material.dispose();
-                        burstParticles = null;
-                    }
-                }
-
-                if (hasActiveModel) {
-                    if (isDismissing) {
-                        objectGroup.rotation.y += 0.36;
-                        const s = objectGroup.scale.x * 0.72;
-                        objectGroup.scale.set(s, s, s);
-                    } else {
-                        // Giro suave automático solo cuando no se está manipulando ni inspeccionando
-                        if (gestureMode === "none" && !highlightedMesh) {
-                            const stepSpin = new THREE.Quaternion().setFromAxisAngle(
-                                new THREE.Vector3(0, 1, 0),
-                                0.0045
-                            );
-                            targetQuat.premultiply(stepSpin);
-                        }
-
-                        objectGroup.position.lerp(targetPos, 0.24);
-                        objectGroup.quaternion.slerp(targetQuat, 0.26);
-
-                        const currentS = objectGroup.scale.x;
-                        const nextS = currentS + (targetScale - currentS) * 0.22;
-                        objectGroup.scale.set(nextS, nextS, nextS);
-
-                        // Interpolar Vista Explosiva
-                        currentExplode += (targetExplode - currentExplode) * 0.18;
-                        for (const mesh of inspectableMeshes) {
-                            if (mesh.userData.origPos && mesh.userData.localExplodeDelta) {
-                                mesh.position.copy(mesh.userData.origPos).addScaledVector(
-                                    mesh.userData.localExplodeDelta,
-                                    currentExplode
-                                );
-                            }
-                        }
-
-                        // Anillos orbitales de telemetría
-                        if (telemetryGroup) {
-                            telemetryGroup.visible = showRingsCheckbox.checked;
-                            if (telemetryGroup.visible) {
-                                const angularVel = Math.abs(objectGroup.rotation.y - prevRotY) * 18;
-                                prevRotY = objectGroup.rotation.y;
-                                const { ring2, ticksGroup } = telemetryGroup.userData;
-                                ring2.rotation.z += (0.01 + angularVel * 0.15);
-                                ticksGroup.rotation.y -= (0.008 + angularVel * 0.1);
-                                const ringExpand = 1 + currentExplode * 0.35;
-                                telemetryGroup.scale.set(ringExpand, 1, ringExpand);
-                            }
-                        }
-
-                        if (scannerBar && isScannerMode) {
-                            scannerBar.visible = true;
-                            scannerBar.position.y = Math.sin(elapsed * 2.6) * 1.15;
-                        }
-
-                        scaleDisplay.textContent = `${Math.round(nextS * 100)}%`;
-                        explodeDisplay.textContent = `${Math.round(currentExplode * 100)}%`;
-                        const degX = Math.round(((objectGroup.rotation.x * 180) / Math.PI) % 360);
-                        const degY = Math.round(((objectGroup.rotation.y * 180) / Math.PI) % 360);
-                        rotDisplay.textContent = `${degX}°, ${degY}°`;
-                    }
-                }
-
-                renderer.render(scene, camera);
-            }
-
-            requestAnimationFrame(mainLoop);
-        }
-
         function processHands(results) {
             if (!THREE || !objectGroup) return;
 
@@ -1660,9 +1052,7 @@
                     const pose = classifyHandPose(landmarks);
                     const handQuat = getHandQuaternion(landmarks);
 
-                    if (showSkeletonCheckbox.checked) {
-                        drawSkeleton(landmarks, pose);
-                    }
+                    if (showSkeletonCheckbox.checked) drawSkeleton(landmarks, pose);
 
                     const palmNorm = landmarks[9];
                     const palmPx = normToScreenPx(palmNorm);
@@ -1673,142 +1063,94 @@
                         drawLabel("PUÑO", palmPx.x, palmPx.y - 36, "#fb923c");
                     } else if (pose === "open") {
                         drawRing(palmPx.x, palmPx.y, "#22d3ee", 24, 3);
-                        openHands.push({
-                            world: normToWorld(palmNorm),
-                            norm: palmNorm,
-                            px: palmPx,
-                            quat: handQuat
-                        });
+                        openHands.push({ world: normToWorld(palmNorm), norm: palmNorm, px: palmPx, quat: handQuat });
                     } else if (pose === "point") {
                         const indexTip = landmarks[8];
-                        pointingHand = {
-                            norm: indexTip,
-                            px: normToScreenPx(indexTip)
-                        };
+                        pointingHand = { norm: indexTip, px: normToScreenPx(indexTip) };
                     } else if (pose === "pinch") {
-                        const thumbTip = landmarks[4];
-                        const indexTip = landmarks[8];
-                        const centerNorm = {
-                            x: (thumbTip.x + indexTip.x) / 2,
-                            y: (thumbTip.y + indexTip.y) / 2,
-                            z: (thumbTip.z + indexTip.z) / 2
-                        };
+                        const thumbTip = landmarks[4], indexTip = landmarks[8];
+                        const centerNorm = { x: (thumbTip.x + indexTip.x) / 2, y: (thumbTip.y + indexTip.y) / 2, z: (thumbTip.z + indexTip.z) / 2 };
                         const px = normToScreenPx(centerNorm);
-
                         drawRing(px.x, px.y, "#38bdf8", 18, 4);
-                        activePinches.push({
-                            world: normToWorld(centerNorm),
-                            norm: centerNorm,
-                            quat: handQuat,
-                            px
-                        });
+                        activePinches.push({ world: normToWorld(centerNorm), norm: centerNorm, quat: handQuat, px });
                     }
                 }
             }
 
-            if (!pointingHand && (highlightedMesh || laserHitInfo)) {
-                clearLaserHighlight();
-            }
+            if (!pointingHand && (highlightedMesh || laserHitInfo)) clearLaserHighlight();
 
-            // ==========================================================
-            // 1. GOLPE IRON MAN (PUÑO CERRADO + PALMA ABIERTA -> CERRAR)
-            // ==========================================================
+            // 1. GOLPE IRON MAN (PUÑO + PALMA)
             if (hasActiveModel && !isDismissing) {
-                if (starkGesture.armed && (now - starkGesture.armedAt) > 1500) {
-                    starkGesture.armed = false;
-                }
-
+                if (starkGesture.armed && (now - starkGesture.armedAt) > 1500) starkGesture.armed = false;
                 if (detectedHands.length >= 2) {
-                    const fistHand = detectedHands.find(hd => hd.pose === "fist");
-                    const openHand = detectedHands.find(hd => hd.pose === "open");
-
+                    const fistHand = detectedHands.find(hd => hd.pose === "fist"), openHand = detectedHands.find(hd => hd.pose === "open");
                     if (fistHand && openHand) {
                         const { palmCenterDist, minTipDist } = getHandImpactDistance(openHand, fistHand);
-                        const midPx = {
-                            x: (fistHand.palmPx.x + openHand.palmPx.x) / 2,
-                            y: (fistHand.palmPx.y + openHand.palmPx.y) / 2
-                        };
-
+                        const midPx = { x: (fistHand.palmPx.x + openHand.palmPx.x) / 2, y: (fistHand.palmPx.y + openHand.palmPx.y) / 2 };
                         drawLine(fistHand.palmPx, openHand.palmPx, "#f97316", 3);
-
-                        if (palmCenterDist > 0.22) {
-                            starkGesture.armed = true;
-                            starkGesture.armedAt = now;
-                            starkGesture.lastPalmDist = palmCenterDist;
-                            gestureBadge.textContent = "Gesto Stark Armado: ¡Golpea el puño!";
-                            gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400";
-                        } else if (starkGesture.armed) {
-                            starkGesture.lastPalmDist = palmCenterDist;
-                        }
-
-                        if (starkGesture.armed && (minTipDist < 0.125 || palmCenterDist < 0.185)) {
-                            starkGesture.armed = false;
-                            triggerStarkDismissal(midPx);
-                            return;
-                        }
+                        if (palmCenterDist > 0.22) { starkGesture.armed = true; starkGesture.armedAt = now; starkGesture.lastPalmDist = palmCenterDist; gestureBadge.textContent = "Gesto Stark Armado"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400"; }
+                        else if (starkGesture.armed) starkGesture.lastPalmDist = palmCenterDist;
+                        if (starkGesture.armed && (minTipDist < 0.125 || palmCenterDist < 0.185)) { starkGesture.armed = false; triggerStarkDismissal(midPx); return; }
                     } else if (starkGesture.armed && activePinches.length === 0) {
                         const dHands = dist2D(detectedHands[0].palmNorm, detectedHands[1].palmNorm);
-                        const midPx = {
-                            x: (detectedHands[0].palmPx.x + detectedHands[1].palmPx.x) / 2,
-                            y: (detectedHands[0].palmPx.y + detectedHands[1].palmPx.y) / 2
-                        };
-                        if (dHands < 0.175) {
-                            starkGesture.armed = false;
-                            triggerStarkDismissal(midPx);
-                            return;
-                        }
+                        const midPx = { x: (detectedHands[0].palmPx.x + detectedHands[1].palmPx.x) / 2, y: (detectedHands[0].palmPx.y + detectedHands[1].palmPx.y) / 2 };
+                        if (dHands < 0.175) { starkGesture.armed = false; triggerStarkDismissal(midPx); return; }
                     }
-                } else if (detectedHands.length === 1 && starkGesture.armed && starkGesture.lastPalmDist < 0.28) {
-                    starkGesture.armed = false;
-                    triggerStarkDismissal(detectedHands[0].palmPx);
-                    return;
-                }
+                } else if (detectedHands.length === 1 && starkGesture.armed && starkGesture.lastPalmDist < 0.28) { starkGesture.armed = false; triggerStarkDismissal(detectedHands[0].palmPx); return; }
             }
 
-            // ==========================================================
-            // 2. CARRUSEL AÉREO POR SWIPE (DESLIZAR 1 MANO DE LADO A LADO)
-            // ==========================================================
-            const singleHand = detectedHands.length === 1 ? detectedHands[0] : null;
-            if (singleHand && (singleHand.pose === "open" || singleHand.pose === "neutral") && !starkGesture.armed) {
+            // 2. SWIPE Y ROTACIÓN LIBRE CON PALMA ABIERTA
+            const singleOpenHand = (detectedHands.length === 1 && openHands.length === 1) ? openHands[0] : null;
+            if (singleOpenHand && !starkGesture.armed) {
                 swipeTracker.missedFrames = 0;
-                const screenNormX = singleHand.palmPx.x / handCanvas.width;
-                swipeTracker.samples.push({
-                    x: screenNormX,
-                    px: singleHand.palmPx,
-                    t: now
-                });
+                const screenNormX = singleOpenHand.px.x / handCanvas.width;
+                swipeTracker.samples.push({ x: screenNormX, px: singleOpenHand.px, t: now });
                 swipeTracker.samples = swipeTracker.samples.filter(s => (now - s.t) < 550);
 
+                let isSwiping = false;
                 if (swipeTracker.samples.length >= 3 && (now - swipeTracker.lastSwipeAt) > 900) {
                     const oldest = swipeTracker.samples[0];
                     const dx = screenNormX - oldest.x;
                     if (Math.abs(dx) > 0.18) {
+                        isSwiping = true;
                         swipeTracker.lastSwipeAt = now;
                         swipeTracker.samples = [];
                         const step = dx > 0 ? 1 : -1;
                         cycleCarousel(step);
+                        gestureMode = "swipe";
                         gestureBadge.textContent = step > 0 ? "Swipe → Siguiente 3D" : "← Swipe Anterior 3D";
                         gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
                         return;
                     }
                 }
+
+                // Rotación libre con palma abierta si no se está haciendo swipe
+                if (!isSwiping && hasActiveModel && !isDismissing) {
+                    if (gestureMode !== "spin") {
+                        gestureMode = "spin";
+                        grabAnchor.handQuat.copy(singleOpenHand.quat);
+                        grabAnchor.objQuat.copy(targetQuat);
+                        gestureBadge.textContent = "Palma Libre: Giro 3D";
+                        gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-sky-400";
+                    } else {
+                        const deltaWristQuat = singleOpenHand.quat.clone().multiply(grabAnchor.handQuat.clone().invert());
+                        const amplifiedWristQuat = scaleQuaternionAngle(deltaWristQuat, 1.45);
+                        targetQuat.copy(amplifiedWristQuat).multiply(grabAnchor.objQuat).normalize();
+                    }
+                    return;
+                }
             } else {
                 swipeTracker.missedFrames++;
-                if (swipeTracker.missedFrames > 2) {
-                    swipeTracker.samples = [];
-                }
+                if (swipeTracker.missedFrames > 2) swipeTracker.samples = [];
+                if (gestureMode === "spin") gestureMode = "none";
             }
 
             if (!hasActiveModel || isDismissing) return;
 
-            // ==========================================================
-            // 3. MODO 2 PINZAS: ESCALAR + GIRO DE AMBAS MUÑECAS + MOVER
-            // ==========================================================
+            // 3. MODO 2 PINZAS (ESCALA + GIRO DE MUÑECAS + MOVER)
             if (activePinches.length >= 2) {
                 const sorted = activePinches.slice(0, 2).sort((a, b) => a.world.x - b.world.x);
-                const hLeft = sorted[0];
-                const hRight = sorted[1];
-
+                const hLeft = sorted[0], hRight = sorted[1];
                 drawLine(hLeft.px, hRight.px, "#818cf8", 3);
 
                 const midWorld = new THREE.Vector3().addVectors(hLeft.world, hRight.world).multiplyScalar(0.5);
@@ -1818,91 +1160,61 @@
 
                 if (gestureMode !== "two") {
                     gestureMode = "two";
-                    grabAnchor.handPos.copy(midWorld);
-                    grabAnchor.objPos.copy(targetPos);
-                    grabAnchor.twoDist = Math.max(distWorld, 0.25);
-                    grabAnchor.twoAngle = angle2D;
-                    grabAnchor.twoDepthDiff = depthDiff;
-                    grabAnchor.twoLeftQuat.copy(hLeft.quat);
-                    grabAnchor.twoRightQuat.copy(hRight.quat);
-                    grabAnchor.objScale = targetScale;
-                    grabAnchor.objQuat.copy(targetQuat);
-
-                    gestureBadge.textContent = "2 Pinzas: Escala y Giro de Muñecas";
-                    gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-indigo-400";
+                    grabAnchor.handPos.copy(midWorld); grabAnchor.objPos.copy(targetPos);
+                    grabAnchor.twoDist = Math.max(distWorld, 0.25); grabAnchor.twoAngle = angle2D; grabAnchor.twoDepthDiff = depthDiff;
+                    grabAnchor.twoLeftQuat.copy(hLeft.quat); grabAnchor.twoRightQuat.copy(hRight.quat);
+                    grabAnchor.objScale = targetScale; grabAnchor.objQuat.copy(targetQuat);
+                    gestureBadge.textContent = "2 Pinzas: Escala y Giro"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-indigo-400";
                 } else {
-                    // 1. Mover según punto medio
                     const deltaMove = new THREE.Vector3().subVectors(midWorld, grabAnchor.handPos);
                     targetPos.copy(grabAnchor.objPos).add(deltaMove);
 
-                    // 2. Escalar según distancia entre manos
                     const ratio = distWorld / grabAnchor.twoDist;
                     targetScale = Math.min(3.5, Math.max(0.25, grabAnchor.objScale * ratio));
 
-                    // 3. Combinar rotación de ambas muñecas + ángulo tipo volante + profundidad
                     const deltaLeft = hLeft.quat.clone().multiply(grabAnchor.twoLeftQuat.clone().invert());
                     const deltaRight = hRight.quat.clone().multiply(grabAnchor.twoRightQuat.clone().invert());
                     const avgWristDelta = deltaLeft.clone().slerp(deltaRight, 0.5);
                     const boostedWrist = scaleQuaternionAngle(avgWristDelta, 1.25);
 
-                    const deltaZ = angle2D - grabAnchor.twoAngle;
-                    const deltaY = -(depthDiff - grabAnchor.twoDepthDiff) * 4.5;
+                    const deltaZ = angle2D - grabAnchor.twoAngle, deltaY = -(depthDiff - grabAnchor.twoDepthDiff) * 4.5;
                     const twoHandTwist = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, deltaY, deltaZ));
-
                     targetQuat.copy(twoHandTwist).multiply(boostedWrist).multiply(grabAnchor.objQuat).normalize();
                 }
                 return;
             }
 
-            // ==========================================================
             // 4. VISTA EXPLOSIVA (2 PALMAS ABIERTAS SEPARÁNDOSE)
-            // ==========================================================
             if (openHands.length >= 2 && !starkGesture.armed) {
                 const sorted = openHands.slice(0, 2).sort((a, b) => a.world.x - b.world.x);
-                const pLeft = sorted[0];
-                const pRight = sorted[1];
+                const pLeft = sorted[0], pRight = sorted[1];
                 const spanWorld = pLeft.world.distanceTo(pRight.world);
-
                 drawLine(pLeft.px, pRight.px, "#22d3ee", 3);
 
                 if (gestureMode !== "explode") {
                     gestureMode = "explode";
-                    grabAnchor.explodeDist = Math.max(spanWorld, 0.35);
-                    grabAnchor.explodeStart = targetExplode;
-                    gestureBadge.textContent = "2 Palmas: Despiece Explosivo";
-                    gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
+                    grabAnchor.explodeDist = Math.max(spanWorld, 0.35); grabAnchor.explodeStart = targetExplode;
+                    gestureBadge.textContent = "Despiece Explosivo"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
                 } else {
                     const deltaSpan = spanWorld - grabAnchor.explodeDist;
                     const nextExp = Math.min(1.0, Math.max(0.0, grabAnchor.explodeStart + deltaSpan * 0.55));
-                    if (grabAnchor.explodeStart > 0.2 && nextExp === 0 && targetExplode > 0) {
-                        playLockSound();
-                    }
+                    if (grabAnchor.explodeStart > 0.2 && nextExp === 0 && targetExplode > 0) playLockSound();
                     targetExplode = nextExp;
                 }
                 return;
             }
 
-            // ==========================================================
-            // 5. MODO 1 PINZA: MOVER + GIRAR SEGÚN ROTACIÓN DE MUÑECA
-            // ==========================================================
+            // 5. MODO 1 PINZA (MOVER + GIRO MUÑECA)
             if (activePinches.length === 1) {
                 const hand = activePinches[0];
-
                 if (gestureMode !== "one") {
                     gestureMode = "one";
-                    grabAnchor.handPos.copy(hand.world);
-                    grabAnchor.handQuat.copy(hand.quat);
-                    grabAnchor.objPos.copy(targetPos);
-                    grabAnchor.objQuat.copy(targetQuat);
-
-                    gestureBadge.textContent = "1 Pinza: Rotación por Muñeca";
-                    gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
+                    grabAnchor.handPos.copy(hand.world); grabAnchor.handQuat.copy(hand.quat);
+                    grabAnchor.objPos.copy(targetPos); grabAnchor.objQuat.copy(targetQuat);
+                    gestureBadge.textContent = "1 Pinza: Mover y Girar"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
                 } else {
-                    // Desplazamiento en pantalla
                     const deltaMove = new THREE.Vector3().subVectors(hand.world, grabAnchor.handPos);
                     targetPos.copy(grabAnchor.objPos).add(deltaMove);
-
-                    // Rotación 3D directa derivada del giro de la muñeca (Pitch, Yaw, Roll)
                     const deltaWristQuat = hand.quat.clone().multiply(grabAnchor.handQuat.clone().invert());
                     const amplifiedWristQuat = scaleQuaternionAngle(deltaWristQuat, 1.45);
                     targetQuat.copy(amplifiedWristQuat).multiply(grabAnchor.objQuat).normalize();
@@ -1910,172 +1222,61 @@
                 return;
             }
 
-            // ==========================================================
-            // 6. PUNTERO LÁSER DE INSPECCIÓN (DEDO ÍNDICE)
-            // ==========================================================
+            // 6. PUNTERO LÁSER
             if (pointingHand) {
-                gestureMode = "point";
-                gestureBadge.textContent = "Láser de Inspección Activo";
-                gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-rose-400";
+                gestureMode = "point"; gestureBadge.textContent = "Láser Activo"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-rose-400";
                 updateLaserInspection(pointingHand.px);
                 return;
             }
 
             if (gestureMode !== "none" && !starkGesture.armed) {
-                gestureMode = "none";
-                gestureBadge.textContent = "Holograma Activo";
-                gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
+                gestureMode = "none"; gestureBadge.textContent = "Holograma Activo"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
             }
         }
 
         // ==========================================
-        // 13. DIBUJO DE ESTELA SWIPE, LÁSER Y TARJETA TÉCNICA
+        // 13. DIBUJOS 2D
         // ==========================================
         function drawSwipeTrail() {
             if (swipeTracker.samples.length < 2) return;
-            handCtx.save();
-            handCtx.beginPath();
-            handCtx.moveTo(swipeTracker.samples[0].px.x, swipeTracker.samples[0].px.y);
-            for (let i = 1; i < swipeTracker.samples.length; i++) {
-                handCtx.lineTo(swipeTracker.samples[i].px.x, swipeTracker.samples[i].px.y);
-            }
-            handCtx.strokeStyle = "rgba(34, 211, 238, 0.55)";
-            handCtx.lineWidth = 4;
-            handCtx.lineCap = "round";
-            handCtx.stroke();
-            handCtx.restore();
+            handCtx.save(); handCtx.beginPath(); handCtx.moveTo(swipeTracker.samples[0].px.x, swipeTracker.samples[0].px.y);
+            for (let i = 1; i < swipeTracker.samples.length; i++) handCtx.lineTo(swipeTracker.samples[i].px.x, swipeTracker.samples[i].px.y);
+            handCtx.strokeStyle = "rgba(34, 211, 238, 0.55)"; handCtx.lineWidth = 4; handCtx.lineCap = "round"; handCtx.stroke(); handCtx.restore();
         }
 
         function drawLaserAndHudCallouts() {
             if (!laserHitInfo) return;
             const { fingerPx, hitPx, partName, tris, dims } = laserHitInfo;
-
-            handCtx.save();
-            handCtx.beginPath();
-            handCtx.moveTo(fingerPx.x, fingerPx.y);
-            handCtx.lineTo(hitPx.x, hitPx.y);
-            handCtx.strokeStyle = partName ? "#f43f5e" : "rgba(244, 63, 94, 0.65)";
-            handCtx.lineWidth = partName ? 3.5 : 2.5;
-            handCtx.shadowColor = "#f43f5e";
-            handCtx.shadowBlur = 12;
-            handCtx.stroke();
-            handCtx.restore();
-
+            handCtx.save(); handCtx.beginPath(); handCtx.moveTo(fingerPx.x, fingerPx.y); handCtx.lineTo(hitPx.x, hitPx.y);
+            handCtx.strokeStyle = partName ? "#f43f5e" : "rgba(244, 63, 94, 0.65)"; handCtx.lineWidth = partName ? 3.5 : 2.5; handCtx.shadowColor = "#f43f5e"; handCtx.shadowBlur = 12; handCtx.stroke(); handCtx.restore();
             drawRing(fingerPx.x, fingerPx.y, "#f43f5e", 11, 2.5);
-
             if (partName) {
                 drawRing(hitPx.x, hitPx.y, "#f43f5e", 14, 2.5);
-
-                const boxX = Math.min(handCanvas.width - 210, Math.max(15, hitPx.x + 28));
-                const boxY = Math.max(70, hitPx.y - 68);
-
-                handCtx.beginPath();
-                handCtx.moveTo(hitPx.x, hitPx.y);
-                handCtx.lineTo(boxX, boxY + 24);
-                handCtx.strokeStyle = "#38bdf8";
-                handCtx.lineWidth = 1.5;
-                handCtx.stroke();
-
-                handCtx.save();
-                handCtx.fillStyle = "rgba(3, 7, 18, 0.9)";
-                handCtx.strokeStyle = "#38bdf8";
-                handCtx.lineWidth = 1.5;
-                handCtx.beginPath();
-                handCtx.roundRect(boxX, boxY, 195, 48, 8);
-                handCtx.fill();
-                handCtx.stroke();
-
-                handCtx.font = "bold 11px monospace";
-                handCtx.fillStyle = "#38bdf8";
-                handCtx.textAlign = "left";
-                handCtx.fillText(partName.slice(0, 24), boxX + 10, boxY + 18);
-
-                handCtx.font = "10px monospace";
-                handCtx.fillStyle = "#cbd5e1";
-                handCtx.fillText(`${tris} tris | ${dims}`, boxX + 10, boxY + 36);
-                handCtx.restore();
+                const boxX = Math.min(handCanvas.width - 210, Math.max(15, hitPx.x + 28)), boxY = Math.max(70, hitPx.y - 68);
+                handCtx.beginPath(); handCtx.moveTo(hitPx.x, hitPx.y); handCtx.lineTo(boxX, boxY + 24); handCtx.strokeStyle = "#38bdf8"; handCtx.lineWidth = 1.5; handCtx.stroke();
+                handCtx.save(); handCtx.fillStyle = "rgba(3, 7, 18, 0.9)"; handCtx.strokeStyle = "#38bdf8"; handCtx.lineWidth = 1.5; handCtx.beginPath(); handCtx.roundRect(boxX, boxY, 195, 48, 8); handCtx.fill(); handCtx.stroke();
+                handCtx.font = "bold 11px monospace"; handCtx.fillStyle = "#38bdf8"; handCtx.textAlign = "left"; handCtx.fillText(partName.slice(0, 24), boxX + 10, boxY + 18);
+                handCtx.font = "10px monospace"; handCtx.fillStyle = "#cbd5e1"; handCtx.fillText(`${tris} tris | ${dims}`, boxX + 10, boxY + 36); handCtx.restore();
             }
         }
 
-        function drawLabel(text, x, y, color) {
-            handCtx.save();
-            handCtx.font = "bold 13px monospace";
-            handCtx.textAlign = "center";
-            handCtx.fillStyle = color;
-            handCtx.shadowColor = "rgba(0,0,0,0.9)";
-            handCtx.shadowBlur = 4;
-            handCtx.fillText(text, x, y);
-            handCtx.restore();
-        }
-
+        function drawLabel(text, x, y, color) { handCtx.save(); handCtx.font = "bold 13px monospace"; handCtx.textAlign = "center"; handCtx.fillStyle = color; handCtx.shadowColor = "rgba(0,0,0,0.9)"; handCtx.shadowBlur = 4; handCtx.fillText(text, x, y); handCtx.restore(); }
         function drawShockwaves() {
             for (let i = shockwaves.length - 1; i >= 0; i--) {
                 const sw = shockwaves[i];
-                handCtx.beginPath();
-                handCtx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
-                handCtx.strokeStyle = `rgba(56, 189, 248, ${sw.alpha})`;
-                handCtx.lineWidth = 6 * sw.alpha;
-                handCtx.stroke();
-
-                sw.radius += 16;
-                sw.alpha -= 0.045;
-                if (sw.alpha <= 0) shockwaves.splice(i, 1);
+                handCtx.beginPath(); handCtx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2); handCtx.strokeStyle = `rgba(56, 189, 248, ${sw.alpha})`; handCtx.lineWidth = 6 * sw.alpha; handCtx.stroke();
+                sw.radius += 16; sw.alpha -= 0.045; if (sw.alpha <= 0) shockwaves.splice(i, 1);
             }
         }
-
-        function drawRing(x, y, color, radius, lineWidth) {
-            handCtx.beginPath();
-            handCtx.arc(x, y, radius, 0, Math.PI * 2);
-            handCtx.strokeStyle = color;
-            handCtx.lineWidth = lineWidth;
-            handCtx.stroke();
-        }
-
-        function drawLine(p1, p2, color, width) {
-            handCtx.beginPath();
-            handCtx.moveTo(p1.x, p1.y);
-            handCtx.lineTo(p2.x, p2.y);
-            handCtx.strokeStyle = color;
-            handCtx.lineWidth = width;
-            handCtx.setLineDash([8, 6]);
-            handCtx.stroke();
-            handCtx.setLineDash([]);
-        }
+        function drawRing(x, y, color, radius, lineWidth) { handCtx.beginPath(); handCtx.arc(x, y, radius, 0, Math.PI * 2); handCtx.strokeStyle = color; handCtx.lineWidth = lineWidth; handCtx.stroke(); }
+        function drawLine(p1, p2, color, width) { handCtx.beginPath(); handCtx.moveTo(p1.x, p1.y); handCtx.lineTo(p2.x, p2.y); handCtx.strokeStyle = color; handCtx.lineWidth = width; handCtx.setLineDash([8, 6]); handCtx.stroke(); handCtx.setLineDash([]); }
 
         function drawSkeleton(landmarks, pose) {
-            handCtx.strokeStyle = pose === "fist"
-                ? "rgba(249, 115, 22, 0.55)"
-                : pose === "point"
-                    ? "rgba(244, 63, 94, 0.65)"
-                    : "rgba(255, 255, 255, 0.35)";
+            handCtx.strokeStyle = pose === "fist" ? "rgba(249, 115, 22, 0.55)" : pose === "point" ? "rgba(244, 63, 94, 0.65)" : "rgba(255, 255, 255, 0.35)";
             handCtx.lineWidth = 1.5;
-
-            const connections = [
-                [0,1],[1,2],[2,3],[3,4],
-                [0,5],[5,6],[6,7],[7,8],
-                [5,9],[9,10],[10,11],[11,12],
-                [9,13],[13,14],[14,15],[15,16],
-                [13,17],[17,18],[18,19],[19,20],
-                [0,17]
-            ];
-
-            for (const [a, b] of connections) {
-                const pa = normToScreenPx(landmarks[a]);
-                const pb = normToScreenPx(landmarks[b]);
-                handCtx.beginPath();
-                handCtx.moveTo(pa.x, pa.y);
-                handCtx.lineTo(pb.x, pb.y);
-                handCtx.stroke();
-            }
-
-            for (let i = 0; i < landmarks.length; i++) {
-                const pt = normToScreenPx(landmarks[i]);
-                const isTip = i === 4 || i === 8;
-                handCtx.beginPath();
-                handCtx.arc(pt.x, pt.y, isTip ? 5 : 2.5, 0, Math.PI * 2);
-                handCtx.fillStyle = pose === "fist" ? "#fb923c" : (pose === "point" && i === 8 ? "#f43f5e" : (isTip ? "#facc15" : "#38bdf8"));
-                handCtx.fill();
-            }
+            const connections = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+            for (const [a, b] of connections) { const pa = normToScreenPx(landmarks[a]); const pb = normToScreenPx(landmarks[b]); handCtx.beginPath(); handCtx.moveTo(pa.x, pa.y); handCtx.lineTo(pb.x, pb.y); handCtx.stroke(); }
+            for (let i = 0; i < landmarks.length; i++) { const pt = normToScreenPx(landmarks[i]); const isTip = i === 4 || i === 8; handCtx.beginPath(); handCtx.arc(pt.x, pt.y, isTip ? 5 : 2.5, 0, Math.PI * 2); handCtx.fillStyle = pose === "fist" ? "#fb923c" : (pose === "point" && i === 8 ? "#f43f5e" : (isTip ? "#facc15" : "#38bdf8")); handCtx.fill(); }
         }
     </script>
 </body>
