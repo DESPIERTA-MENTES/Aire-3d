@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Air 3D Studio - J.A.R.V.I.S. Holographic Lab</title>
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -84,7 +81,7 @@
         <canvas id="three_canvas"></canvas>
         <div class="hud-vignette"></div>
 
-        <!-- Panel de Análisis HUD del Escáner -->
+        <!-- Panel HUD de Escáner -->
         <div id="scanner-hud" class="hidden absolute right-4 top-20 w-56 sm:w-64 bg-sky-950/85 backdrop-blur-md border border-sky-400/50 rounded-xl p-3 shadow-[0_0_20px_rgba(14,165,233,0.3)] z-10 transition-opacity duration-300">
             <h3 class="text-sky-300 font-bold text-[11px] uppercase tracking-widest border-b border-sky-500/40 pb-1.5 mb-2.5 flex items-center gap-2">
                 <i class="fa-solid fa-satellite-dish animate-pulse"></i> Análisis Estructural
@@ -102,8 +99,7 @@
 
         <div id="drag-overlay" class="hidden fixed inset-4 z-30 border-2 border-dashed border-cyan-400 bg-cyan-950/75 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center text-center p-6 pointer-events-none">
             <i class="fa-solid fa-cloud-arrow-up text-5xl text-cyan-400 mb-3 animate-bounce"></i>
-            <p class="text-lg font-bold text-white">Suelta tus archivos 3D para añadirlos al carrusel</p>
-            <p class="text-xs text-cyan-200 font-mono mt-1">Soporta selección múltiple: .GLB, .GLTF, .OBJ, .STL</p>
+            <p class="text-lg font-bold text-white">Suelta tus archivos 3D para añadirlos</p>
         </div>
 
         <div id="start-overlay" class="relative z-20 bg-gray-900/95 border border-cyan-500/40 rounded-3xl p-6 max-w-md mx-4 text-center shadow-2xl space-y-4">
@@ -112,7 +108,7 @@
             </div>
             <div>
                 <h2 class="text-xl font-black tracking-wider text-cyan-50">J.A.R.V.I.S. 3D LAB</h2>
-                <p class="text-[11px] font-mono text-cyan-400/80">Interfaz Holográfica Automática</p>
+                <p class="text-[11px] font-mono text-cyan-400/80">Gestos de Alta Precisión (3D Depth)</p>
             </div>
             <div class="text-[11px] text-gray-300 leading-relaxed text-left space-y-1.5 bg-gray-950/70 p-3.5 rounded-2xl border border-gray-800">
                 <p><strong class="text-sky-400">Voz Activa:</strong> Habla directo ("Escanear", "Modo Plano", "Explotar", "Ocultar anillos").</p>
@@ -138,10 +134,10 @@
                     <span id="carousel-counter" class="text-[10px] font-mono bg-cyan-950/80 text-cyan-300 border border-cyan-700/50 px-2 py-0.5 rounded-full">1 / 4</span>
                 </div>
                 <p id="status-text" class="text-[11px] font-mono text-gray-300 truncate max-w-[280px] sm:max-w-sm">
-                    Inicia la cámara para activar los sensores y la voz.
+                    Inicia la cámara para activar sensores.
                 </p>
                 <p id="voice-transcript" class="hidden text-[10px] font-mono text-emerald-300 truncate">
-                    <i class="fa-solid fa-waveform-lines mr-1"></i> Iniciando protocolo de voz...
+                    <i class="fa-solid fa-waveform-lines mr-1"></i> Escuchando comandos...
                 </p>
             </div>
 
@@ -195,51 +191,36 @@
         </div>
     </div>
 
-    <!-- Script Principal Único -->
+    <!-- Script Principal -->
     <script>
         // ==========================================
-        // 1. REFERENCIAS DOM
+        // REFERENCIAS DOM Y UTILIDADES
         // ==========================================
-        const video = document.getElementById("webcam");
-        const handCanvas = document.getElementById("hand_canvas");
-        const handCtx = handCanvas.getContext("2d");
-        const threeCanvas = document.getElementById("three_canvas");
+        const video = document.getElementById("webcam"), handCanvas = document.getElementById("hand_canvas");
+        const handCtx = handCanvas.getContext("2d"), threeCanvas = document.getElementById("three_canvas");
+        const startOverlay = document.getElementById("start-overlay"), launchBtn = document.getElementById("launch-btn");
+        const overlayError = document.getElementById("overlay-error"), statusDot = document.getElementById("status-dot");
+        const gestureBadge = document.getElementById("gesture-badge"), statusText = document.getElementById("status-text");
+        const voiceTranscript = document.getElementById("voice-transcript"), carouselCounter = document.getElementById("carousel-counter");
+        const uploadModelBtn = document.getElementById("upload-model-btn"), modelFileInput = document.getElementById("model-file-input");
+        const dragOverlay = document.getElementById("drag-overlay"), prevModelBtn = document.getElementById("prev-model-btn");
+        const nextModelBtn = document.getElementById("next-model-btn"), shapeSelect = document.getElementById("shape-select");
+        const blueprintBtn = document.getElementById("blueprint-btn"), scannerBtn = document.getElementById("scanner-btn");
+        const scannerHud = document.getElementById("scanner-hud"), jarvisVoiceBtn = document.getElementById("jarvis-voice-btn");
+        const jarvisMicIcon = document.getElementById("jarvis-mic-icon"), resetBtn = document.getElementById("reset-btn");
+        const scaleDisplay = document.getElementById("scale-display"), explodeDisplay = document.getElementById("explode-display");
+        const rotDisplay = document.getElementById("rot-display"), inspectedPartBadge = document.getElementById("inspected-part-badge");
+        const showRingsCheckbox = document.getElementById("show-rings"), showSkeletonCheckbox = document.getElementById("show-skeleton");
 
-        const startOverlay = document.getElementById("start-overlay");
-        const launchBtn = document.getElementById("launch-btn");
-        const overlayError = document.getElementById("overlay-error");
-        const statusDot = document.getElementById("status-dot");
-        const gestureBadge = document.getElementById("gesture-badge");
-        const statusText = document.getElementById("status-text");
-        const voiceTranscript = document.getElementById("voice-transcript");
-        const carouselCounter = document.getElementById("carousel-counter");
-
-        const uploadModelBtn = document.getElementById("upload-model-btn");
-        const modelFileInput = document.getElementById("model-file-input");
-        const dragOverlay = document.getElementById("drag-overlay");
-
-        const prevModelBtn = document.getElementById("prev-model-btn");
-        const nextModelBtn = document.getElementById("next-model-btn");
-        const shapeSelect = document.getElementById("shape-select");
-        const blueprintBtn = document.getElementById("blueprint-btn");
-        const scannerBtn = document.getElementById("scanner-btn");
-        const scannerHud = document.getElementById("scanner-hud");
-        const jarvisVoiceBtn = document.getElementById("jarvis-voice-btn");
-        const jarvisMicIcon = document.getElementById("jarvis-mic-icon");
-        const resetBtn = document.getElementById("reset-btn");
-
-        const scaleDisplay = document.getElementById("scale-display");
-        const explodeDisplay = document.getElementById("explode-display");
-        const rotDisplay = document.getElementById("rot-display");
-        const inspectedPartBadge = document.getElementById("inspected-part-badge");
-        const showRingsCheckbox = document.getElementById("show-rings");
-        const showSkeletonCheckbox = document.getElementById("show-skeleton");
+        // Funciones Matemáticas Universales
+        function dist2D(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+        // NUEVO: Distancia 3D para precisión inmune a la perspectiva
+        function dist3D(a, b) { return Math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2 + (a.z - b.z)**2); }
 
         // ==========================================
-        // 2. SINTETIZADOR DE AUDIO FUTURISTA
+        // SINTETIZADOR DE AUDIO FUTURISTA
         // ==========================================
         let sfxCtx = null;
-
         async function initSfx() {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             if (!sfxCtx) sfxCtx = new AudioCtx();
@@ -249,18 +230,13 @@
         function playTone(freqStart, freqEnd, duration, type = "sine", vol = 0.25) {
             if (!sfxCtx) return;
             const now = sfxCtx.currentTime;
-            const osc = sfxCtx.createOscillator();
-            const gain = sfxCtx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freqStart, now);
+            const osc = sfxCtx.createOscillator(), gain = sfxCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freqStart, now);
             osc.frequency.exponentialRampToValueAtTime(Math.max(20, freqEnd), now + duration);
-            gain.gain.setValueAtTime(0.001, now);
-            gain.gain.linearRampToValueAtTime(vol, now + 0.015);
+            gain.gain.setValueAtTime(0.001, now); gain.gain.linearRampToValueAtTime(vol, now + 0.015);
             gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-            osc.connect(gain);
-            gain.connect(sfxCtx.destination);
-            osc.start(now);
-            osc.stop(now + duration + 0.02);
+            osc.connect(gain); gain.connect(sfxCtx.destination);
+            osc.start(now); osc.stop(now + duration + 0.02);
         }
 
         function playDismissSound() { playTone(820, 90, 0.38, "sine", 0.42); playTone(1240, 135, 0.32, "triangle", 0.28); }
@@ -277,33 +253,24 @@
         }
 
         // ==========================================
-        // 3. PROYECCIÓN EXACTA PANTALLA <-> CÁMARA
+        // PROYECCIÓN EXACTA PANTALLA <-> CÁMARA
         // ==========================================
         function normToScreenPx(lm) {
             const sw = handCanvas.width || window.innerWidth, sh = handCanvas.height || window.innerHeight;
             const vw = video.videoWidth || sw, vh = video.videoHeight || sh;
             const scale = Math.max(sw / vw, sh / vh);
             const rw = vw * scale, rh = vh * scale;
-            const offsetX = (sw - rw) / 2, offsetY = (sh - rh) / 2;
-            return { x: offsetX + (1 - lm.x) * rw, y: offsetY + lm.y * rh };
+            return { x: ((sw - rw) / 2) + (1 - lm.x) * rw, y: ((sh - rh) / 2) + lm.y * rh };
         }
-
         function screenPxToNDC(px) {
             const sw = handCanvas.width || window.innerWidth, sh = handCanvas.height || window.innerHeight;
             return { x: (px.x / sw) * 2 - 1, y: -(px.y / sh) * 2 + 1 };
         }
-
         function normToWorld(lm) {
             const px = normToScreenPx(lm), ndc = screenPxToNDC(px);
-            const vFov = (camera.fov * Math.PI) / 180;
-            const visHeight = 2 * Math.tan(vFov / 2) * camera.position.z;
-            const visWidth = visHeight * camera.aspect;
-            return new THREE.Vector3(ndc.x * (visWidth / 2), ndc.y * (visHeight / 2), 0);
+            const visHeight = 2 * Math.tan((camera.fov * Math.PI) / 360) * camera.position.z;
+            return new THREE.Vector3(ndc.x * (visHeight * camera.aspect / 2), ndc.y * (visHeight / 2), 0);
         }
-
-        // ==========================================
-        // 4. ORIENTACIÓN 3D DE MUÑECA
-        // ==========================================
         function landmarkToPalmSpace(lm) {
             const aspect = (video.videoWidth && video.videoHeight) ? (video.videoWidth / video.videoHeight) : (window.innerWidth / window.innerHeight);
             return new THREE.Vector3((0.5 - lm.x) * aspect, 0.5 - lm.y, lm.z * 1.85);
@@ -313,25 +280,67 @@
             const pWrist = landmarkToPalmSpace(landmarks[0]), pIndex = landmarkToPalmSpace(landmarks[5]);
             const pMiddle = landmarkToPalmSpace(landmarks[9]), pPinky = landmarkToPalmSpace(landmarks[17]);
             const yAxis = new THREE.Vector3().subVectors(pMiddle, pWrist).normalize();
-            const across = new THREE.Vector3().subVectors(pIndex, pPinky);
-            const zAxis = new THREE.Vector3().crossVectors(across, yAxis);
+            const zAxis = new THREE.Vector3().crossVectors(new THREE.Vector3().subVectors(pIndex, pPinky), yAxis);
             if (zAxis.lengthSq() < 1e-6) zAxis.set(0, 0, 1); else zAxis.normalize();
             const xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis).normalize();
             return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis));
         }
 
         function scaleQuaternionAngle(quat, factor) {
-            const q = quat.clone().normalize();
-            if (q.w < 0) q.set(-q.x, -q.y, -q.z, -q.w);
-            const clampedW = Math.min(1, Math.max(-1, q.w));
-            const halfAngle = Math.acos(clampedW), sinHalf = Math.sin(halfAngle);
+            const q = quat.clone().normalize(); if (q.w < 0) q.set(-q.x, -q.y, -q.z, -q.w);
+            const sinHalf = Math.sin(Math.acos(Math.min(1, Math.max(-1, q.w))));
             if (sinHalf < 1e-5) return new THREE.Quaternion();
-            const axis = new THREE.Vector3(q.x / sinHalf, q.y / sinHalf, q.z / sinHalf);
-            return new THREE.Quaternion().setFromAxisAngle(axis, halfAngle * 2 * factor);
+            return new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(q.x / sinHalf, q.y / sinHalf, q.z / sinHalf), Math.acos(q.w) * 2 * factor);
         }
 
         // ==========================================
-        // 5. THREE.JS, LOADERS Y ANILLOS
+        // CLASIFICADOR DE POSTURAS 3D (Anti-Perspectiva)
+        // ==========================================
+        function classifyHandPose(landmarks) {
+            const wrist = landmarks[0], thumbTip = landmarks[4], indexTip = landmarks[8];
+            const fingerJoints = [{ tip: 8, mcp: 5 }, { tip: 12, mcp: 9 }, { tip: 16, mcp: 13 }, { tip: 20, mcp: 17 }];
+            
+            let curledCount = 0, openFingerCount = 0; const ratios = [];
+            
+            for (const f of fingerJoints) {
+                // Evaluamos estiramiento midiendo distancia 3D de muñeca a punta vs muñeca a nudillo
+                const dTip = dist3D(landmarks[f.tip], wrist);
+                const dMcp = dist3D(landmarks[f.mcp], wrist);
+                const ratio = dTip / Math.max(dMcp, 0.001);
+                ratios.push(ratio);
+
+                if (ratio < 1.30) curledCount++;      // Doblado hacia la palma
+                if (ratio > 1.55) openFingerCount++; // Totalmente estirado
+            }
+
+            if (curledCount >= 3) return "fist";
+            
+            // Pinza en 3D: Inmune a giros de cámara
+            if (dist3D(thumbTip, indexTip) < 0.085) return "pinch";
+
+            const indexRatio = ratios[0], avgOtherRatio = (ratios[1] + ratios[2] + ratios[3]) / 3;
+            if (indexRatio > 1.50 && avgOtherRatio < 1.40 && ratios[1] < 1.45) return "point";
+            
+            if (openFingerCount >= 3) return "open";
+            return "neutral";
+        }
+
+        function getHandImpactDistance(openHand, fistHand) {
+            const palmCenterDist = dist3D(openHand.palmNorm, fistHand.palmNorm);
+            const openTips = [4, 8, 12, 16, 20].map(idx => openHand.landmarks[idx]);
+            const fistTargets = [0, 5, 9, 13, 17].map(idx => fistHand.landmarks[idx]);
+            let minTipDist = palmCenterDist;
+            for (const tip of openTips) {
+                for (const target of fistTargets) {
+                    const d = dist3D(tip, target);
+                    if (d < minTipDist) minTipDist = d;
+                }
+            }
+            return { palmCenterDist, minTipDist };
+        }
+
+        // ==========================================
+        // SETUP DE THREE.JS Y CARGADORES
         // ==========================================
         let THREE = null, GLTFLoader = null, DRACOLoader = null, OBJLoader = null, STLLoader = null;
         let scene, camera, renderer, objectGroup, modelSlot, telemetryGroup, scannerBar, clock, raycaster;
@@ -407,44 +416,26 @@
                 const tick = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.01, 0.14), new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7 }));
                 tick.position.set(Math.cos(angle) * 1.44, 0, Math.sin(angle) * 1.44); tick.rotation.y = -angle; ticksGroup.add(tick);
             }
-            telemetryGroup.userData = { ring1, ring2, ring3, ticksGroup };
-            telemetryGroup.add(ring1, ring2, ring3, ticksGroup);
-            objectGroup.add(telemetryGroup);
+            telemetryGroup.userData = { ring1, ring2, ring3, ticksGroup }; telemetryGroup.add(ring1, ring2, ring3, ticksGroup); objectGroup.add(telemetryGroup);
         }
 
         function buildScannerSweep() {
             scannerBar = new THREE.Group();
             const plane = new THREE.Mesh(new THREE.PlaneGeometry(2.7, 2.7), new THREE.MeshBasicMaterial({ color: 0x06b6d4, side: THREE.DoubleSide, transparent: true, opacity: 0.14, depthWrite: false })); plane.rotation.x = Math.PI / 2;
             const border = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(2.7, 0.015, 2.7)), new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.85 }));
-            scannerBar.add(plane, border);
-            scannerBar.visible = false;
-            objectGroup.add(scannerBar);
+            scannerBar.add(plane, border); scannerBar.visible = false; objectGroup.add(scannerBar);
         }
 
         function updateScannerStats() {
             if (!hasActiveModel) return;
-            let totalVerts = 0;
-            let totalTris = 0;
-            
+            let totalVerts = 0, totalTris = 0;
             inspectableMeshes.forEach(mesh => {
-                if (mesh.geometry) {
-                    const pos = mesh.geometry.attributes.position;
-                    if (pos) {
-                        totalVerts += pos.count;
-                        if (mesh.geometry.index) {
-                            totalTris += mesh.geometry.index.count / 3;
-                        } else {
-                            totalTris += pos.count / 3;
-                        }
-                    }
+                if (mesh.geometry && mesh.geometry.attributes.position) {
+                    totalVerts += mesh.geometry.attributes.position.count;
+                    totalTris += mesh.geometry.index ? mesh.geometry.index.count / 3 : mesh.geometry.attributes.position.count / 3;
                 }
             });
-
-            // Medir dimensiones del bounding box del slot central (ignorando la rotación global del objeto)
-            const box = new THREE.Box3().setFromObject(modelSlot);
-            const size = new THREE.Vector3();
-            box.getSize(size);
-
+            const box = new THREE.Box3().setFromObject(modelSlot), size = new THREE.Vector3(); box.getSize(size);
             document.getElementById("scan-parts").textContent = inspectableMeshes.length;
             document.getElementById("scan-verts").textContent = Math.round(totalVerts).toLocaleString();
             document.getElementById("scan-tris").textContent = Math.round(totalTris).toLocaleString();
@@ -475,7 +466,6 @@
         function setScannerMode(enabled) {
             isScannerMode = enabled;
             scannerBtn.classList.toggle("bg-sky-600", enabled); scannerBtn.classList.toggle("text-white", enabled);
-            
             if (enabled && hasActiveModel) {
                 if (scannerBar) scannerBar.visible = true;
                 scannerHud.classList.remove("hidden");
@@ -487,17 +477,11 @@
             }
         }
 
-        blueprintBtn.addEventListener("click", () => {
-            setBlueprintMode(!isBlueprintMode);
-            jarvisSpeak(isBlueprintMode ? "Modo plano activado." : "Texturas restauradas.");
-        });
-        scannerBtn.addEventListener("click", () => {
-            setScannerMode(!isScannerMode);
-            jarvisSpeak(isScannerMode ? "Escáner láser iniciado." : "Escáner desactivado.");
-        });
+        blueprintBtn.addEventListener("click", () => setBlueprintMode(!isBlueprintMode));
+        scannerBtn.addEventListener("click", () => setScannerMode(!isScannerMode));
 
         // ==========================================
-        // 6. MODELOS Y CARGA
+        // CARGA DE MODELOS 3D
         // ==========================================
         function clearCurrentModel() {
             if (!modelSlot) return;
@@ -518,35 +502,27 @@
         function buildProceduralMultiPartModel(shape) {
             const root = new THREE.Group();
             if (shape === "reactor") {
-                const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 1), new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.9, roughness: 0.15 }));
-                core.name = "Núcleo de Paladio"; root.add(core);
-                const torus = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.11, 20, 48), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.25 }));
-                torus.name = "Anillo Contenedor"; root.add(torus);
-                const backplate = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.62, 0.18, 32), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 }));
-                backplate.rotation.x = Math.PI / 2; backplate.position.z = -0.28; backplate.name = "Placa Base de Titanio"; root.add(backplate);
+                const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 1), new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.9, roughness: 0.15 })); core.name = "Núcleo de Paladio"; root.add(core);
+                const torus = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.11, 20, 48), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.25 })); torus.name = "Anillo Contenedor"; root.add(torus);
+                const backplate = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.62, 0.18, 32), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 })); backplate.rotation.x = Math.PI / 2; backplate.position.z = -0.28; backplate.name = "Placa Base de Titanio"; root.add(backplate);
                 for (let i = 0; i < 8; i++) {
                     const angle = (i / 8) * Math.PI * 2;
                     const coil = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.28, 0.26), new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.75, roughness: 0.25 }));
                     coil.position.set(Math.cos(angle) * 0.85, Math.sin(angle) * 0.85, 0.05); coil.rotation.z = angle; coil.name = `Bobina Electromagnética #${i + 1}`; root.add(coil);
                 }
-                const lens = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.72, 32), new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: 0x06b6d4, emissiveIntensity: 0.4, side: THREE.DoubleSide, transparent: true, opacity: 0.75 }));
-                lens.position.z = 0.24; lens.name = "Difusor Óptico Frontal"; root.add(lens);
+                const lens = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.72, 32), new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: 0x06b6d4, emissiveIntensity: 0.4, side: THREE.DoubleSide, transparent: true, opacity: 0.75 })); lens.position.z = 0.24; lens.name = "Difusor Óptico Frontal"; root.add(lens);
             } else if (shape === "drone") {
-                const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 24, 24), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.25 }));
-                body.scale.set(1.2, 0.65, 1.2); body.name = "Chasis Central Blindado"; root.add(body);
-                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 20), new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.9 }));
-                eye.position.set(0, 0, 0.58); eye.name = "Sensor Óptico Infrarrojo"; root.add(eye);
+                const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 24, 24), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.25 })); body.scale.set(1.2, 0.65, 1.2); body.name = "Chasis Central Blindado"; root.add(body);
+                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 20), new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.9 })); eye.position.set(0, 0, 0.58); eye.name = "Sensor Óptico Infrarrojo"; root.add(eye);
                 [[-0.85, 0.2, -0.75], [0.85, 0.2, -0.75], [-0.85, 0.2, 0.75], [0.85, 0.2, 0.75]].forEach(([x, y, z], idx) => {
-                    const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.14, 24), new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.6, roughness: 0.25 }));
-                    pod.position.set(x, y, z); pod.name = `Propulsor Repulsor #${idx + 1}`; root.add(pod);
+                    const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.14, 24), new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.6, roughness: 0.25 })); pod.position.set(x, y, z); pod.name = `Propulsor Repulsor #${idx + 1}`; root.add(pod);
                 });
             } else if (shape === "quantum") {
                 const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(0.48, 0), new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7e22ce, emissiveIntensity: 0.6, roughness: 0.2 })); inner.name = "Singularidad Central"; root.add(inner);
                 const shell = new THREE.Mesh(new THREE.DodecahedronGeometry(0.88, 0), new THREE.MeshStandardMaterial({ color: 0x38bdf8, wireframe: true })); shell.name = "Jaula Geodésica"; root.add(shell);
                 for (let i = 0; i < 6; i++) {
                     const node = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.7, roughness: 0.2 }));
-                    const axis = i % 3; const sign = i < 3 ? 1 : -1; node.position.set(axis === 0 ? sign * 1.05 : 0, axis === 1 ? sign * 1.05 : 0, axis === 2 ? sign * 1.05 : 0);
-                    node.name = `Estabilizador #${i + 1}`; root.add(node);
+                    const axis = i % 3; const sign = i < 3 ? 1 : -1; node.position.set(axis === 0 ? sign * 1.05 : 0, axis === 1 ? sign * 1.05 : 0, axis === 2 ? sign * 1.05 : 0); node.name = `Estabilizador #${i + 1}`; root.add(node);
                 }
             } else {
                 const core = new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 24), new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.7 })); core.name = "Núcleo Térmico"; root.add(core);
@@ -604,15 +580,11 @@
 
             gestureBadge.textContent = "Holograma Activo"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
             statusText.textContent = `Proyectando: ${title}`;
-            
-            // Auto actualizar escáner si estaba encendido
-            if (isScannerMode) {
-                updateScannerStats();
-            }
+            if (isScannerMode) updateScannerStats();
         }
 
         // ==========================================
-        // 7. CARRUSEL AÉREO
+        // CARRUSEL AÉREO
         // ==========================================
         function refreshCarouselSelect() {
             shapeSelect.innerHTML = "";
@@ -680,7 +652,7 @@
         window.addEventListener("drop", (e) => { e.preventDefault(); dragOverlay.classList.add("hidden"); enqueue3DFiles(e.dataTransfer.files); });
 
         // ==========================================
-        // 8. DESINTEGRACIÓN STARK Y RESET
+        // DESINTEGRACIÓN STARK Y RESET
         // ==========================================
         function spawnHologramBurst(originPos) {
             if (!THREE || !scene) return;
@@ -725,7 +697,7 @@
         });
 
         // ==========================================
-        // 9. COMANDOS DE VOZ J.A.R.V.I.S. (AUTO INICIO)
+        // COMANDOS DE VOZ J.A.R.V.I.S.
         // ==========================================
         let jarvisRecognition = null, isJarvisListening = false;
         
@@ -774,7 +746,7 @@
                 if (isDeactivate) { setBlueprintMode(false); jarvisSpeak("Modo plano desactivado."); }
                 else { setBlueprintMode(true); jarvisSpeak("Modo plano activado."); }
             } else if (cmd.includes("sólido") || cmd.includes("solido") || cmd.includes("normal") || cmd.includes("textura")) {
-                setBlueprintMode(false); jarvisSpeak("Texturas restauradas.");
+                setBlueprintMode(false); jarvisSpeak("Modo plano desactivado. Texturas restauradas.");
             } else if (cmd.includes("escáner") || cmd.includes("escaner") || cmd.includes("escanear") || cmd.includes("análisis")) {
                 if (isDeactivate) { setScannerMode(false); jarvisSpeak("Escáner desactivado."); }
                 else { setScannerMode(true); jarvisSpeak("Escáner láser iniciado."); }
@@ -812,34 +784,8 @@
         });
 
         // ==========================================
-        // 10. CLASIFICADOR DE POSTURAS Y LÁSER
+        // ACTUALIZAR LÁSER 
         // ==========================================
-        function dist2D(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
-        function classifyHandPose(landmarks) {
-            const wrist = landmarks[0], thumbTip = landmarks[4], indexTip = landmarks[8];
-            const fingerJoints = [{ tip: 8, pip: 6, mcp: 5 }, { tip: 12, pip: 10, mcp: 9 }, { tip: 16, pip: 14, mcp: 13 }, { tip: 20, pip: 18, mcp: 17 }];
-            let curledCount = 0, openFingerCount = 0; const ratios = [];
-            for (const f of fingerJoints) {
-                const dTip = dist2D(landmarks[f.tip], wrist), dPip = dist2D(landmarks[f.pip], wrist), dMcp = dist2D(landmarks[f.mcp], wrist);
-                const ratio = dTip / Math.max(dPip, 0.001); ratios.push(ratio);
-                if (dTip < dPip * 1.03 || dTip < dMcp * 1.15) curledCount++;
-                if (dTip > dPip * 1.08 && dTip > dMcp * 1.25) openFingerCount++;
-            }
-            if (curledCount >= 3) return "fist";
-            if (dist2D(thumbTip, indexTip) < 0.068) return "pinch";
-            const indexRatio = ratios[0], avgOtherRatio = (ratios[1] + ratios[2] + ratios[3]) / 3;
-            if (indexRatio > 1.14 && indexRatio > avgOtherRatio + 0.16 && ratios[1] < 1.12 && ratios[2] < 1.12) return "point";
-            if (openFingerCount >= 3) return "open";
-            return "neutral";
-        }
-        function getHandImpactDistance(openHand, fistHand) {
-            const palmCenterDist = dist2D(openHand.palmNorm, fistHand.palmNorm);
-            const openTips = [4, 8, 12, 16, 20].map(idx => openHand.landmarks[idx]);
-            const fistTargets = [0, 5, 9, 13, 17].map(idx => fistHand.landmarks[idx]);
-            let minTipDist = palmCenterDist;
-            for (const tip of openTips) { for (const target of fistTargets) { const d = dist2D(tip, target); if (d < minTipDist) minTipDist = d; } }
-            return { palmCenterDist, minTipDist };
-        }
         function updateLaserInspection(indexTipPx) {
             if (!THREE || !raycaster || !hasActiveModel || inspectableMeshes.length === 0) { clearLaserHighlight(); return; }
             const ndc = screenPxToNDC(indexTipPx);
@@ -848,7 +794,7 @@
             let selectedMesh = null, hitPoint3D = null;
             if (hits.length > 0) { selectedMesh = hits[0].object; hitPoint3D = hits[0].point; }
             else {
-                let bestDistPx = 38; const tempBox = new THREE.Box3(), tempCenter = new THREE.Vector3();
+                let bestDistPx = 45; const tempBox = new THREE.Box3(), tempCenter = new THREE.Vector3();
                 for (const mesh of inspectableMeshes) {
                     tempBox.setFromObject(mesh); tempBox.getCenter(tempCenter);
                     const proj = tempCenter.clone().project(camera);
@@ -866,7 +812,7 @@
                 }
                 const projected = hitPoint3D.clone().project(camera);
                 const hitCanvasX = ((projected.x + 1) * 0.5) * handCanvas.width, hitCanvasY = ((-projected.y + 1) * 0.5) * handCanvas.height;
-                const tris = selectedMesh.geometry.index ? Math.round(selectedMesh.geometry.index.count / 3) : Math.round(selectedMesh.geometry.attributes.position.count / 3);
+                const tris = selectedMesh.geometry.index ? Math.round(selectedMesh.geometry.index.count / 3) : (selectedMesh.geometry.attributes.position ? Math.round(selectedMesh.geometry.attributes.position.count / 3) : 0);
                 const box = new THREE.Box3().setFromObject(selectedMesh); const sz = new THREE.Vector3(); box.getSize(sz);
                 laserHitInfo = { fingerPx: indexTipPx, hitPx: { x: hitCanvasX, y: hitCanvasY }, partName: selectedMesh.name, tris, dims: `${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)}m` };
                 inspectedPartBadge.classList.remove("hidden"); inspectedPartBadge.querySelector("span").textContent = selectedMesh.name;
@@ -888,7 +834,7 @@
         }
 
         // ==========================================
-        // 11. INICIO DE CÁMARA Y AUTO-ARRANQUE DE VOZ
+        // INICIO SISTEMA CÁMARA
         // ==========================================
         let handLandmarker = null, lastVideoTime = -1, isLoopRunning = false, prevRotY = 0;
         const starkGesture = { armed: false, armedAt: 0, lastPalmDist: 1 };
@@ -902,11 +848,10 @@
             if (window.location.protocol === "file:") { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError('Abre el archivo con Live Server (localhost) o HTTPS.'); return; }
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError("Cámara bloqueada o sin soporte."); return; }
             
-            // Auto-iniciar comandos de voz si es soportado
             setupJarvisVoice();
             if (jarvisRecognition) {
                 isJarvisListening = true;
-                try { jarvisRecognition.start(); jarvisSpeak("Sistemas de reconocimiento en línea."); } catch(e){}
+                try { jarvisRecognition.start(); jarvisSpeak("Sistemas en línea."); } catch(e){}
             }
 
             try {
@@ -931,7 +876,7 @@
                 const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
                 handLandmarker = await HandLandmarker.createFromOptions(vision, {
                     baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task", delegate: "GPU" },
-                    runningMode: "VIDEO", numHands: 2, minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5
+                    runningMode: "VIDEO", numHands: 2, minHandDetectionConfidence: 0.65, minHandPresenceConfidence: 0.65, minTrackingConfidence: 0.65
                 });
                 gestureBadge.textContent = "Sistemas En Línea"; statusText.textContent = `Proyectando: ${modelCarousel[currentCarouselIndex].name}`;
             } catch (err) { gestureBadge.textContent = "Error de IA"; statusText.textContent = `Fallo en sensores: ${err.message}`; }
@@ -1008,7 +953,7 @@
         }
 
         // ==========================================
-        // 12. GESTOS EN TIEMPO REAL
+        // GESTOS EN TIEMPO REAL
         // ==========================================
         function processHands(results) {
             if (!THREE || !objectGroup) return;
@@ -1019,6 +964,7 @@
                     if (showSkeletonCheckbox.checked) drawSkeleton(landmarks, pose);
                     const palmNorm = landmarks[9], palmPx = normToScreenPx(palmNorm);
                     detectedHands.push({ pose, palmNorm, palmPx, landmarks, quat: handQuat });
+                    
                     if (pose === "fist") { drawRing(palmPx.x, palmPx.y, "#f97316", 28, 4); drawLabel("PUÑO", palmPx.x, palmPx.y - 36, "#fb923c"); }
                     else if (pose === "open") { drawRing(palmPx.x, palmPx.y, "#22d3ee", 24, 3); openHands.push({ world: normToWorld(palmNorm), norm: palmNorm, px: palmPx, quat: handQuat }); }
                     else if (pose === "point") { pointingHand = { norm: landmarks[8], px: normToScreenPx(landmarks[8]) }; }
@@ -1029,6 +975,7 @@
                     }
                 }
             }
+
             if (!pointingHand && (highlightedMesh || laserHitInfo)) clearLaserHighlight();
 
             // 1. GOLPE IRON MAN (PUÑO + PALMA)
@@ -1040,31 +987,35 @@
                         const { palmCenterDist, minTipDist } = getHandImpactDistance(openHand, fistHand);
                         const midPx = { x: (fistHand.palmPx.x + openHand.palmPx.x) / 2, y: (fistHand.palmPx.y + openHand.palmPx.y) / 2 };
                         drawLine(fistHand.palmPx, openHand.palmPx, "#f97316", 3);
-                        if (palmCenterDist > 0.22) { starkGesture.armed = true; starkGesture.armedAt = now; starkGesture.lastPalmDist = palmCenterDist; gestureBadge.textContent = "Gesto Stark Armado"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400"; }
+                        if (palmCenterDist > 0.25) { starkGesture.armed = true; starkGesture.armedAt = now; starkGesture.lastPalmDist = palmCenterDist; gestureBadge.textContent = "Gesto Stark Armado"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400"; }
                         else if (starkGesture.armed) starkGesture.lastPalmDist = palmCenterDist;
-                        if (starkGesture.armed && (minTipDist < 0.125 || palmCenterDist < 0.185)) { starkGesture.armed = false; triggerStarkDismissal(midPx); return; }
+                        if (starkGesture.armed && (minTipDist < 0.12 || palmCenterDist < 0.15)) { starkGesture.armed = false; triggerStarkDismissal(midPx); return; }
                     } else if (starkGesture.armed && activePinches.length === 0) {
-                        const dHands = dist2D(detectedHands[0].palmNorm, detectedHands[1].palmNorm);
-                        if (dHands < 0.175) { starkGesture.armed = false; triggerStarkDismissal({ x: (detectedHands[0].palmPx.x + detectedHands[1].palmPx.x) / 2, y: (detectedHands[0].palmPx.y + detectedHands[1].palmPx.y) / 2 }); return; }
+                        const dHands = dist3D(detectedHands[0].palmNorm, detectedHands[1].palmNorm);
+                        const midPx = { x: (detectedHands[0].palmPx.x + detectedHands[1].palmPx.x) / 2, y: (detectedHands[0].palmPx.y + detectedHands[1].palmPx.y) / 2 };
+                        if (dHands < 0.15) { starkGesture.armed = false; triggerStarkDismissal(midPx); return; }
                     }
                 } else if (detectedHands.length === 1 && starkGesture.armed && starkGesture.lastPalmDist < 0.28) { starkGesture.armed = false; triggerStarkDismissal(detectedHands[0].palmPx); return; }
             }
 
-            // 2. SWIPE Y ROTACIÓN LIBRE CON PALMA ABIERTA
+            // 2. SWIPE Y ROTACIÓN LIBRE
             const singleOpenHand = (detectedHands.length === 1 && openHands.length === 1) ? openHands[0] : null;
             if (singleOpenHand && !starkGesture.armed) {
-                swipeTracker.missedFrames = 0; const screenNormX = singleOpenHand.px.x / handCanvas.width;
+                swipeTracker.missedFrames = 0;
+                const screenNormX = singleOpenHand.px.x / handCanvas.width;
                 swipeTracker.samples.push({ x: screenNormX, px: singleOpenHand.px, t: now });
-                swipeTracker.samples = swipeTracker.samples.filter(s => (now - s.t) < 550);
+                swipeTracker.samples = swipeTracker.samples.filter(s => (now - s.t) < 650);
+
                 let isSwiping = false;
                 if (swipeTracker.samples.length >= 3 && (now - swipeTracker.lastSwipeAt) > 900) {
                     const dx = screenNormX - swipeTracker.samples[0].x;
-                    if (Math.abs(dx) > 0.18) {
+                    if (Math.abs(dx) > 0.15) {
                         isSwiping = true; swipeTracker.lastSwipeAt = now; swipeTracker.samples = []; const step = dx > 0 ? 1 : -1; cycleCarousel(step);
                         gestureMode = "swipe"; gestureBadge.textContent = step > 0 ? "Swipe → Siguiente 3D" : "← Swipe Anterior 3D"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
                         return;
                     }
                 }
+
                 if (!isSwiping && hasActiveModel && !isDismissing) {
                     if (gestureMode !== "spin") {
                         gestureMode = "spin"; grabAnchor.handQuat.copy(singleOpenHand.quat); grabAnchor.objQuat.copy(targetQuat);
@@ -1076,6 +1027,7 @@
                     return;
                 }
             } else { swipeTracker.missedFrames++; if (swipeTracker.missedFrames > 2) swipeTracker.samples = []; if (gestureMode === "spin") gestureMode = "none"; }
+            
             if (!hasActiveModel || isDismissing) return;
 
             // 3. MODO 2 PINZAS
@@ -1085,6 +1037,7 @@
                 const midWorld = new THREE.Vector3().addVectors(hLeft.world, hRight.world).multiplyScalar(0.5);
                 const distWorld = hLeft.world.distanceTo(hRight.world);
                 const angle2D = Math.atan2(hRight.world.y - hLeft.world.y, hRight.world.x - hLeft.world.x), depthDiff = hRight.norm.z - hLeft.norm.z;
+                
                 if (gestureMode !== "two") {
                     gestureMode = "two"; grabAnchor.handPos.copy(midWorld); grabAnchor.objPos.copy(targetPos);
                     grabAnchor.twoDist = Math.max(distWorld, 0.25); grabAnchor.twoAngle = angle2D; grabAnchor.twoDepthDiff = depthDiff;
@@ -1104,6 +1057,7 @@
             if (openHands.length >= 2 && !starkGesture.armed) {
                 const sorted = openHands.slice(0, 2).sort((a, b) => a.world.x - b.world.x); const pLeft = sorted[0], pRight = sorted[1];
                 const spanWorld = pLeft.world.distanceTo(pRight.world); drawLine(pLeft.px, pRight.px, "#22d3ee", 3);
+                
                 if (gestureMode !== "explode") {
                     gestureMode = "explode"; grabAnchor.explodeDist = Math.max(spanWorld, 0.35); grabAnchor.explodeStart = targetExplode;
                     gestureBadge.textContent = "Despiece Explosivo"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
@@ -1139,7 +1093,7 @@
         }
 
         // ==========================================
-        // 13. DIBUJOS 2D
+        // DIBUJOS 2D
         // ==========================================
         function drawSwipeTrail() {
             if (swipeTracker.samples.length < 2) return;
