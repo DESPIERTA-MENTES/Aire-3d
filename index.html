@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Air 3D Studio - J.A.R.V.I.S. Holographic Lab</title>
 
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -99,7 +100,7 @@
 
         <div id="drag-overlay" class="hidden fixed inset-4 z-30 border-2 border-dashed border-cyan-400 bg-cyan-950/75 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center text-center p-6 pointer-events-none">
             <i class="fa-solid fa-cloud-arrow-up text-5xl text-cyan-400 mb-3 animate-bounce"></i>
-            <p class="text-lg font-bold text-white">Suelta tus archivos 3D para añadirlos</p>
+            <p class="text-lg font-bold text-white">Suelta tus archivos 3D para añadirlos al carrusel</p>
         </div>
 
         <div id="start-overlay" class="relative z-20 bg-gray-900/95 border border-cyan-500/40 rounded-3xl p-6 max-w-md mx-4 text-center shadow-2xl space-y-4">
@@ -108,11 +109,11 @@
             </div>
             <div>
                 <h2 class="text-xl font-black tracking-wider text-cyan-50">J.A.R.V.I.S. 3D LAB</h2>
-                <p class="text-[11px] font-mono text-cyan-400/80">Gestos de Alta Precisión (3D Depth)</p>
+                <p class="text-[11px] font-mono text-cyan-400/80">Gestos Rigurosos y Control por Voz</p>
             </div>
             <div class="text-[11px] text-gray-300 leading-relaxed text-left space-y-1.5 bg-gray-950/70 p-3.5 rounded-2xl border border-gray-800">
-                <p><strong class="text-sky-400">Voz Activa:</strong> Habla directo ("Escanear", "Modo Plano", "Explotar", "Ocultar anillos").</p>
-                <p><strong class="text-cyan-400">Manos Libres:</strong> Pinza para Mover/Escalar. Palma abierta para girar. Deslizar para cambiar modelo.</p>
+                <p><strong class="text-sky-400">Voz Activa:</strong> Habla directo ("Centra holograma", "Expande holograma", "Escanear", "Modo Plano").</p>
+                <p><strong class="text-cyan-400">Manos Libres:</strong> Pinza para Mover/Escalar. Palma abierta para girar.</p>
                 <p><strong class="text-rose-400">Dedo Índice:</strong> Láser de inspección técnica.</p>
             </div>
             <button id="launch-btn" class="w-full py-3.5 px-5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
@@ -134,7 +135,7 @@
                     <span id="carousel-counter" class="text-[10px] font-mono bg-cyan-950/80 text-cyan-300 border border-cyan-700/50 px-2 py-0.5 rounded-full">1 / 4</span>
                 </div>
                 <p id="status-text" class="text-[11px] font-mono text-gray-300 truncate max-w-[280px] sm:max-w-sm">
-                    Inicia la cámara para activar sensores.
+                    Inicia la cámara para activar los sensores y la voz.
                 </p>
                 <p id="voice-transcript" class="hidden text-[10px] font-mono text-emerald-300 truncate">
                     <i class="fa-solid fa-waveform-lines mr-1"></i> Escuchando comandos...
@@ -191,7 +192,7 @@
         </div>
     </div>
 
-    <!-- Script Principal -->
+    <!-- Script Principal Único -->
     <script>
         // ==========================================
         // REFERENCIAS DOM Y UTILIDADES
@@ -212,9 +213,7 @@
         const rotDisplay = document.getElementById("rot-display"), inspectedPartBadge = document.getElementById("inspected-part-badge");
         const showRingsCheckbox = document.getElementById("show-rings"), showSkeletonCheckbox = document.getElementById("show-skeleton");
 
-        // Funciones Matemáticas Universales
         function dist2D(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
-        // NUEVO: Distancia 3D para precisión inmune a la perspectiva
         function dist3D(a, b) { return Math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2 + (a.z - b.z)**2); }
 
         // ==========================================
@@ -301,21 +300,15 @@
             const fingerJoints = [{ tip: 8, mcp: 5 }, { tip: 12, mcp: 9 }, { tip: 16, mcp: 13 }, { tip: 20, mcp: 17 }];
             
             let curledCount = 0, openFingerCount = 0; const ratios = [];
-            
             for (const f of fingerJoints) {
-                // Evaluamos estiramiento midiendo distancia 3D de muñeca a punta vs muñeca a nudillo
                 const dTip = dist3D(landmarks[f.tip], wrist);
                 const dMcp = dist3D(landmarks[f.mcp], wrist);
                 const ratio = dTip / Math.max(dMcp, 0.001);
                 ratios.push(ratio);
-
-                if (ratio < 1.30) curledCount++;      // Doblado hacia la palma
-                if (ratio > 1.55) openFingerCount++; // Totalmente estirado
+                if (ratio < 1.30) curledCount++;     
+                if (ratio > 1.55) openFingerCount++; 
             }
-
             if (curledCount >= 3) return "fist";
-            
-            // Pinza en 3D: Inmune a giros de cámara
             if (dist3D(thumbTip, indexTip) < 0.085) return "pinch";
 
             const indexRatio = ratios[0], avgOtherRatio = (ratios[1] + ratios[2] + ratios[3]) / 3;
@@ -416,14 +409,18 @@
                 const tick = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.01, 0.14), new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7 }));
                 tick.position.set(Math.cos(angle) * 1.44, 0, Math.sin(angle) * 1.44); tick.rotation.y = -angle; ticksGroup.add(tick);
             }
-            telemetryGroup.userData = { ring1, ring2, ring3, ticksGroup }; telemetryGroup.add(ring1, ring2, ring3, ticksGroup); objectGroup.add(telemetryGroup);
+            telemetryGroup.userData = { ring1, ring2, ring3, ticksGroup };
+            telemetryGroup.add(ring1, ring2, ring3, ticksGroup);
+            objectGroup.add(telemetryGroup);
         }
 
         function buildScannerSweep() {
             scannerBar = new THREE.Group();
             const plane = new THREE.Mesh(new THREE.PlaneGeometry(2.7, 2.7), new THREE.MeshBasicMaterial({ color: 0x06b6d4, side: THREE.DoubleSide, transparent: true, opacity: 0.14, depthWrite: false })); plane.rotation.x = Math.PI / 2;
             const border = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(2.7, 0.015, 2.7)), new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.85 }));
-            scannerBar.add(plane, border); scannerBar.visible = false; objectGroup.add(scannerBar);
+            scannerBar.add(plane, border);
+            scannerBar.visible = false;
+            objectGroup.add(scannerBar);
         }
 
         function updateScannerStats() {
@@ -481,7 +478,7 @@
         scannerBtn.addEventListener("click", () => setScannerMode(!isScannerMode));
 
         // ==========================================
-        // CARGA DE MODELOS 3D
+        // PROCEDURALES Y CARGA DE MODELOS 3D
         // ==========================================
         function clearCurrentModel() {
             if (!modelSlot) return;
@@ -515,7 +512,7 @@
                 const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 24, 24), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.25 })); body.scale.set(1.2, 0.65, 1.2); body.name = "Chasis Central Blindado"; root.add(body);
                 const eye = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 20), new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.9 })); eye.position.set(0, 0, 0.58); eye.name = "Sensor Óptico Infrarrojo"; root.add(eye);
                 [[-0.85, 0.2, -0.75], [0.85, 0.2, -0.75], [-0.85, 0.2, 0.75], [0.85, 0.2, 0.75]].forEach(([x, y, z], idx) => {
-                    const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.14, 24), new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.6, roughness: 0.25 })); pod.position.set(x, y, z); pod.name = `Propulsor Repulsor #${idx + 1}`; root.add(pod);
+                    const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.14, 24), new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.6, roughness: 0.25 })); pod.position.set(x, y, z); pod.name = `Propulsor #${idx + 1}`; root.add(pod);
                 });
             } else if (shape === "quantum") {
                 const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(0.48, 0), new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7e22ce, emissiveIntensity: 0.6, roughness: 0.2 })); inner.name = "Singularidad Central"; root.add(inner);
@@ -583,9 +580,6 @@
             if (isScannerMode) updateScannerStats();
         }
 
-        // ==========================================
-        // CARRUSEL AÉREO
-        // ==========================================
         function refreshCarouselSelect() {
             shapeSelect.innerHTML = "";
             modelCarousel.forEach((item, idx) => {
@@ -652,7 +646,7 @@
         window.addEventListener("drop", (e) => { e.preventDefault(); dragOverlay.classList.add("hidden"); enqueue3DFiles(e.dataTransfer.files); });
 
         // ==========================================
-        // DESINTEGRACIÓN STARK Y RESET
+        // STARK DISMISS Y RESET
         // ==========================================
         function spawnHologramBurst(originPos) {
             if (!THREE || !scene) return;
@@ -674,7 +668,7 @@
             if (impactPx) shockwaves.push({ x: impactPx.x, y: impactPx.y, radius: 18, alpha: 1.0 });
             spawnHologramBurst(objectGroup.position);
             gestureBadge.textContent = "Holograma Cerrado"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400";
-            statusText.textContent = "Desliza una mano abierta (Swipe) o usa la voz para invocar otro modelo.";
+            statusText.textContent = "Desliza (Swipe) o usa la voz para invocar otro modelo.";
             if (isScannerMode) setScannerMode(false);
             
             setTimeout(() => {
@@ -703,14 +697,12 @@
         
         function setupJarvisVoice() {
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRec) { statusText.textContent = "Navegador sin soporte de voz (Usa Chrome/Edge)."; return; }
+            if (!SpeechRec) { statusText.textContent = "Navegador sin soporte de voz."; return; }
             jarvisRecognition = new SpeechRec(); jarvisRecognition.lang = "es-ES"; jarvisRecognition.continuous = true; jarvisRecognition.interimResults = true;
             
             jarvisRecognition.onstart = () => {
-                isJarvisListening = true;
-                voiceTranscript.classList.remove("hidden");
-                jarvisVoiceBtn.classList.add("bg-indigo-600", "text-white", "jarvis-active");
-                jarvisMicIcon.className = "fa-solid fa-microphone-lines animate-pulse";
+                isJarvisListening = true; voiceTranscript.classList.remove("hidden");
+                jarvisVoiceBtn.classList.add("bg-indigo-600", "text-white", "jarvis-active"); jarvisMicIcon.className = "fa-solid fa-microphone-lines animate-pulse";
             };
             
             jarvisRecognition.onresult = (event) => {
@@ -723,56 +715,51 @@
             
             jarvisRecognition.onerror = (e) => {
                 if (e.error === "not-allowed" || e.error === "audio-capture") {
-                    isJarvisListening = false;
-                    voiceTranscript.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Micrófono bloqueado.`;
+                    isJarvisListening = false; voiceTranscript.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Micrófono bloqueado.`;
                 }
             };
             
             jarvisRecognition.onend = () => {
-                if (isJarvisListening) { 
-                    setTimeout(() => { try { jarvisRecognition.start(); } catch (e) {} }, 100); 
-                } else {
-                    voiceTranscript.classList.add("hidden");
-                    jarvisVoiceBtn.classList.remove("bg-indigo-600", "text-white", "jarvis-active");
-                    jarvisMicIcon.className = "fa-solid fa-microphone-slash";
-                }
+                if (isJarvisListening) { setTimeout(() => { try { jarvisRecognition.start(); } catch (e) {} }, 100); } 
+                else { voiceTranscript.classList.add("hidden"); jarvisVoiceBtn.classList.remove("bg-indigo-600", "text-white", "jarvis-active"); jarvisMicIcon.className = "fa-solid fa-microphone-slash"; }
             };
         }
 
         function executeVoiceCommand(cmd) {
-            const isDeactivate = cmd.includes("desactiva") || cmd.includes("quitar") || cmd.includes("quita") || cmd.includes("apagar") || cmd.includes("oculta") || cmd.includes("esconde") || cmd.includes("sin ");
+            const isDeactivate = cmd.includes("desactiva") || cmd.includes("quitar") || cmd.includes("quita") || cmd.includes("apaga") || cmd.includes("deten") || cmd.includes("detén") || cmd.includes("salir") || cmd.includes("sin ");
             
-            if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("holograma") || cmd.includes("esquema")) {
-                if (isDeactivate) { setBlueprintMode(false); jarvisSpeak("Modo plano desactivado."); }
-                else { setBlueprintMode(true); jarvisSpeak("Modo plano activado."); }
-            } else if (cmd.includes("sólido") || cmd.includes("solido") || cmd.includes("normal") || cmd.includes("textura")) {
-                setBlueprintMode(false); jarvisSpeak("Modo plano desactivado. Texturas restauradas.");
+            // Prioridad absoluta a las acciones
+            if (cmd.includes("centra") || cmd.includes("reiniciar") || cmd.includes("restaurar") || cmd.includes("centro")) {
+                resetObject(); jarvisSpeak("Holograma centrado.");
+            } else if (cmd.includes("expande") || cmd.includes("explotar") || cmd.includes("desarmar") || cmd.includes("despiece") || cmd.includes("abrir piezas")) {
+                if (!hasActiveModel) loadCarouselItem(currentCarouselIndex, false);
+                targetExplode = 0.95; playSummonSound(); jarvisSpeak("Desplegando componentes.");
+            } else if (cmd.includes("armar") || cmd.includes("ensamblar") || cmd.includes("juntar") || cmd.includes("unir") || cmd.includes("cierra piezas")) {
+                targetExplode = 0.0; playLockSound(); jarvisSpeak("Componentes ensamblados.");
             } else if (cmd.includes("escáner") || cmd.includes("escaner") || cmd.includes("escanear") || cmd.includes("análisis")) {
                 if (isDeactivate) { setScannerMode(false); jarvisSpeak("Escáner desactivado."); }
                 else { setScannerMode(true); jarvisSpeak("Escáner láser iniciado."); }
-            } else if (cmd.includes("explotar") || cmd.includes("desarmar") || cmd.includes("despiece") || cmd.includes("abrir piezas")) {
-                if (!hasActiveModel) loadCarouselItem(currentCarouselIndex, false);
-                targetExplode = 0.9; playSummonSound(); jarvisSpeak("Desplegando componentes.");
-            } else if (cmd.includes("armar") || cmd.includes("ensamblar") || cmd.includes("juntar") || cmd.includes("unir")) {
-                targetExplode = 0.0; playLockSound(); jarvisSpeak("Componentes ensamblados.");
+            } else if (cmd.includes("cerrar") || cmd.includes("eliminar") || cmd.includes("borrar") || (cmd.includes("apaga") && !cmd.includes("plano") && !cmd.includes("escáner") && !cmd.includes("anillos"))) {
+                triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 }); jarvisSpeak("Cerrando proyección.");
             } else if (cmd.includes("siguiente") || cmd.includes("cambiar")) {
                 cycleCarousel(1); jarvisSpeak("Cargando siguiente modelo.");
             } else if (cmd.includes("anterior")) {
                 cycleCarousel(-1); jarvisSpeak("Modelo anterior.");
-            } else if (cmd.includes("centrar") || cmd.includes("reiniciar") || cmd.includes("restaurar")) {
-                resetObject(); jarvisSpeak("Holograma centrado.");
-            } else if (cmd.includes("cerrar") || cmd.includes("eliminar") || (cmd.includes("apagar") && !cmd.includes("plano") && !cmd.includes("escáner") && !cmd.includes("anillos")) || cmd.includes("borrar")) {
-                triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 }); jarvisSpeak("Cerrando proyección.");
             } else if (cmd.includes("anillos") || cmd.includes("telemetría")) {
                 if (isDeactivate) { showRingsCheckbox.checked = false; telemetryGroup.visible = false; jarvisSpeak("Anillos ocultos."); }
                 else { showRingsCheckbox.checked = true; telemetryGroup.visible = true; jarvisSpeak("Anillos visibles."); }
             } else if (cmd.includes("manos") || cmd.includes("esqueleto") || cmd.includes("sensores")) {
-                if (isDeactivate) { showSkeletonCheckbox.checked = false; jarvisSpeak("Sensores de mano ocultos."); }
-                else { showSkeletonCheckbox.checked = true; jarvisSpeak("Sensores de mano visibles."); }
-            } else if (cmd.includes("agrandar") || cmd.includes("aumentar escala") || cmd.includes("más grande")) {
+                if (isDeactivate) { showSkeletonCheckbox.checked = false; jarvisSpeak("Sensores ocultos."); }
+                else { showSkeletonCheckbox.checked = true; jarvisSpeak("Sensores visibles."); }
+            } else if (cmd.includes("agrandar") || cmd.includes("aumentar") || cmd.includes("más grande")) {
                 if (hasActiveModel) { targetScale *= 1.5; jarvisSpeak("Aumentando escala."); }
-            } else if (cmd.includes("achicar") || cmd.includes("reducir escala") || cmd.includes("más pequeño")) {
+            } else if (cmd.includes("achicar") || cmd.includes("reducir") || cmd.includes("más pequeño")) {
                 if (hasActiveModel) { targetScale *= 0.6; jarvisSpeak("Reduciendo escala."); }
+            } else if (cmd.includes("sólido") || cmd.includes("solido") || cmd.includes("normal") || cmd.includes("textura")) {
+                setBlueprintMode(false); jarvisSpeak("Texturas restauradas.");
+            } else if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("holograma") || cmd.includes("esquema")) {
+                if (isDeactivate) { setBlueprintMode(false); jarvisSpeak("Modo plano desactivado."); }
+                else { setBlueprintMode(true); jarvisSpeak("Modo plano activado."); }
             }
         }
 
@@ -784,7 +771,7 @@
         });
 
         // ==========================================
-        // ACTUALIZAR LÁSER 
+        // UPDATE DE LÁSER (Puntero 3D)
         // ==========================================
         function updateLaserInspection(indexTipPx) {
             if (!THREE || !raycaster || !hasActiveModel || inspectableMeshes.length === 0) { clearLaserHighlight(); return; }
@@ -798,8 +785,8 @@
                 for (const mesh of inspectableMeshes) {
                     tempBox.setFromObject(mesh); tempBox.getCenter(tempCenter);
                     const proj = tempCenter.clone().project(camera);
-                    const sx = ((proj.x + 1) * 0.5) * handCanvas.width, sy = ((-proj.y + 1) * 0.5) * handCanvas.height;
-                    const d = Math.hypot(sx - indexTipPx.x, sy - indexTipPx.y);
+                    const pxProj = normToScreenPx({ x: (proj.x + 1) / 2, y: (-proj.y + 1) / 2 });
+                    const d = dist2D(pxProj, indexTipPx);
                     if (d < bestDistPx) { bestDistPx = d; selectedMesh = mesh; hitPoint3D = tempCenter.clone(); }
                 }
             }
@@ -811,16 +798,16 @@
                     playScanBeep();
                 }
                 const projected = hitPoint3D.clone().project(camera);
-                const hitCanvasX = ((projected.x + 1) * 0.5) * handCanvas.width, hitCanvasY = ((-projected.y + 1) * 0.5) * handCanvas.height;
+                const hitCanvas = normToScreenPx({ x: (projected.x + 1) / 2, y: (-projected.y + 1) / 2 });
                 const tris = selectedMesh.geometry.index ? Math.round(selectedMesh.geometry.index.count / 3) : (selectedMesh.geometry.attributes.position ? Math.round(selectedMesh.geometry.attributes.position.count / 3) : 0);
                 const box = new THREE.Box3().setFromObject(selectedMesh); const sz = new THREE.Vector3(); box.getSize(sz);
-                laserHitInfo = { fingerPx: indexTipPx, hitPx: { x: hitCanvasX, y: hitCanvasY }, partName: selectedMesh.name, tris, dims: `${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)}m` };
+                laserHitInfo = { fingerPx: indexTipPx, hitPx: hitCanvas, partName: selectedMesh.name, tris, dims: `${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)}m` };
                 inspectedPartBadge.classList.remove("hidden"); inspectedPartBadge.querySelector("span").textContent = selectedMesh.name;
             } else {
                 clearLaserHighlight();
                 const objProj = objectGroup.position.clone().project(camera);
-                const objScreenX = ((objProj.x + 1) * 0.5) * handCanvas.width, objScreenY = ((-objProj.y + 1) * 0.5) * handCanvas.height;
-                const angleToObj = Math.atan2(objScreenY - indexTipPx.y, objScreenX - indexTipPx.x);
+                const objScreen = normToScreenPx({ x: (objProj.x + 1) / 2, y: (-objProj.y + 1) / 2 });
+                const angleToObj = Math.atan2(objScreen.y - indexTipPx.y, objScreen.x - indexTipPx.x);
                 laserHitInfo = { fingerPx: indexTipPx, hitPx: { x: indexTipPx.x + Math.cos(angleToObj) * 110, y: indexTipPx.y + Math.sin(angleToObj) * 110 }, partName: null };
             }
         }
@@ -834,7 +821,7 @@
         }
 
         // ==========================================
-        // INICIO SISTEMA CÁMARA
+        // ARRANQUE DEL SISTEMA
         // ==========================================
         let handLandmarker = null, lastVideoTime = -1, isLoopRunning = false, prevRotY = 0;
         const starkGesture = { armed: false, armedAt: 0, lastPalmDist: 1 };
@@ -882,6 +869,9 @@
             } catch (err) { gestureBadge.textContent = "Error de IA"; statusText.textContent = `Fallo en sensores: ${err.message}`; }
         }
 
+        // ==========================================
+        // MAIN LOOP (RENDER 3D Y GESTOS)
+        // ==========================================
         function mainLoop() {
             if (handCanvas.width !== window.innerWidth || handCanvas.height !== window.innerHeight) {
                 handCanvas.width = window.innerWidth; handCanvas.height = window.innerHeight;
@@ -916,9 +906,17 @@
                         objectGroup.rotation.y += 0.36;
                         const s = objectGroup.scale.x * 0.72; objectGroup.scale.set(s, s, s);
                     } else {
-                        if (gestureMode === "none" && !highlightedMesh) { targetQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.0045)); }
-                        objectGroup.position.lerp(targetPos, 0.24); objectGroup.quaternion.slerp(targetQuat, 0.26);
-                        const currentS = objectGroup.scale.x; const nextS = currentS + (targetScale - currentS) * 0.22; objectGroup.scale.set(nextS, nextS, nextS);
+                        // Solo rota en el eje Y si no lo estás agarrando, para que "no flote"
+                        if (gestureMode === "none" && !highlightedMesh) { 
+                            targetQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.0035)); 
+                        }
+
+                        // Lerp ajustado para que la traslación siga la mano de forma más rígida sin sentirse en hielo
+                        objectGroup.position.lerp(targetPos, 0.45); 
+                        objectGroup.quaternion.slerp(targetQuat, 0.45);
+                        const currentS = objectGroup.scale.x; 
+                        const nextS = currentS + (targetScale - currentS) * 0.45; 
+                        objectGroup.scale.set(nextS, nextS, nextS);
 
                         currentExplode += (targetExplode - currentExplode) * 0.18;
                         for (const mesh of inspectableMeshes) {
@@ -952,12 +950,10 @@
             requestAnimationFrame(mainLoop);
         }
 
-        // ==========================================
-        // GESTOS EN TIEMPO REAL
-        // ==========================================
         function processHands(results) {
             if (!THREE || !objectGroup) return;
             const activePinches = [], openHands = [], detectedHands = []; let pointingHand = null; const now = performance.now();
+            
             if (results.landmarks) {
                 for (let i = 0; i < results.landmarks.length; i++) {
                     const landmarks = results.landmarks[i], pose = classifyHandPose(landmarks), handQuat = getHandQuaternion(landmarks);
@@ -987,8 +983,10 @@
                         const { palmCenterDist, minTipDist } = getHandImpactDistance(openHand, fistHand);
                         const midPx = { x: (fistHand.palmPx.x + openHand.palmPx.x) / 2, y: (fistHand.palmPx.y + openHand.palmPx.y) / 2 };
                         drawLine(fistHand.palmPx, openHand.palmPx, "#f97316", 3);
+                        
                         if (palmCenterDist > 0.25) { starkGesture.armed = true; starkGesture.armedAt = now; starkGesture.lastPalmDist = palmCenterDist; gestureBadge.textContent = "Gesto Stark Armado"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400"; }
                         else if (starkGesture.armed) starkGesture.lastPalmDist = palmCenterDist;
+                        
                         if (starkGesture.armed && (minTipDist < 0.12 || palmCenterDist < 0.15)) { starkGesture.armed = false; triggerStarkDismissal(midPx); return; }
                     } else if (starkGesture.armed && activePinches.length === 0) {
                         const dHands = dist3D(detectedHands[0].palmNorm, detectedHands[1].palmNorm);
@@ -998,11 +996,10 @@
                 } else if (detectedHands.length === 1 && starkGesture.armed && starkGesture.lastPalmDist < 0.28) { starkGesture.armed = false; triggerStarkDismissal(detectedHands[0].palmPx); return; }
             }
 
-            // 2. SWIPE Y ROTACIÓN LIBRE
+            // 2. SWIPE Y ROTACIÓN LIBRE CON PALMA ABIERTA
             const singleOpenHand = (detectedHands.length === 1 && openHands.length === 1) ? openHands[0] : null;
             if (singleOpenHand && !starkGesture.armed) {
-                swipeTracker.missedFrames = 0;
-                const screenNormX = singleOpenHand.px.x / handCanvas.width;
+                swipeTracker.missedFrames = 0; const screenNormX = singleOpenHand.px.x / handCanvas.width;
                 swipeTracker.samples.push({ x: screenNormX, px: singleOpenHand.px, t: now });
                 swipeTracker.samples = swipeTracker.samples.filter(s => (now - s.t) < 650);
 
@@ -1011,11 +1008,10 @@
                     const dx = screenNormX - swipeTracker.samples[0].x;
                     if (Math.abs(dx) > 0.15) {
                         isSwiping = true; swipeTracker.lastSwipeAt = now; swipeTracker.samples = []; const step = dx > 0 ? 1 : -1; cycleCarousel(step);
-                        gestureMode = "swipe"; gestureBadge.textContent = step > 0 ? "Swipe → Siguiente 3D" : "← Swipe Anterior 3D"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
+                        gestureMode = "swipe"; gestureBadge.textContent = step > 0 ? "Swipe →" : "← Swipe"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
                         return;
                     }
                 }
-
                 if (!isSwiping && hasActiveModel && !isDismissing) {
                     if (gestureMode !== "spin") {
                         gestureMode = "spin"; grabAnchor.handQuat.copy(singleOpenHand.quat); grabAnchor.objQuat.copy(targetQuat);
@@ -1030,7 +1026,7 @@
             
             if (!hasActiveModel || isDismissing) return;
 
-            // 3. MODO 2 PINZAS
+            // 3. MODO 2 PINZAS (ESCALA + ROTACIÓN + MOVER)
             if (activePinches.length >= 2) {
                 const sorted = activePinches.slice(0, 2).sort((a, b) => a.world.x - b.world.x); const hLeft = sorted[0], hRight = sorted[1];
                 drawLine(hLeft.px, hRight.px, "#818cf8", 3);
@@ -1053,7 +1049,7 @@
                 return;
             }
 
-            // 4. VISTA EXPLOSIVA
+            // 4. VISTA EXPLOSIVA (2 PALMAS ABIERTAS)
             if (openHands.length >= 2 && !starkGesture.armed) {
                 const sorted = openHands.slice(0, 2).sort((a, b) => a.world.x - b.world.x); const pLeft = sorted[0], pRight = sorted[1];
                 const spanWorld = pLeft.world.distanceTo(pRight.world); drawLine(pLeft.px, pRight.px, "#22d3ee", 3);
@@ -1069,7 +1065,7 @@
                 return;
             }
 
-            // 5. MODO 1 PINZA
+            // 5. MODO 1 PINZA (MOVER Y GIRAR ESTRICTO)
             if (activePinches.length === 1) {
                 const hand = activePinches[0];
                 if (gestureMode !== "one") {
@@ -1093,7 +1089,7 @@
         }
 
         // ==========================================
-        // DIBUJOS 2D
+        // DIBUJO EN CANVAS 2D
         // ==========================================
         function drawSwipeTrail() {
             if (swipeTracker.samples.length < 2) return;
