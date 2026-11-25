@@ -90,6 +90,9 @@
                     <h4 id="card-part-title" class="text-sm font-bold text-white leading-tight">--</h4>
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
+                    <button id="isolate-card-btn" title="Aislar esta pieza para verla sola" class="p-1.5 rounded-lg bg-violet-600/35 hover:bg-violet-600/60 text-violet-200 text-xs transition cursor-pointer">
+                        <i class="fa-solid fa-cube"></i>
+                    </button>
                     <button id="read-part-btn" title="Leer en voz alta" class="p-1.5 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-200 text-xs transition cursor-pointer">
                         <i class="fa-solid fa-volume-high"></i>
                     </button>
@@ -104,7 +107,7 @@
             </div>
         </div>
 
-        <!-- Modal de Edición Docente para Piezas (.glb o biblioteca) -->
+        <!-- Modal de Edición Docente -->
         <div id="edit-note-modal" class="hidden fixed inset-0 z-40 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto">
             <div class="bg-gray-900 border border-cyan-500/50 rounded-2xl p-5 max-w-md w-full space-y-3.5 shadow-2xl">
                 <div class="flex justify-between items-center border-b border-gray-800 pb-2">
@@ -165,10 +168,10 @@
                 <p class="text-[11px] font-mono text-cyan-400/80">Laboratorio Interactivo para Enseñanza</p>
             </div>
             <div class="text-[11px] text-gray-300 leading-relaxed text-left space-y-1.5 bg-gray-950/70 p-3.5 rounded-2xl border border-gray-800">
-                <p><strong class="text-sky-400">Palma Abierta:</strong> Gira tu muñeca para rotar el modelo (queda quieto al soltarlo para apuntar fácil).</p>
-                <p><strong class="text-rose-400">Dedo Índice (Láser):</strong> Estira el índice para señalar piezas o dibujar en <em>Modo Pizarra</em>.</p>
-                <p><strong class="text-purple-400">Índice + Medio Juntos:</strong> Desliza para cambiar entre modelos educativos.</p>
-                <p><strong class="text-emerald-400">Voz Chumingo:</strong> <em>"Activa 360"</em>, <em>"Desactiva 360"</em>, <em>"Detener animación"</em>, <em>"Explica esta pieza"</em>, <em>"Expandir"</em>.</p>
+                <p><strong class="text-rose-400">Dedo Índice (Láser):</strong> Estira el índice para seleccionar una pieza y ver su ficha.</p>
+                <p><strong class="text-violet-400">Aislar Pieza:</strong> Señala una parte y di <em>"Aislar pieza"</em> para estudiarla sola en el centro; di <em>"Mostrar todo"</em> para volver.</p>
+                <p><strong class="text-sky-400">Palma Abierta:</strong> Gira tu muñeca para rotar el modelo o la pieza aislada.</p>
+                <p><strong class="text-emerald-400">Voz Chumingo:</strong> <em>"Expandir"</em>, <em>"Contrae modelo"</em>, <em>"Activa 360"</em>, <em>"Corte transversal"</em>, <em>"Explica esta pieza"</em>.</p>
             </div>
             <button id="launch-btn" class="w-full py-3.5 px-5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-power-off"></i> Iniciar CHUMINGO 3D
@@ -210,6 +213,11 @@
                     <button id="next-model-btn" class="px-2 py-2 text-cyan-400 hover:bg-gray-800 transition cursor-pointer"><i class="fa-solid fa-chevron-right text-xs"></i></button>
                 </div>
 
+                <!-- Botón Aislar / Restaurar Pieza -->
+                <button id="isolate-btn" title="Aislar pieza seleccionada o mostrar modelo completo" class="bg-gray-950/90 hover:bg-gray-800 text-violet-300 border border-violet-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                    <i class="fa-solid fa-cube"></i><span id="isolate-btn-label" class="hidden md:inline">Aislar</span>
+                </button>
+
                 <!-- Control de Giro 360 -->
                 <button id="spin360-btn" title="Activar o desactivar rotación continua 360°" class="bg-gray-950/90 hover:bg-gray-800 text-cyan-300 border border-cyan-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
                     <i id="spin360-icon" class="fa-solid fa-rotate"></i><span class="hidden md:inline">360°</span>
@@ -217,17 +225,17 @@
 
                 <!-- Control de Animación del Modelo (.glb) -->
                 <button id="anim-toggle-btn" title="Pausar o activar animación del modelo" class="hidden bg-teal-600 text-white border border-teal-400/50 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i id="anim-toggle-icon" class="fa-solid fa-pause"></i><span class="hidden md:inline">Animación</span>
+                    <i id="anim-toggle-icon" class="fa-solid fa-pause"></i><span class="hidden lg:inline">Animación</span>
                 </button>
 
                 <!-- Corte Transversal -->
                 <button id="slice-btn" title="Corte Transversal en Tiempo Real" class="bg-gray-950/90 hover:bg-gray-800 text-amber-300 border border-amber-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i class="fa-solid fa-scissors"></i><span class="hidden md:inline">Corte</span>
+                    <i class="fa-solid fa-scissors"></i><span class="hidden lg:inline">Corte</span>
                 </button>
 
                 <!-- Pizarra Espacial 3D -->
                 <button id="draw-btn" title="Pizarra Espacial 3D (Dibuja con el índice)" class="bg-gray-950/90 hover:bg-gray-800 text-fuchsia-300 border border-fuchsia-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i class="fa-solid fa-paintbrush"></i><span class="hidden md:inline">Pizarra</span>
+                    <i class="fa-solid fa-paintbrush"></i><span class="hidden lg:inline">Pizarra</span>
                 </button>
 
                 <!-- Limpiar Pizarra -->
@@ -236,11 +244,11 @@
                 </button>
 
                 <button id="blueprint-btn" title="Modo Plano" class="bg-gray-950/90 hover:bg-gray-800 text-cyan-300 border border-cyan-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i class="fa-solid fa-border-all"></i><span class="hidden lg:inline">Plano</span>
+                    <i class="fa-solid fa-border-all"></i><span class="hidden xl:inline">Plano</span>
                 </button>
 
                 <button id="scanner-btn" title="Escáner Estructural" class="bg-gray-950/90 hover:bg-gray-800 text-sky-300 border border-sky-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i class="fa-solid fa-barcode"></i><span class="hidden lg:inline">Escáner</span>
+                    <i class="fa-solid fa-barcode"></i><span class="hidden xl:inline">Escáner</span>
                 </button>
 
                 <button id="chumingo-voice-btn" title="Micrófono CHUMINGO" class="bg-gray-950/90 hover:bg-gray-800 text-indigo-300 border border-indigo-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
@@ -290,6 +298,9 @@
         const dragOverlay = document.getElementById("drag-overlay"), prevModelBtn = document.getElementById("prev-model-btn");
         const nextModelBtn = document.getElementById("next-model-btn"), shapeSelect = document.getElementById("shape-select");
 
+        const isolateBtn = document.getElementById("isolate-btn");
+        const isolateBtnLabel = document.getElementById("isolate-btn-label");
+        const isolateCardBtn = document.getElementById("isolate-card-btn");
         const spin360Btn = document.getElementById("spin360-btn");
         const spin360Icon = document.getElementById("spin360-icon");
         const animToggleBtn = document.getElementById("anim-toggle-btn");
@@ -513,7 +524,7 @@
         }
 
         // ==========================================
-        // 6. THREE.JS, GIRO 360, ANIMACIÓN Y CORTE TRANSVERSAL
+        // 6. THREE.JS, AISLAMIENTO DE PIEZA, GIRO 360 Y CORTE
         // ==========================================
         let THREE = null, GLTFLoader = null, DRACOLoader = null, OBJLoader = null, STLLoader = null;
         let scene, camera, renderer, objectGroup, modelSlot, drawingGroup, telemetryGroup, scannerBar, sliceVisualPlane, clock, raycaster;
@@ -522,6 +533,10 @@
         let isAnimationPlaying = true;
         let hasModelAnimation = false;
         let isAutoSpin360 = false;
+
+        // Estado de Aislamiento de Pieza Individual
+        let isolatedMesh = null;
+        let preIsolateState = null;
 
         let targetPos, targetQuat, grabAnchor;
         let targetScale = 1.0, targetExplode = 0.0, currentExplode = 0.0;
@@ -643,6 +658,122 @@
             scene.add(sliceVisualPlane);
         }
 
+        // ==========================================
+        // AISLAMIENTO INDIVIDUAL DE PIEZA
+        // ==========================================
+        function isolateSelectedPart(targetMesh = null) {
+            const meshToIsolate = targetMesh || highlightedMesh || lastSelectedMeshForCard;
+            if (!meshToIsolate || !hasActiveModel) {
+                chumingoSpeak("Señala primero una pieza con tu dedo índice para aislarla.");
+                return false;
+            }
+
+            if (isolatedMesh === meshToIsolate) return true;
+
+            // Guardar estado previo del conjunto completo antes de aislar
+            if (!isolatedMesh) {
+                preIsolateState = {
+                    explode: targetExplode,
+                    scale: targetScale,
+                    pos: targetPos.clone()
+                };
+            }
+
+            isolatedMesh = meshToIsolate;
+
+            // Limpiar resaltado rojo láser para ver la pieza con su material real
+            clearLaserHighlight();
+
+            // Ocultar todas las demás piezas y dejar visible solo la seleccionada
+            inspectableMeshes.forEach((m) => {
+                m.visible = (m === isolatedMesh);
+            });
+
+            // Contraer expansión para que la pieza quede centrada y ampliar suavemente si es pequeña
+            targetExplode = 0.0;
+            currentExplode = 0.0;
+            if (isolatedMesh.userData.origPos) {
+                isolatedMesh.position.copy(isolatedMesh.userData.origPos);
+            }
+
+            // Centrar la pieza aislada en el origen de objectGroup
+            objectGroup.updateMatrixWorld(true);
+            const box = new THREE.Box3().setFromObject(isolatedMesh);
+            const centerWorld = new THREE.Vector3();
+            const sizeWorld = new THREE.Vector3();
+            box.getCenter(centerWorld);
+            box.getSize(sizeWorld);
+
+            const localOffset = objectGroup.worldToLocal(centerWorld.clone());
+            modelSlot.position.sub(localOffset);
+
+            const maxDim = Math.max(sizeWorld.x, sizeWorld.y, sizeWorld.z);
+            if (maxDim > 0 && maxDim < 1.1) {
+                targetScale = Math.min(2.4, 1.35 / maxDim);
+            } else {
+                targetScale = 1.0;
+            }
+            targetPos.set(0, 0, 0);
+
+            updateIsolateUI(true);
+            showDidacticCardForMesh(isolatedMesh);
+            playSummonSound();
+            statusText.textContent = `Pieza aislada: ${isolatedMesh.name}`;
+            if (isScannerMode) updateScannerStats();
+            return true;
+        }
+
+        function exitPartIsolation(announce = false) {
+            if (!isolatedMesh) return;
+            isolatedMesh = null;
+
+            inspectableMeshes.forEach((m) => {
+                m.visible = true;
+            });
+
+            // Restaurar posición centrada del modelo completo
+            modelSlot.position.set(0, 0, 0);
+
+            if (preIsolateState) {
+                targetExplode = preIsolateState.explode;
+                targetScale = preIsolateState.scale;
+                targetPos.copy(preIsolateState.pos);
+                preIsolateState = null;
+            }
+
+            updateIsolateUI(false);
+            playLockSound();
+            if (hasActiveModel) {
+                statusText.textContent = `Modelo completo: ${currentModelTitle}`;
+                if (isScannerMode) updateScannerStats();
+            }
+            if (announce) chumingoSpeak("Mostrando modelo completo.");
+        }
+
+        function updateIsolateUI(isIsolated) {
+            isolateBtn.classList.toggle("bg-violet-600", isIsolated);
+            isolateBtn.classList.toggle("text-white", isIsolated);
+            isolateBtn.classList.toggle("bg-gray-950/90", !isIsolated);
+            isolateBtn.classList.toggle("text-violet-300", !isIsolated);
+            isolateBtnLabel.textContent = isIsolated ? "Ver Todo" : "Aislar";
+        }
+
+        isolateBtn.addEventListener("click", () => {
+            if (isolatedMesh) {
+                exitPartIsolation(true);
+            } else if (isolateSelectedPart()) {
+                chumingoSpeak(`Aislando ${isolatedMesh.name}.`);
+            }
+        });
+
+        isolateCardBtn.addEventListener("click", () => {
+            if (isolatedMesh && isolatedMesh === lastSelectedMeshForCard) {
+                exitPartIsolation(true);
+            } else if (isolateSelectedPart(lastSelectedMeshForCard)) {
+                chumingoSpeak(`Aislando ${isolatedMesh.name}.`);
+            }
+        });
+
         // Control de Giro Continuo 360°
         function setAutoSpin360(enabled) {
             isAutoSpin360 = enabled;
@@ -653,8 +784,8 @@
             spin360Icon.classList.toggle("fa-spin", enabled);
             if (hasActiveModel) {
                 statusText.textContent = enabled
-                    ? `Rotación 360° activa: ${currentModelTitle}`
-                    : `Rotación 360° detenida: ${currentModelTitle}`;
+                    ? `Rotación 360° activa: ${isolatedMesh ? isolatedMesh.name : currentModelTitle}`
+                    : `Rotación 360° detenida: ${isolatedMesh ? isolatedMesh.name : currentModelTitle}`;
             }
         }
 
@@ -786,15 +917,17 @@
 
         function updateScannerStats() {
             if (!hasActiveModel) return;
+            const activeList = isolatedMesh ? [isolatedMesh] : inspectableMeshes;
             let totalVerts = 0, totalTris = 0;
-            inspectableMeshes.forEach(mesh => {
+            activeList.forEach(mesh => {
                 if (mesh.geometry && mesh.geometry.attributes.position) {
                     totalVerts += mesh.geometry.attributes.position.count;
                     totalTris += mesh.geometry.index ? mesh.geometry.index.count / 3 : mesh.geometry.attributes.position.count / 3;
                 }
             });
-            const box = new THREE.Box3().setFromObject(modelSlot), size = new THREE.Vector3(); box.getSize(size);
-            document.getElementById("scan-parts").textContent = inspectableMeshes.length;
+            const targetBoxObj = isolatedMesh || modelSlot;
+            const box = new THREE.Box3().setFromObject(targetBoxObj), size = new THREE.Vector3(); box.getSize(size);
+            document.getElementById("scan-parts").textContent = activeList.length;
             document.getElementById("scan-verts").textContent = Math.round(totalVerts).toLocaleString();
             document.getElementById("scan-tris").textContent = Math.round(totalTris).toLocaleString();
             document.getElementById("scan-x").textContent = size.x.toFixed(2) + "m";
@@ -1043,11 +1176,17 @@
 
         function clearCurrentModel() {
             if (!modelSlot) return;
+            isolatedMesh = null;
+            preIsolateState = null;
+            updateIsolateUI(false);
+
             highlightedMesh = null; lastSelectedMeshForCard = null; laserHitInfo = null;
             inspectedPartBadge.classList.add("hidden");
             didacticCard.classList.add("hidden");
             hasModelAnimation = false;
             animToggleBtn.classList.add("hidden");
+
+            modelSlot.position.set(0, 0, 0);
 
             if (animationMixer) { animationMixer.stopAllAction(); animationMixer = null; }
             modelSlot.traverse((child) => {
@@ -1297,6 +1436,7 @@
 
         function resetObject() {
             if (!hasActiveModel) { loadCarouselItem(currentCarouselIndex, true); return; }
+            if (isolatedMesh) exitPartIsolation(false);
             targetPos.set(0, 0, 0); targetQuat.setFromEuler(new THREE.Euler(0.25, 0.35, 0));
             targetScale = 1.0; targetExplode = 0.0; gestureMode = "none"; playLockSound();
         }
@@ -1369,7 +1509,22 @@
                 cmd.includes("pausar") || cmd.includes("salir") ||
                 cmd.includes("sin ");
 
-            // 1. MODO GIRO CONTINUO 360°
+            // 1. AISLAR PIEZA INDIVIDUAL O VOLVER A VER TODO
+            if (cmd.includes("aisla") || cmd.includes("enfoca") || cmd.includes("solo esta") || cmd.includes("individual")) {
+                if (hasTurnOff) {
+                    exitPartIsolation(true);
+                } else if (isolateSelectedPart()) {
+                    chumingoSpeak(`Aislando ${isolatedMesh.name}.`);
+                }
+                return;
+            }
+
+            if (cmd.includes("mostrar todo") || cmd.includes("muestra todo") || cmd.includes("ver todo") || cmd.includes("modelo completo") || cmd.includes("restaurar piezas")) {
+                exitPartIsolation(true);
+                return;
+            }
+
+            // 2. MODO GIRO CONTINUO 360°
             if (cmd.includes("360") || cmd.includes("trescientos sesenta") || cmd.includes("giro continuo") || cmd.includes("rotacion continua")) {
                 if (hasTurnOff) {
                     setAutoSpin360(false);
@@ -1382,7 +1537,7 @@
                 return;
             }
 
-            // 2. CONTROL DE ANIMACIÓN DEL MODELO 3D
+            // 3. CONTROL DE ANIMACIÓN DEL MODELO 3D
             if (cmd.includes("animacion") || cmd.includes("movimiento")) {
                 if (!hasModelAnimation) {
                     chumingoSpeak("Este modelo no tiene una animación integrada.");
@@ -1398,13 +1553,13 @@
                 return;
             }
 
-            // 3. EXPLICAR PIEZA SELECCIONADA (FICHA DIDÁCTICA)
+            // 4. EXPLICAR PIEZA SELECCIONADA (FICHA DIDÁCTICA)
             if (cmd.includes("explica") || cmd.includes("que es") || cmd.includes("funcion") || cmd.includes("leer ficha")) {
                 explainCurrentDidacticPiece();
                 return;
             }
 
-            // 4. CORTE TRANSVERSAL / SECCIÓN
+            // 5. CORTE TRANSVERSAL / SECCIÓN
             if (cmd.includes("corte") || cmd.includes("seccion") || cmd.includes("cortar") || cmd.includes("interior")) {
                 if (hasTurnOff) {
                     setSliceMode(false);
@@ -1416,7 +1571,7 @@
                 return;
             }
 
-            // 5. PIZARRA ESPACIAL 3D
+            // 6. PIZARRA ESPACIAL 3D
             if (cmd.includes("pizarra") || cmd.includes("dibuj") || cmd.includes("trazo")) {
                 if (cmd.includes("borra") || cmd.includes("limpia")) {
                     clearSpatialBoard();
@@ -1431,7 +1586,7 @@
                 return;
             }
 
-            // 6. MODO PLANO / BLUEPRINT
+            // 7. MODO PLANO / BLUEPRINT
             if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("esquema")) {
                 if (hasTurnOff) {
                     setBlueprintMode(false);
@@ -1449,9 +1604,10 @@
                 return;
             }
 
-            // 7. EXPANDIR / CONTRAER PIEZAS
+            // 8. EXPANDIR / CONTRAER PIEZAS
             if (cmd.includes("expand") || cmd.includes("explot") || cmd.includes("desarm") || cmd.includes("despiece") || cmd.includes("abrir pieza") || cmd.includes("separa")) {
                 if (!hasActiveModel) loadCarouselItem(currentCarouselIndex, false);
+                if (isolatedMesh) exitPartIsolation(false);
                 targetExplode = 0.95;
                 playSummonSound();
                 chumingoSpeak("Expandiendo modelo.");
@@ -1459,20 +1615,21 @@
             }
 
             if (cmd.includes("contra") || cmd.includes("arma") || cmd.includes("ensambl") || cmd.includes("junta") || cmd.includes("unir") || cmd.includes("une") || cmd.includes("normalidad")) {
+                if (isolatedMesh) exitPartIsolation(false);
                 targetExplode = 0.0;
                 playLockSound();
                 chumingoSpeak("Contrayendo modelo a su estado normal.");
                 return;
             }
 
-            // 8. CENTRAR HOLOGRAMA
+            // 9. CENTRAR HOLOGRAMA
             if (cmd.includes("centra") || cmd.includes("centro") || cmd.includes("reinicia") || cmd.includes("restaura")) {
                 resetObject();
                 chumingoSpeak("Holograma centrado.");
                 return;
             }
 
-            // 9. ESCÁNER LÁSER
+            // 10. ESCÁNER LÁSER
             if (cmd.includes("escan") || cmd.includes("analisis")) {
                 if (hasTurnOff) {
                     setScannerMode(false);
@@ -1484,7 +1641,7 @@
                 return;
             }
 
-            // 10. BIBLIOTECA DE MODELOS EDUCATIVOS
+            // 11. BIBLIOTECA DE MODELOS EDUCATIVOS
             if (cmd.includes("volcan")) { loadCarouselItem(0, true); chumingoSpeak("Cargando volcán en capas."); return; }
             if (cmd.includes("adn") || cmd.includes("molecula")) { loadCarouselItem(1, true); chumingoSpeak("Cargando molécula de A D N."); return; }
             if (cmd.includes("atomo") || cmd.includes("bohr")) { loadCarouselItem(2, true); chumingoSpeak("Cargando átomo de Bohr."); return; }
@@ -1502,7 +1659,7 @@
                 return;
             }
 
-            // 11. ANILLOS Y SENSORES
+            // 12. ANILLOS Y SENSORES
             if (cmd.includes("anillo") || cmd.includes("telemetria")) {
                 if (hasTurnOff) { showRingsCheckbox.checked = false; telemetryGroup.visible = false; chumingoSpeak("Anillos ocultos."); }
                 else { showRingsCheckbox.checked = true; telemetryGroup.visible = true; chumingoSpeak("Anillos visibles."); }
@@ -1514,7 +1671,7 @@
                 return;
             }
 
-            // 12. ESCALA
+            // 13. ESCALA
             if (cmd.includes("agrand") || cmd.includes("aumenta") || cmd.includes("mas grande")) {
                 if (hasActiveModel) { targetScale = Math.min(3.5, targetScale * 1.45); chumingoSpeak("Agrandando modelo."); }
                 return;
@@ -1524,7 +1681,7 @@
                 return;
             }
 
-            // 13. CERRAR PROYECCIÓN
+            // 14. CERRAR PROYECCIÓN
             if (cmd.includes("cerra") || cmd.includes("cierra") || cmd.includes("elimina") || cmd.includes("borra") || hasTurnOff) {
                 triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 });
                 chumingoSpeak("Cerrando proyección.");
@@ -1542,15 +1699,16 @@
         // 12. LÁSER DE INSPECCIÓN Y FICHAS DIDÁCTICAS
         // ==========================================
         function updateLaserInspection(indexTipPx) {
-            if (!THREE || !raycaster || !hasActiveModel || inspectableMeshes.length === 0) { clearLaserHighlight(); return; }
+            const visibleMeshes = inspectableMeshes.filter(m => m.visible);
+            if (!THREE || !raycaster || !hasActiveModel || visibleMeshes.length === 0) { clearLaserHighlight(); return; }
             const ndc = screenPxToNDC(indexTipPx);
             raycaster.setFromCamera(new THREE.Vector2(ndc.x, ndc.y), camera);
-            const hits = raycaster.intersectObjects(inspectableMeshes, false);
+            const hits = raycaster.intersectObjects(visibleMeshes, false);
             let selectedMesh = null, hitPoint3D = null;
             if (hits.length > 0) { selectedMesh = hits[0].object; hitPoint3D = hits[0].point; }
             else {
                 let bestDistPx = 45; const tempBox = new THREE.Box3(), tempCenter = new THREE.Vector3();
-                for (const mesh of inspectableMeshes) {
+                for (const mesh of visibleMeshes) {
                     tempBox.setFromObject(mesh); tempBox.getCenter(tempCenter);
                     const proj = tempCenter.clone().project(camera);
                     const pxProj = normToScreenPx({ x: (proj.x + 1) / 2, y: (-proj.y + 1) / 2 });
@@ -1684,7 +1842,6 @@
                         objectGroup.rotation.y += 0.36;
                         const s = objectGroup.scale.x * 0.72; objectGroup.scale.set(s, s, s);
                     } else {
-                        // Giro continuo 360° solo si fue activado por voz o botón
                         if (isAutoSpin360 && gestureMode === "none" && !highlightedMesh && !isDrawMode) {
                             targetQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.014));
                         }
@@ -1695,10 +1852,12 @@
                         const nextS = currentS + (targetScale - currentS) * 0.45; 
                         objectGroup.scale.set(nextS, nextS, nextS);
 
-                        currentExplode += (targetExplode - currentExplode) * 0.18;
-                        for (const mesh of inspectableMeshes) {
-                            if (mesh.userData.origPos && mesh.userData.localExplodeDelta) {
-                                mesh.position.copy(mesh.userData.origPos).addScaledVector(mesh.userData.localExplodeDelta, currentExplode);
+                        if (!isolatedMesh) {
+                            currentExplode += (targetExplode - currentExplode) * 0.18;
+                            for (const mesh of inspectableMeshes) {
+                                if (mesh.userData.origPos && mesh.userData.localExplodeDelta) {
+                                    mesh.position.copy(mesh.userData.origPos).addScaledVector(mesh.userData.localExplodeDelta, currentExplode);
+                                }
                             }
                         }
 
@@ -1721,7 +1880,7 @@
                         }
 
                         scaleDisplay.textContent = `${Math.round(nextS * 100)}%`;
-                        explodeDisplay.textContent = `${Math.round(currentExplode * 100)}%`;
+                        explodeDisplay.textContent = isolatedMesh ? "AISLADO" : `${Math.round(currentExplode * 100)}%`;
                         const degX = Math.round(((objectGroup.rotation.x * 180) / Math.PI) % 360), degY = Math.round(((objectGroup.rotation.y * 180) / Math.PI) % 360);
                         rotDisplay.textContent = `${degX}°, ${degY}°`;
                     }
@@ -1878,6 +2037,7 @@
 
             // 5. VISTA EXPLOSIVA (2 PALMAS ABIERTAS)
             if (openHands.length >= 2 && !starkGesture.armed) {
+                if (isolatedMesh) exitPartIsolation(false);
                 const sorted = openHands.slice(0, 2).sort((a, b) => a.world.x - b.world.x); const pLeft = sorted[0], pRight = sorted[1];
                 const spanWorld = pLeft.world.distanceTo(pRight.world); drawLine(pLeft.px, pRight.px, "#22d3ee", 3);
                 
