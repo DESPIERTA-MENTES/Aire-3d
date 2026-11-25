@@ -169,9 +169,9 @@
             </div>
             <div class="text-[11px] text-gray-300 leading-relaxed text-left space-y-1.5 bg-gray-950/70 p-3.5 rounded-2xl border border-gray-800">
                 <p><strong class="text-rose-400">Dedo Índice (Láser):</strong> Estira el índice para seleccionar una pieza y ver su ficha.</p>
-                <p><strong class="text-violet-400">Aislar Pieza:</strong> Señala una parte y di <em>"Aislar pieza"</em> para estudiarla sola en el centro; di <em>"Mostrar todo"</em> para volver.</p>
+                <p><strong class="text-violet-400">Aislar Pieza:</strong> Señala una parte y di <em>"Aislar pieza"</em> para estudiarla sola; di <em>"Mostrar todo"</em> para volver.</p>
                 <p><strong class="text-sky-400">Palma Abierta:</strong> Gira tu muñeca para rotar el modelo o la pieza aislada.</p>
-                <p><strong class="text-emerald-400">Voz Chumingo:</strong> <em>"Expandir"</em>, <em>"Contrae modelo"</em>, <em>"Activa 360"</em>, <em>"Corte transversal"</em>, <em>"Explica esta pieza"</em>.</p>
+                <p><strong class="text-emerald-400">Voz Chumingo:</strong> <em>"Aumenta tamaño 10%"</em>, <em>"Reduce tamaño 20%"</em>, <em>"Activa 360"</em>, <em>"Expandir"</em>, <em>"Corte transversal"</em>.</p>
             </div>
             <button id="launch-btn" class="w-full py-3.5 px-5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-power-off"></i> Iniciar CHUMINGO 3D
@@ -534,7 +534,6 @@
         let hasModelAnimation = false;
         let isAutoSpin360 = false;
 
-        // Estado de Aislamiento de Pieza Individual
         let isolatedMesh = null;
         let preIsolateState = null;
 
@@ -670,7 +669,6 @@
 
             if (isolatedMesh === meshToIsolate) return true;
 
-            // Guardar estado previo del conjunto completo antes de aislar
             if (!isolatedMesh) {
                 preIsolateState = {
                     explode: targetExplode,
@@ -680,23 +678,18 @@
             }
 
             isolatedMesh = meshToIsolate;
-
-            // Limpiar resaltado rojo láser para ver la pieza con su material real
             clearLaserHighlight();
 
-            // Ocultar todas las demás piezas y dejar visible solo la seleccionada
             inspectableMeshes.forEach((m) => {
                 m.visible = (m === isolatedMesh);
             });
 
-            // Contraer expansión para que la pieza quede centrada y ampliar suavemente si es pequeña
             targetExplode = 0.0;
             currentExplode = 0.0;
             if (isolatedMesh.userData.origPos) {
                 isolatedMesh.position.copy(isolatedMesh.userData.origPos);
             }
 
-            // Centrar la pieza aislada en el origen de objectGroup
             objectGroup.updateMatrixWorld(true);
             const box = new THREE.Box3().setFromObject(isolatedMesh);
             const centerWorld = new THREE.Vector3();
@@ -731,7 +724,6 @@
                 m.visible = true;
             });
 
-            // Restaurar posición centrada del modelo completo
             modelSlot.position.set(0, 0, 0);
 
             if (preIsolateState) {
@@ -1491,9 +1483,27 @@
                 .toLowerCase()
                 .normalize("NFD")
                 .replace(/[\u0300-\u036f]/g, "")
-                .replace(/[.,!?¿¡]/g, "")
+                .replace(/[.,!?¿¡%]/g, "")
                 .replace(/\s+/g, " ")
                 .trim();
+        }
+
+        // Extrae el porcentaje dicho por voz (ej: "10", "veinte", "15 por ciento")
+        function extractSpokenPercentage(cmd, fallback = 15) {
+            const numMatch = cmd.match(/(\d+(?:[.,]\d+)?)/);
+            if (numMatch) {
+                const val = parseFloat(numMatch[1].replace(",", "."));
+                if (!isNaN(val) && val > 0) return val;
+            }
+            const wordsMap = {
+                "cinco": 5, "diez": 10, "quince": 15, "veinte": 20, "veinticinco": 25,
+                "treinta": 30, "cuarenta": 40, "cincuenta": 50, "sesenta": 60,
+                "setenta": 70, "ochenta": 80, "noventa": 90, "cien": 100, "ciento": 100, "doble": 100
+            };
+            for (const [word, val] of Object.entries(wordsMap)) {
+                if (cmd.includes(word)) return val;
+            }
+            return fallback;
         }
 
         function executeVoiceCommand(rawCmd) {
@@ -1604,7 +1614,35 @@
                 return;
             }
 
-            // 8. EXPANDIR / CONTRAER PIEZAS
+            // 8. ESCALA PORCENTUAL (AUMENTAR / REDUCIR EN %)
+            if (cmd.includes("aumenta") || cmd.includes("agrand") || cmd.includes("sube") || cmd.includes("mas grande") || cmd.includes("amplia")) {
+                if (hasActiveModel) {
+                    const pct = extractSpokenPercentage(cmd, 15);
+                    targetScale = Math.min(4.0, Math.max(0.15, targetScale + (pct / 100)));
+                    const finalPct = Math.round(targetScale * 100);
+                    chumingoSpeak(`Tamaño aumentado un ${pct} por ciento. Escala actual al ${finalPct} por ciento.`);
+                }
+                return;
+            }
+            if (cmd.includes("reduce") || cmd.includes("reduci") || cmd.includes("achic") || cmd.includes("disminuy") || cmd.includes("baja") || cmd.includes("mas pequeno")) {
+                if (hasActiveModel) {
+                    const pct = extractSpokenPercentage(cmd, 15);
+                    targetScale = Math.min(4.0, Math.max(0.15, targetScale - (pct / 100)));
+                    const finalPct = Math.round(targetScale * 100);
+                    chumingoSpeak(`Tamaño reducido un ${pct} por ciento. Escala actual al ${finalPct} por ciento.`);
+                }
+                return;
+            }
+            if ((cmd.includes("tamano") || cmd.includes("escala")) && (cmd.includes("por ciento") || /\d+/.test(cmd))) {
+                if (hasActiveModel) {
+                    const directPct = extractSpokenPercentage(cmd, 100);
+                    targetScale = Math.min(4.0, Math.max(0.15, directPct / 100));
+                    chumingoSpeak(`Escala ajustada al ${Math.round(targetScale * 100)} por ciento.`);
+                }
+                return;
+            }
+
+            // 9. EXPANDIR / CONTRAER PIEZAS
             if (cmd.includes("expand") || cmd.includes("explot") || cmd.includes("desarm") || cmd.includes("despiece") || cmd.includes("abrir pieza") || cmd.includes("separa")) {
                 if (!hasActiveModel) loadCarouselItem(currentCarouselIndex, false);
                 if (isolatedMesh) exitPartIsolation(false);
@@ -1622,14 +1660,14 @@
                 return;
             }
 
-            // 9. CENTRAR HOLOGRAMA
+            // 10. CENTRAR HOLOGRAMA
             if (cmd.includes("centra") || cmd.includes("centro") || cmd.includes("reinicia") || cmd.includes("restaura")) {
                 resetObject();
                 chumingoSpeak("Holograma centrado.");
                 return;
             }
 
-            // 10. ESCÁNER LÁSER
+            // 11. ESCÁNER LÁSER
             if (cmd.includes("escan") || cmd.includes("analisis")) {
                 if (hasTurnOff) {
                     setScannerMode(false);
@@ -1641,7 +1679,7 @@
                 return;
             }
 
-            // 11. BIBLIOTECA DE MODELOS EDUCATIVOS
+            // 12. BIBLIOTECA DE MODELOS EDUCATIVOS
             if (cmd.includes("volcan")) { loadCarouselItem(0, true); chumingoSpeak("Cargando volcán en capas."); return; }
             if (cmd.includes("adn") || cmd.includes("molecula")) { loadCarouselItem(1, true); chumingoSpeak("Cargando molécula de A D N."); return; }
             if (cmd.includes("atomo") || cmd.includes("bohr")) { loadCarouselItem(2, true); chumingoSpeak("Cargando átomo de Bohr."); return; }
@@ -1659,7 +1697,7 @@
                 return;
             }
 
-            // 12. ANILLOS Y SENSORES
+            // 13. ANILLOS Y SENSORES
             if (cmd.includes("anillo") || cmd.includes("telemetria")) {
                 if (hasTurnOff) { showRingsCheckbox.checked = false; telemetryGroup.visible = false; chumingoSpeak("Anillos ocultos."); }
                 else { showRingsCheckbox.checked = true; telemetryGroup.visible = true; chumingoSpeak("Anillos visibles."); }
@@ -1668,16 +1706,6 @@
             if (cmd.includes("mano") || cmd.includes("esqueleto") || cmd.includes("sensor")) {
                 if (hasTurnOff) { showSkeletonCheckbox.checked = false; chumingoSpeak("Sensores de mano ocultos."); }
                 else { showSkeletonCheckbox.checked = true; chumingoSpeak("Sensores de mano visibles."); }
-                return;
-            }
-
-            // 13. ESCALA
-            if (cmd.includes("agrand") || cmd.includes("aumenta") || cmd.includes("mas grande")) {
-                if (hasActiveModel) { targetScale = Math.min(3.5, targetScale * 1.45); chumingoSpeak("Agrandando modelo."); }
-                return;
-            }
-            if (cmd.includes("achic") || cmd.includes("reduc") || cmd.includes("mas pequeno")) {
-                if (hasActiveModel) { targetScale = Math.max(0.25, targetScale * 0.65); chumingoSpeak("Achicando modelo."); }
                 return;
             }
 
@@ -2027,7 +2055,7 @@
                     gestureBadge.textContent = "2 Pinzas: Escala y Giro"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-indigo-400";
                 } else {
                     targetPos.copy(grabAnchor.objPos).add(new THREE.Vector3().subVectors(midWorld, grabAnchor.handPos));
-                    targetScale = Math.min(3.5, Math.max(0.25, grabAnchor.objScale * (distWorld / grabAnchor.twoDist)));
+                    targetScale = Math.min(4.0, Math.max(0.15, grabAnchor.objScale * (distWorld / grabAnchor.twoDist)));
                     const avgWristDelta = hLeft.quat.clone().multiply(grabAnchor.twoLeftQuat.clone().invert()).slerp(hRight.quat.clone().multiply(grabAnchor.twoRightQuat.clone().invert()), 0.5);
                     const twoHandTwist = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -(depthDiff - grabAnchor.twoDepthDiff) * 4.5, angle2D - grabAnchor.twoAngle));
                     targetQuat.copy(twoHandTwist).multiply(scaleQuaternionAngle(avgWristDelta, 1.25)).multiply(grabAnchor.objQuat).normalize();
