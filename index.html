@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title> MODELADO CHUMINGO 3D </title>
+    <title>CHUMINGO 3D - Laboratorio Educativo Holográfico</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -69,7 +69,7 @@
             0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.5); }
             50% { box-shadow: 0 0 16px 2px rgba(34, 211, 238, 0.35); }
         }
-        .jarvis-active {
+        .chumingo-active {
             animation: pulseGlow 2s infinite;
         }
     </style>
@@ -82,8 +82,60 @@
         <canvas id="three_canvas"></canvas>
         <div class="hud-vignette"></div>
 
+        <!-- Ficha Didáctica Flotante (Modo Clase) -->
+        <div id="didactic-card" class="hidden absolute left-4 bottom-20 w-72 sm:w-80 bg-gray-950/90 backdrop-blur-md border border-cyan-400/60 rounded-2xl p-3.5 shadow-[0_0_25px_rgba(6,182,212,0.3)] z-20 pointer-events-auto space-y-2">
+            <div class="flex items-start justify-between gap-2 border-b border-cyan-800/60 pb-1.5">
+                <div>
+                    <span class="text-[9px] font-mono uppercase tracking-widest text-cyan-400 block">Ficha Didáctica</span>
+                    <h4 id="card-part-title" class="text-sm font-bold text-white leading-tight">--</h4>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button id="read-part-btn" title="Leer en voz alta" class="p-1.5 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-200 text-xs transition cursor-pointer">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                    <button id="edit-part-btn" title="Editar anotación docente" class="p-1.5 rounded-lg bg-amber-600/30 hover:bg-amber-600/50 text-amber-200 text-xs transition cursor-pointer">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                </div>
+            </div>
+            <p id="card-part-desc" class="text-xs text-gray-200 leading-relaxed">--</p>
+            <div class="bg-cyan-950/50 border border-cyan-800/50 rounded-lg px-2.5 py-1.5 text-[11px] text-cyan-200">
+                <strong class="text-cyan-400">Función:</strong> <span id="card-part-func">--</span>
+            </div>
+        </div>
+
+        <!-- Modal de Edición Docente para Piezas (.glb o biblioteca) -->
+        <div id="edit-note-modal" class="hidden fixed inset-0 z-40 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto">
+            <div class="bg-gray-900 border border-cyan-500/50 rounded-2xl p-5 max-w-md w-full space-y-3.5 shadow-2xl">
+                <div class="flex justify-between items-center border-b border-gray-800 pb-2">
+                    <h3 class="text-sm font-bold text-cyan-300 flex items-center gap-2">
+                        <i class="fa-solid fa-chalkboard-user"></i> Editar Ficha Pedagógica
+                    </h3>
+                    <button id="close-edit-modal" class="text-gray-400 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="space-y-2.5 text-xs">
+                    <div>
+                        <label class="block text-gray-400 mb-1">Nombre de la Pieza / Estructura:</label>
+                        <input type="text" id="edit-title-input" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:border-cyan-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 mb-1">Descripción para el Estudiante:</label>
+                        <textarea id="edit-desc-input" rows="2" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:border-cyan-500 focus:outline-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 mb-1">Función Principal:</label>
+                        <input type="text" id="edit-func-input" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:border-cyan-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-1">
+                    <button id="cancel-edit-btn" class="px-3.5 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-semibold">Cancelar</button>
+                    <button id="save-edit-btn" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold">Guardar Ficha</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Panel HUD de Escáner -->
-        <div id="scanner-hud" class="hidden absolute right-4 top-20 w-56 sm:w-64 bg-sky-950/85 backdrop-blur-md border border-sky-400/50 rounded-xl p-3 shadow-[0_0_20px_rgba(14,165,233,0.3)] z-10 transition-opacity duration-300">
+        <div id="scanner-hud" class="hidden absolute right-4 top-20 w-56 sm:w-64 bg-sky-950/85 backdrop-blur-md border border-sky-400/50 rounded-xl p-3 shadow-[0_0_20px_rgba(14,165,233,0.3)] z-10">
             <h3 class="text-sky-300 font-bold text-[11px] uppercase tracking-widest border-b border-sky-500/40 pb-1.5 mb-2.5 flex items-center gap-2">
                 <i class="fa-solid fa-satellite-dish animate-pulse"></i> Análisis Estructural
             </h3>
@@ -103,23 +155,23 @@
             <p class="text-lg font-bold text-white">Suelta tus archivos 3D para añadirlos al carrusel</p>
         </div>
 
+        <!-- Pantalla de Inicio -->
         <div id="start-overlay" class="relative z-20 bg-gray-900/95 border border-cyan-500/40 rounded-3xl p-6 max-w-md mx-4 text-center shadow-2xl space-y-4">
             <div class="w-16 h-16 mx-auto rounded-2xl bg-cyan-500/15 border border-cyan-400/40 flex items-center justify-center text-cyan-400 text-3xl">
-                <i class="fa-solid fa-atom"></i>
+                <i class="fa-solid fa-graduation-cap"></i>
             </div>
             <div>
-                <h2 class="text-xl font-black tracking-wider text-cyan-50">C.H.U.M.I.N.G.O 3D </h2>
-                <p class="text-[11px] font-mono text-cyan-400/80">Control por Voz Latino y Gestos 3D</p>
+                <h2 class="text-xl font-black tracking-wider text-cyan-50">CHUMINGO 3D</h2>
+                <p class="text-[11px] font-mono text-cyan-400/80">Laboratorio Interactivo para Enseñanza</p>
             </div>
             <div class="text-[11px] text-gray-300 leading-relaxed text-left space-y-1.5 bg-gray-950/70 p-3.5 rounded-2xl border border-gray-800">
-                <p><strong class="text-purple-400">Cambiar Modelo:</strong> Junta <strong>Índice + Medio</strong> estirados (demás dedos cerrados) y desliza de lado a lado.</p>
-                <p><strong class="text-sky-400">Palma Abierta:</strong> Gira libremente el objeto 3D con tu muñeca.</p>
-                <p><strong class="text-cyan-400">Pinzas (1 o 2):</strong> Mover y agrandar/achicar el modelo.</p>
-                <p><strong class="text-rose-400">Dedo Índice:</strong> Láser de inspección técnica.</p>
-                <p><strong class="text-emerald-400">Voz Activa:</strong> <em>"Expandir"</em>, <em>"Contrae modelo"</em>, <em>"Activa modo plano"</em>, <em>"Desactivar modo plano"</em>, <em>"Escanear"</em>, <em>"Centra holograma"</em>.</p>
+                <p><strong class="text-rose-400">Dedo Índice (Láser):</strong> Señala cualquier pieza para ver su ficha didáctica o dibuja en el aire en <em>Modo Pizarra</em>.</p>
+                <p><strong class="text-amber-400">Corte Transversal:</strong> Di <em>"Corte transversal"</em> para ver el interior del modelo en tiempo real.</p>
+                <p><strong class="text-purple-400">Índice + Medio Juntos:</strong> Desliza para cambiar entre modelos educativos.</p>
+                <p><strong class="text-emerald-400">Voz Chumingo:</strong> <em>"Explica esta pieza"</em>, <em>"Expandir"</em>, <em>"Contrae modelo"</em>, <em>"Modo pizarra"</em>, <em>"Borrar pizarra"</em>, <em>"Activa modo plano"</em>.</p>
             </div>
             <button id="launch-btn" class="w-full py-3.5 px-5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
-                <i class="fa-solid fa-power-off"></i> Iniciar Laboratorio Holográfico
+                <i class="fa-solid fa-power-off"></i> Iniciar CHUMINGO 3D
             </button>
             <p id="overlay-error" class="hidden text-xs font-mono text-red-400 bg-red-950/60 border border-red-800 rounded-xl p-2.5 text-left"></p>
         </div>
@@ -132,40 +184,60 @@
                 <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
                         <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-gray-500"></span>
-                        <span id="gesture-badge" class="text-xs font-bold tracking-wider uppercase text-cyan-300">En espera</span>
+                        <span class="text-[10px] font-black tracking-widest text-cyan-400">CHUMINGO 3D</span>
+                        <span class="text-gray-600">|</span>
+                        <span id="gesture-badge" class="text-xs font-bold tracking-wider uppercase text-cyan-200">En espera</span>
                     </div>
-                    <span id="carousel-counter" class="text-[10px] font-mono bg-cyan-950/80 text-cyan-300 border border-cyan-700/50 px-2 py-0.5 rounded-full">1 / 4</span>
+                    <span id="carousel-counter" class="text-[10px] font-mono bg-cyan-950/80 text-cyan-300 border border-cyan-700/50 px-2 py-0.5 rounded-full">1 / 5</span>
                 </div>
-                <p id="status-text" class="text-[11px] font-mono text-gray-300 truncate max-w-[280px] sm:max-w-sm">
-                    Inicia la cámara para activar los sensores y la voz.
+                <p id="status-text" class="text-[11px] font-mono text-gray-300 truncate max-w-[290px] sm:max-w-sm">
+                    Inicia la cámara para comenzar la clase interactiva.
                 </p>
                 <p id="voice-transcript" class="hidden text-[10px] font-mono text-emerald-300 truncate">
                     <i class="fa-solid fa-waveform-lines mr-1"></i> Escuchando comandos...
                 </p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <div class="flex flex-wrap items-center gap-1.5">
                 <input type="file" id="model-file-input" accept=".glb,.gltf,.obj,.stl" multiple class="hidden">
-                <button id="upload-model-btn" title="Cargar archivos 3D" class="bg-emerald-600/90 hover:bg-emerald-500 active:scale-95 text-white border border-emerald-400/50 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition cursor-pointer">
-                    <i class="fa-solid fa-folder-plus"></i><span>Cargar 3D</span>
+                <button id="upload-model-btn" title="Cargar archivos 3D" class="bg-emerald-600/90 hover:bg-emerald-500 active:scale-95 text-white border border-emerald-400/50 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition cursor-pointer">
+                    <i class="fa-solid fa-folder-plus"></i><span class="hidden sm:inline">Cargar 3D</span>
                 </button>
 
                 <div class="flex items-center bg-gray-950/90 border border-gray-700 rounded-xl overflow-hidden shadow-lg">
-                    <button id="prev-model-btn" class="px-2.5 py-2 text-cyan-400 hover:bg-gray-800 transition cursor-pointer"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                    <select id="shape-select" class="bg-transparent text-xs text-gray-100 font-semibold py-2 px-1.5 focus:outline-none cursor-pointer max-w-[120px] sm:max-w-[160px] truncate"></select>
-                    <button id="next-model-btn" class="px-2.5 py-2 text-cyan-400 hover:bg-gray-800 transition cursor-pointer"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                    <button id="prev-model-btn" class="px-2 py-2 text-cyan-400 hover:bg-gray-800 transition cursor-pointer"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                    <select id="shape-select" class="bg-transparent text-xs text-gray-100 font-semibold py-2 px-1 focus:outline-none cursor-pointer max-w-[135px] sm:max-w-[175px] truncate"></select>
+                    <button id="next-model-btn" class="px-2 py-2 text-cyan-400 hover:bg-gray-800 transition cursor-pointer"><i class="fa-solid fa-chevron-right text-xs"></i></button>
                 </div>
 
-                <button id="blueprint-btn" title="Modo Plano" class="bg-gray-950/90 hover:bg-gray-800 text-cyan-300 border border-cyan-500/40 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i class="fa-solid fa-border-all"></i><span class="hidden md:inline">Blueprint</span>
+                <!-- Corte Transversal -->
+                <button id="slice-btn" title="Corte Transversal en Tiempo Real" class="bg-gray-950/90 hover:bg-gray-800 text-amber-300 border border-amber-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                    <i class="fa-solid fa-scissors"></i><span class="hidden md:inline">Corte</span>
                 </button>
-                <button id="scanner-btn" title="Escáner láser" class="bg-gray-950/90 hover:bg-gray-800 text-sky-300 border border-sky-500/40 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i class="fa-solid fa-barcode"></i><span class="hidden md:inline">Escáner</span>
+
+                <!-- Pizarra Espacial 3D -->
+                <button id="draw-btn" title="Pizarra Espacial 3D (Dibuja con el índice)" class="bg-gray-950/90 hover:bg-gray-800 text-fuchsia-300 border border-fuchsia-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                    <i class="fa-solid fa-paintbrush"></i><span class="hidden md:inline">Pizarra</span>
                 </button>
-                <button id="jarvis-voice-btn" title="Micrófono J.A.R.V.I.S." class="bg-gray-950/90 hover:bg-gray-800 text-indigo-300 border border-indigo-500/40 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i id="jarvis-mic-icon" class="fa-solid fa-microphone-slash"></i>
+
+                <!-- Limpiar Pizarra -->
+                <button id="clear-draw-btn" title="Borrar trazos de pizarra" class="hidden bg-fuchsia-950/90 hover:bg-fuchsia-900 text-fuchsia-200 border border-fuchsia-500/50 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1 transition active:scale-95 cursor-pointer">
+                    <i class="fa-solid fa-eraser"></i>
                 </button>
-                <button id="reset-btn" title="Centrar objeto" class="bg-gray-950/90 hover:bg-gray-800 text-amber-300 border border-amber-500/40 text-xs font-bold py-2 px-3 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+
+                <button id="blueprint-btn" title="Modo Plano" class="bg-gray-950/90 hover:bg-gray-800 text-cyan-300 border border-cyan-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                    <i class="fa-solid fa-border-all"></i><span class="hidden lg:inline">Plano</span>
+                </button>
+
+                <button id="scanner-btn" title="Escáner Estructural" class="bg-gray-950/90 hover:bg-gray-800 text-sky-300 border border-sky-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                    <i class="fa-solid fa-barcode"></i><span class="hidden lg:inline">Escáner</span>
+                </button>
+
+                <button id="chumingo-voice-btn" title="Micrófono CHUMINGO" class="bg-gray-950/90 hover:bg-gray-800 text-indigo-300 border border-indigo-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                    <i id="chumingo-mic-icon" class="fa-solid fa-microphone-slash"></i>
+                </button>
+
+                <button id="reset-btn" title="Centrar holograma" class="bg-gray-950/90 hover:bg-gray-800 text-amber-300 border border-amber-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
                     <i class="fa-solid fa-arrows-to-dot"></i>
                 </button>
             </div>
@@ -194,10 +266,9 @@
         </div>
     </div>
 
-    <!-- Script Principal Único -->
     <script>
         // ==========================================
-        // REFERENCIAS DOM Y UTILIDADES
+        // 1. REFERENCIAS DOM Y UTILIDADES
         // ==========================================
         const video = document.getElementById("webcam"), handCanvas = document.getElementById("hand_canvas");
         const handCtx = handCanvas.getContext("2d"), threeCanvas = document.getElementById("three_canvas");
@@ -208,9 +279,29 @@
         const uploadModelBtn = document.getElementById("upload-model-btn"), modelFileInput = document.getElementById("model-file-input");
         const dragOverlay = document.getElementById("drag-overlay"), prevModelBtn = document.getElementById("prev-model-btn");
         const nextModelBtn = document.getElementById("next-model-btn"), shapeSelect = document.getElementById("shape-select");
+
+        const sliceBtn = document.getElementById("slice-btn");
+        const drawBtn = document.getElementById("draw-btn");
+        const clearDrawBtn = document.getElementById("clear-draw-btn");
         const blueprintBtn = document.getElementById("blueprint-btn"), scannerBtn = document.getElementById("scanner-btn");
-        const scannerHud = document.getElementById("scanner-hud"), jarvisVoiceBtn = document.getElementById("jarvis-voice-btn");
-        const jarvisMicIcon = document.getElementById("jarvis-mic-icon"), resetBtn = document.getElementById("reset-btn");
+        const scannerHud = document.getElementById("scanner-hud"), chumingoVoiceBtn = document.getElementById("chumingo-voice-btn");
+        const chumingoMicIcon = document.getElementById("chumingo-mic-icon"), resetBtn = document.getElementById("reset-btn");
+
+        const didacticCard = document.getElementById("didactic-card");
+        const cardPartTitle = document.getElementById("card-part-title");
+        const cardPartDesc = document.getElementById("card-part-desc");
+        const cardPartFunc = document.getElementById("card-part-func");
+        const readPartBtn = document.getElementById("read-part-btn");
+        const editPartBtn = document.getElementById("edit-part-btn");
+
+        const editNoteModal = document.getElementById("edit-note-modal");
+        const editTitleInput = document.getElementById("edit-title-input");
+        const editDescInput = document.getElementById("edit-desc-input");
+        const editFuncInput = document.getElementById("edit-func-input");
+        const closeEditModal = document.getElementById("close-edit-modal");
+        const cancelEditBtn = document.getElementById("cancel-edit-btn");
+        const saveEditBtn = document.getElementById("save-edit-btn");
+
         const scaleDisplay = document.getElementById("scale-display"), explodeDisplay = document.getElementById("explode-display");
         const rotDisplay = document.getElementById("rot-display"), inspectedPartBadge = document.getElementById("inspected-part-badge");
         const showRingsCheckbox = document.getElementById("show-rings"), showSkeletonCheckbox = document.getElementById("show-skeleton");
@@ -219,7 +310,24 @@
         function dist3D(a, b) { return Math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2 + (a.z - b.z)**2); }
 
         // ==========================================
-        // SINTETIZADOR DE AUDIO Y VOZ EN ESPAÑOL LATINO
+        // 2. PERSISTENCIA DE FICHAS DIDÁCTICAS DOCENTES
+        // ==========================================
+        const STORAGE_KEY = "chumingo3d_didactic_notes_v1";
+        let customTeacherNotes = {};
+        try {
+            customTeacherNotes = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        } catch (e) { customTeacherNotes = {}; }
+
+        function saveTeacherNotes() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(customTeacherNotes)); } catch (e) {}
+        }
+
+        function getNoteKey(modelTitle, rawMeshName) {
+            return `${modelTitle}::${rawMeshName}`;
+        }
+
+        // ==========================================
+        // 3. AUDIO Y VOZ EN ESPAÑOL LATINO (CHUMINGO)
         // ==========================================
         let sfxCtx = null;
         let selectedLatinVoice = null;
@@ -238,22 +346,13 @@
             const preferredLocales = ["es-cl", "es-mx", "es-ar", "es-co", "es-pe", "es-ve", "es-419", "es-us"];
             for (const loc of preferredLocales) {
                 const match = voices.find(v => v.lang.toLowerCase().replace("_", "-") === loc);
-                if (match) {
-                    selectedLatinVoice = match;
-                    return;
-                }
+                if (match) { selectedLatinVoice = match; return; }
             }
-
             const anyLatin = voices.find(v => {
                 const lang = v.lang.toLowerCase().replace("_", "-");
                 return lang.startsWith("es-") && lang !== "es-es";
             });
-            if (anyLatin) {
-                selectedLatinVoice = anyLatin;
-                return;
-            }
-
-            selectedLatinVoice = voices.find(v => v.lang.toLowerCase().startsWith("es")) || null;
+            selectedLatinVoice = anyLatin || voices.find(v => v.lang.toLowerCase().startsWith("es")) || null;
         }
 
         if ("speechSynthesis" in window) {
@@ -278,10 +377,9 @@
         function playScanBeep() { playTone(1150, 1480, 0.11, "sine", 0.15); }
         function playLockSound() { playTone(440, 220, 0.16, "triangle", 0.25); }
 
-        function jarvisSpeak(text) {
+        function chumingoSpeak(text) {
             if (!("speechSynthesis" in window)) return;
             if (!selectedLatinVoice) loadLatinAmericanVoice();
-
             window.speechSynthesis.cancel();
             const utter = new SpeechSynthesisUtterance(text);
             if (selectedLatinVoice) {
@@ -290,14 +388,14 @@
             } else {
                 utter.lang = "es-CL";
             }
-            utter.rate = 1.05;
-            utter.pitch = 0.94;
-            utter.volume = 0.9;
+            utter.rate = 1.04;
+            utter.pitch = 0.95;
+            utter.volume = 0.92;
             window.speechSynthesis.speak(utter);
         }
 
         // ==========================================
-        // PROYECCIÓN EXACTA PANTALLA <-> CÁMARA
+        // 4. PROYECCIÓN PANTALLA <-> CÁMARA
         // ==========================================
         function normToScreenPx(lm) {
             const sw = handCanvas.width || window.innerWidth, sh = handCanvas.height || window.innerHeight;
@@ -338,7 +436,7 @@
         }
 
         // ==========================================
-        // CLASIFICADOR DE POSTURAS 3D
+        // 5. CLASIFICADOR DE POSTURAS 3D
         // ==========================================
         function classifyHandPose(landmarks) {
             const wrist = landmarks[0], thumbTip = landmarks[4], indexTip = landmarks[8], middleTip = landmarks[12];
@@ -359,7 +457,7 @@
                 if (ratio > 1.54) openFingerCount++;
             }
 
-            // Gesto de Cambio de Modelo: Índice + Medio estirados y juntos; Anular + Meñique cerrados
+            // Índice + Medio estirados y juntos; Anular + Meñique cerrados -> Cambiar Modelo
             const indexExtended = ratios[0] > 1.48;
             const middleExtended = ratios[1] > 1.48;
             const ringCurled = ratios[2] < 1.36;
@@ -395,23 +493,34 @@
         }
 
         // ==========================================
-        // SETUP DE THREE.JS Y CARGADORES
+        // 6. THREE.JS, CORTE TRANSVERSAL Y PIZARRA 3D
         // ==========================================
         let THREE = null, GLTFLoader = null, DRACOLoader = null, OBJLoader = null, STLLoader = null;
-        let scene, camera, renderer, objectGroup, modelSlot, telemetryGroup, scannerBar, clock, raycaster;
+        let scene, camera, renderer, objectGroup, modelSlot, drawingGroup, telemetryGroup, scannerBar, sliceVisualPlane, clock, raycaster;
+        let clippingPlane = null;
         let animationMixer = null;
         let targetPos, targetQuat, grabAnchor;
         let targetScale = 1.0, targetExplode = 0.0, currentExplode = 0.0;
 
-        let gestureMode = "none", hasActiveModel = false, isDismissing = false, isBlueprintMode = false, isScannerMode = false;
-        let inspectableMeshes = [], highlightedMesh = null, laserHitInfo = null;
+        let gestureMode = "none", hasActiveModel = false, isDismissing = false;
+        let isBlueprintMode = false, isScannerMode = false, isSliceMode = false, isDrawMode = false;
+        let currentModelTitle = "";
+
+        let inspectableMeshes = [], highlightedMesh = null, lastSelectedMeshForCard = null, laserHitInfo = null;
         let burstParticles = null, burstVelocities = [], burstLife = 0, shockwaves = [];
 
+        // Variables de Pizarra Espacial 3D
+        let activeStrokeLine = null;
+        let activeStrokePoints = [];
+        let lastDrawFrameTime = 0;
+
+        // Biblioteca Rápida de Modelos Educativos
         const modelCarousel = [
-            { id: "builtin:reactor", name: "Reactor Arc Mark VI", type: "builtin", shape: "reactor" },
-            { id: "builtin:drone", name: "Dron Táctico T-8", type: "builtin", shape: "drone" },
-            { id: "builtin:quantum", name: "Núcleo Cuántico", type: "builtin", shape: "quantum" },
-            { id: "builtin:planet", name: "Sistema Orbital", type: "builtin", shape: "planet" }
+            { id: "edu:volcano", name: "Volcán en Capas (Geología)", type: "builtin", shape: "volcano" },
+            { id: "edu:dna", name: "Molécula de ADN (Biología)", type: "builtin", shape: "dna" },
+            { id: "edu:atom", name: "Átomo de Bohr (Química)", type: "builtin", shape: "atom" },
+            { id: "edu:solar", name: "Sistema Solar (Astronomía)", type: "builtin", shape: "solar" },
+            { id: "edu:engine", name: "Motor 4 Tiempos (Física)", type: "builtin", shape: "engine" }
         ];
         let currentCarouselIndex = 0;
 
@@ -440,20 +549,33 @@
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure = 1.25;
+            renderer.localClippingEnabled = true;
 
-            scene.add(new THREE.HemisphereLight(0xffffff, 0x1e293b, 1.35));
+            // Plano de corte transversal (sección)
+            clippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0.15);
+
+            scene.add(new THREE.HemisphereLight(0xffffff, 0x1e293b, 1.4));
             const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.8); dirLight1.position.set(4, 6, 6); scene.add(dirLight1);
             const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 1.2); dirLight2.position.set(-5, -3, 4); scene.add(dirLight2);
             const backLight = new THREE.DirectionalLight(0xa855f7, 0.9); backLight.position.set(0, 4, -6); scene.add(backLight);
 
             objectGroup = new THREE.Group(); scene.add(objectGroup);
             modelSlot = new THREE.Group(); objectGroup.add(modelSlot);
+            drawingGroup = new THREE.Group(); objectGroup.add(drawingGroup);
 
             buildTelemetryRings();
             buildScannerSweep();
+            buildSlicePlaneVisual();
 
             targetPos = new THREE.Vector3(0, 0, 0); targetQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.28, 0.4, 0));
-            grabAnchor = { handPos: new THREE.Vector3(), handQuat: new THREE.Quaternion(), objPos: new THREE.Vector3(), objQuat: new THREE.Quaternion(), twoDist: 1, twoAngle: 0, twoDepthDiff: 0, twoLeftQuat: new THREE.Quaternion(), twoRightQuat: new THREE.Quaternion(), objScale: 1, explodeDist: 0.5, explodeStart: 0 };
+            grabAnchor = {
+                handPos: new THREE.Vector3(), handQuat: new THREE.Quaternion(),
+                objPos: new THREE.Vector3(), objQuat: new THREE.Quaternion(),
+                twoDist: 1, twoAngle: 0, twoDepthDiff: 0,
+                twoLeftQuat: new THREE.Quaternion(), twoRightQuat: new THREE.Quaternion(),
+                objScale: 1, explodeDist: 0.5, explodeStart: 0,
+                sliceStartY: 0, sliceStartConst: 0
+            };
 
             refreshCarouselSelect();
             loadCarouselItem(0, false);
@@ -483,6 +605,124 @@
             scannerBar.add(plane, border);
             scannerBar.visible = false;
             objectGroup.add(scannerBar);
+        }
+
+        function buildSlicePlaneVisual() {
+            sliceVisualPlane = new THREE.Group();
+            const sheet = new THREE.Mesh(
+                new THREE.PlaneGeometry(2.8, 2.8),
+                new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, transparent: true, opacity: 0.14, depthWrite: false })
+            );
+            sheet.rotation.x = Math.PI / 2;
+            const frame = new THREE.LineSegments(
+                new THREE.EdgesGeometry(new THREE.BoxGeometry(2.8, 0.012, 2.8)),
+                new THREE.LineBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.9 })
+            );
+            sliceVisualPlane.add(sheet, frame);
+            sliceVisualPlane.visible = false;
+            scene.add(sliceVisualPlane);
+        }
+
+        // Activar / Desactivar Corte Transversal
+        function setSliceMode(enabled) {
+            isSliceMode = enabled;
+            sliceBtn.classList.toggle("bg-amber-600", enabled);
+            sliceBtn.classList.toggle("text-white", enabled);
+
+            if (enabled && hasActiveModel) {
+                clippingPlane.constant = objectGroup.position.y + 0.1;
+                sliceVisualPlane.visible = true;
+                sliceVisualPlane.position.set(objectGroup.position.x, clippingPlane.constant, objectGroup.position.z);
+                applyClippingToMaterials(true);
+                playScanBeep();
+                statusText.textContent = "Corte transversal activo. Mueve una palma arriba/abajo para ajustar.";
+            } else {
+                sliceVisualPlane.visible = false;
+                applyClippingToMaterials(false);
+            }
+        }
+
+        function applyClippingToMaterials(enable) {
+            inspectableMeshes.forEach((mesh) => {
+                const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+                mats.forEach((m) => {
+                    m.clippingPlanes = enable ? [clippingPlane] : [];
+                    m.clipShadows = enable;
+                    if (enable) m.side = THREE.DoubleSide;
+                    m.needsUpdate = true;
+                });
+            });
+        }
+
+        sliceBtn.addEventListener("click", () => {
+            setSliceMode(!isSliceMode);
+            chumingoSpeak(isSliceMode ? "Corte transversal activado." : "Corte transversal desactivado.");
+        });
+
+        // Pizarra Espacial 3D
+        function setDrawMode(enabled) {
+            isDrawMode = enabled;
+            drawBtn.classList.toggle("bg-fuchsia-600", enabled);
+            drawBtn.classList.toggle("text-white", enabled);
+            activeStrokeLine = null;
+            activeStrokePoints = [];
+            if (enabled) {
+                clearDrawBtn.classList.remove("hidden");
+                statusText.textContent = "Modo Pizarra 3D: Apunta con el dedo índice para dibujar en el aire.";
+                playScanBeep();
+            }
+        }
+
+        function clearSpatialBoard() {
+            if (!drawingGroup) return;
+            while (drawingGroup.children.length > 0) {
+                const line = drawingGroup.children[0];
+                if (line.geometry) line.geometry.dispose();
+                if (line.material) line.material.dispose();
+                drawingGroup.remove(line);
+            }
+            activeStrokeLine = null;
+            activeStrokePoints = [];
+            clearDrawBtn.classList.add("hidden");
+            playLockSound();
+        }
+
+        drawBtn.addEventListener("click", () => {
+            setDrawMode(!isDrawMode);
+            chumingoSpeak(isDrawMode ? "Modo pizarra activado." : "Modo pizarra desactivado.");
+        });
+        clearDrawBtn.addEventListener("click", () => {
+            clearSpatialBoard();
+            chumingoSpeak("Pizarra borrada.");
+        });
+
+        function addSpatialStrokePoint(screenPx) {
+            if (!THREE || !drawingGroup || !hasActiveModel) return;
+            const ndc = screenPxToNDC(screenPx);
+            const vec = new THREE.Vector3(ndc.x, ndc.y, 0.5).unproject(camera);
+            const dir = vec.sub(camera.position).normalize();
+            // Proyectar punto sobre un plano 3D frente al objeto
+            const dist = (objectGroup.position.z + 0.85 - camera.position.z) / dir.z;
+            const worldPt = camera.position.clone().add(dir.multiplyScalar(dist));
+            const localPt = objectGroup.worldToLocal(worldPt);
+
+            if (activeStrokePoints.length > 0) {
+                const lastPt = activeStrokePoints[activeStrokePoints.length - 1];
+                if (lastPt.distanceTo(localPt) < 0.03) return;
+            }
+
+            activeStrokePoints.push(localPt);
+            clearDrawBtn.classList.remove("hidden");
+
+            if (activeStrokeLine) {
+                activeStrokeLine.geometry.dispose();
+                activeStrokeLine.geometry = new THREE.BufferGeometry().setFromPoints(activeStrokePoints);
+            } else {
+                const geo = new THREE.BufferGeometry().setFromPoints(activeStrokePoints);
+                const mat = new THREE.LineBasicMaterial({ color: 0xf0abfc, linewidth: 3 });
+                activeStrokeLine = new THREE.Line(geo, mat);
+                drawingGroup.add(activeStrokeLine);
+            }
         }
 
         function updateScannerStats() {
@@ -520,6 +760,7 @@
                     if (mesh.userData.blueprintWire) mesh.userData.blueprintWire.visible = false;
                 }
             });
+            if (isSliceMode) applyClippingToMaterials(true);
             if (hasActiveModel) {
                 statusText.textContent = enabled ? "Modo plano activado." : "Modelo normal restaurado.";
             }
@@ -541,19 +782,219 @@
 
         blueprintBtn.addEventListener("click", () => {
             setBlueprintMode(!isBlueprintMode);
-            jarvisSpeak(isBlueprintMode ? "Modo plano activado." : "Modo plano desactivado.");
+            chumingoSpeak(isBlueprintMode ? "Modo plano activado." : "Modo plano desactivado.");
         });
         scannerBtn.addEventListener("click", () => {
             setScannerMode(!isScannerMode);
-            jarvisSpeak(isScannerMode ? "Escáner láser iniciado." : "Escáner desactivado.");
+            chumingoSpeak(isScannerMode ? "Escáner estructural iniciado." : "Escáner desactivado.");
         });
 
         // ==========================================
-        // PROCEDURALES Y CARGA DE MODELOS 3D
+        // 7. BIBLIOTECA EDUCATIVA CON FICHAS DIDÁCTICAS
         // ==========================================
+        function attachDidacticData(mesh, title, desc, func) {
+            mesh.name = title;
+            mesh.userData.rawName = title;
+            mesh.userData.didactic = { title, desc, func };
+        }
+
+        function buildEducationalModel(shape) {
+            const root = new THREE.Group();
+
+            if (shape === "volcano") {
+                // 1. Cono Volcánico Exterior
+                const cone = new THREE.Mesh(
+                    new THREE.ConeGeometry(1.15, 1.45, 32, 1, true),
+                    new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.85, side: THREE.DoubleSide })
+                );
+                attachDidacticData(cone, "Cono Volcánico", "Estructura cónica formada por la acumulación de lava solidificada, cenizas y piroclastos.", "Sostiene el edificio volcánico y canaliza las erupciones.");
+                root.add(cone);
+
+                // 2. Cámara Magmática (Interior visible con Corte o Expansión)
+                const chamber = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.42, 24, 24),
+                    new THREE.MeshStandardMaterial({ color: 0xea580c, emissive: 0xdc2626, emissiveIntensity: 0.9 })
+                );
+                chamber.position.y = -0.38;
+                attachDidacticData(chamber, "Cámara Magmática", "Depósito subterráneo de roca fundida a temperaturas entre 700°C y 1300°C.", "Almacena el magma bajo alta presión antes de ascender.");
+                root.add(chamber);
+
+                // 3. Chimenea Central
+                const chimney = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.11, 0.16, 1.05, 20),
+                    new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.85 })
+                );
+                chimney.position.y = 0.15;
+                attachDidacticData(chimney, "Chimenea Volcánica", "Conducto vertical que conecta la cámara magmática profunda con la superficie.", "Permite el ascenso de magma y gases hacia el cráter.");
+                root.add(chimney);
+
+                // 4. Cráter Superior
+                const crater = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.24, 0.07, 16, 32),
+                    new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xea580c, emissiveIntensity: 0.7 })
+                );
+                crater.rotation.x = Math.PI / 2;
+                crater.position.y = 0.72;
+                attachDidacticData(crater, "Cráter Principal", "Abertura en la cima del volcán por donde se expulsan lava, cenizas y gases.", "Libera la presión interna de la corteza terrestre.");
+                root.add(crater);
+
+            } else if (shape === "dna") {
+                const steps = 12;
+                const baseColors = [0x38bdf8, 0xf43f5e, 0x10b981, 0xfacc15];
+                const baseNames = ["Adenina - Timina", "Citosina - Guanina"];
+
+                for (let i = 0; i < steps; i++) {
+                    const y = (i - steps / 2) * 0.18;
+                    const angle = i * 0.52;
+                    const r = 0.52;
+
+                    const s1 = new THREE.Mesh(new THREE.SphereGeometry(0.085, 16, 16), new THREE.MeshStandardMaterial({ color: 0x6366f1, metalness: 0.4 }));
+                    s1.position.set(Math.cos(angle) * r, y, Math.sin(angle) * r);
+                    attachDidacticData(s1, "Cadena Azúcar-Fosfato A", "Columna vertebral externa compuesta por desoxirribosa y grupos fosfato.", "Da soporte estructural a la doble hélice del ADN.");
+                    root.add(s1);
+
+                    const s2 = new THREE.Mesh(new THREE.SphereGeometry(0.085, 16, 16), new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.4 }));
+                    s2.position.set(Math.cos(angle + Math.PI) * r, y, Math.sin(angle + Math.PI) * r);
+                    attachDidacticData(s2, "Cadena Azúcar-Fosfato B", "Hebra antiparalela complementaria que corre en dirección opuesta (3' a 5').", "Estabiliza y protege las bases nitrogenadas internas.");
+                    root.add(s2);
+
+                    const rung = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.03, 0.03, r * 2, 12),
+                        new THREE.MeshStandardMaterial({ color: baseColors[i % 4], emissive: baseColors[i % 4], emissiveIntensity: 0.35 })
+                    );
+                    rung.position.set(0, y, 0);
+                    rung.rotation.z = Math.PI / 2;
+                    rung.rotation.y = -angle;
+                    const pairTitle = baseNames[i % 2];
+                    attachDidacticData(rung, `Par de Bases: ${pairTitle}`, "Unión mediante puentes de hidrógeno entre bases nitrogenadas complementarias.", "Codifica la información genética de los seres vivos.");
+                    root.add(rung);
+                }
+
+            } else if (shape === "atom") {
+                // Protones y Neutrones en el núcleo
+                for (let i = 0; i < 6; i++) {
+                    const isProton = i % 2 === 0;
+                    const nucleon = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.16, 18, 18),
+                        new THREE.MeshStandardMaterial({
+                            color: isProton ? 0xef4444 : 0x3b82f6,
+                            emissive: isProton ? 0xb91c1c : 0x1d4ed8,
+                            emissiveIntensity: 0.5
+                        })
+                    );
+                    nucleon.position.set((Math.random() - 0.5) * 0.24, (Math.random() - 0.5) * 0.24, (Math.random() - 0.5) * 0.24);
+                    attachDidacticData(
+                        nucleon,
+                        isProton ? "Protón (Carga +)" : "Neutrón (Carga Neutra)",
+                        isProton ? "Partícula subatómica con carga eléctrica positiva ubicada en el núcleo." : "Partícula subatómica sin carga eléctrica que aporta masa al núcleo.",
+                        isProton ? "Define el número atómico y la identidad del elemento químico." : "Estabiliza el núcleo evitando la repulsión entre protones."
+                    );
+                    root.add(nucleon);
+                }
+
+                // 3 Orbitales y Electrones
+                const tilts = [[0.4, 0.2, 0], [-0.4, 0.3, 0.8], [0.1, -0.5, -0.7]];
+                tilts.forEach(([rx, ry, rz], idx) => {
+                    const orbit = new THREE.Mesh(
+                        new THREE.TorusGeometry(0.95, 0.015, 12, 64),
+                        new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.65 })
+                    );
+                    orbit.rotation.set(rx, ry, rz);
+                    attachDidacticData(orbit, `Orbital Electrónico Nivel ${idx + 1}`, "Nivel de energía cuantizado donde se desplazan los electrones alrededor del núcleo.", "Determina los enlaces químicos y la reactividad del átomo.");
+                    root.add(orbit);
+
+                    const electron = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.08, 16, 16),
+                        new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: 0x06b6d4, emissiveIntensity: 0.9 })
+                    );
+                    electron.position.set(Math.cos(idx * 2) * 0.95, Math.sin(idx * 2) * 0.5, 0.3);
+                    attachDidacticData(electron, `Electrón #${idx + 1} (Carga -)`, "Partícula elemental de carga negativa que orbita a gran velocidad.", "Participa en la conducción eléctrica y enlaces covalentes/iónicos.");
+                    root.add(electron);
+                });
+
+            } else if (shape === "solar") {
+                const sun = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.38, 28, 28),
+                    new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf97316, emissiveIntensity: 0.95 })
+                );
+                attachDidacticData(sun, "El Sol (Estrella Tipo G2V)", "Estrella enana amarilla que concentra el 99.86% de la masa del Sistema Solar.", "Provee luz, calor y gravedad para mantener los planetas en órbita.");
+                root.add(sun);
+
+                const planets = [
+                    { name: "Mercurio", r: 0.55, sz: 0.06, color: 0xa8a29e, desc: "El planeta más pequeño y cercano al Sol, sin atmósfera densa.", func: "Presenta las variaciones térmicas más extremas del sistema." },
+                    { name: "Venus", r: 0.72, sz: 0.085, color: 0xfde047, desc: "Segundo planeta, cubierto por una densa atmósfera de CO2.", func: "Genera el efecto invernadero más intenso del Sistema Solar." },
+                    { name: "Tierra", r: 0.92, sz: 0.095, color: 0x3b82f6, desc: "Tercer planeta desde el Sol, único conocido con agua líquida superficial.", func: "Alberga la biosfera y posee campo magnético protector." },
+                    { name: "Marte", r: 1.12, sz: 0.075, color: 0xef4444, desc: "El planeta rojo, rico en óxido de hierro en su superficie.", func: "Posee el Monte Olimpo, el volcán más grande conocido." },
+                    { name: "Saturno", r: 1.42, sz: 0.14, color: 0xf59e0b, desc: "Gigante gaseoso reconocido por su sistema de anillos de hielo y roca.", func: "Su baja densidad es menor que la del agua." }
+                ];
+
+                planets.forEach((p, i) => {
+                    const angle = i * 1.25;
+                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(p.sz, 20, 20), new THREE.MeshStandardMaterial({ color: p.color, roughness: 0.4 }));
+                    mesh.position.set(Math.cos(angle) * p.r, 0, Math.sin(angle) * p.r);
+                    attachDidacticData(mesh, p.name, p.desc, p.func);
+                    root.add(mesh);
+
+                    const orbitRing = new THREE.Mesh(
+                        new THREE.RingGeometry(p.r - 0.008, p.r + 0.008, 64),
+                        new THREE.MeshBasicMaterial({ color: 0x475569, side: THREE.DoubleSide, transparent: true, opacity: 0.45 })
+                    );
+                    orbitRing.rotation.x = Math.PI / 2;
+                    attachDidacticData(orbitRing, `Órbita de ${p.name}`, "Trayectoria elíptica recorrida alrededor del Sol por atracción gravitatoria.", "Define la duración del año planetario.");
+                    root.add(orbitRing);
+                });
+
+            } else {
+                // Motor de 4 Tiempos
+                const block = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.55, 0.55, 1.1, 32, 1, true),
+                    new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.75, roughness: 0.25, transparent: true, opacity: 0.45, side: THREE.DoubleSide })
+                );
+                attachDidacticData(block, "Cilindro del Motor", "Cámara metálica mecanizada donde se realiza la combustión aire-combustible.", "Guía el desplazamiento lineal del pistón y disipa el calor.");
+                root.add(block);
+
+                const spark = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.08, 0.08, 0.28, 16),
+                    new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.8 })
+                );
+                spark.position.y = 0.62;
+                attachDidacticData(spark, "Bujía de Encendido", "Componente eléctrico ubicado en la culata del cilindro.", "Produce la chispa de alto voltaje que inicia la explosión.");
+                root.add(spark);
+
+                const piston = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.48, 0.48, 0.32, 28),
+                    new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.85, roughness: 0.2 })
+                );
+                piston.position.y = 0.15;
+                attachDidacticData(piston, "Pistón / Émbolo", "Pieza móvil cilíndrica de aleación ligera ajustada dentro del cilindro.", "Recibe la fuerza de la explosión y la empuja hacia abajo.");
+                root.add(piston);
+
+                const rod = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.12, 0.58, 0.1),
+                    new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.25 })
+                );
+                rod.position.y = -0.26;
+                attachDidacticData(rod, "Biela", "Barra articulada que conecta el pistón con el cigüeñal.", "Transmite el movimiento lineal del pistón al cigüeñal.");
+                root.add(rod);
+
+                const crank = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.32, 0.08, 16, 32),
+                    new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.8, roughness: 0.25 })
+                );
+                crank.position.y = -0.62;
+                attachDidacticData(crank, "Cigüeñal", "Eje acodado ubicado en la parte inferior del bloque motor.", "Transforma el movimiento lineal alternativo en rotación continua.");
+                root.add(crank);
+            }
+
+            return root;
+        }
+
         function clearCurrentModel() {
             if (!modelSlot) return;
-            highlightedMesh = null; laserHitInfo = null; inspectedPartBadge.classList.add("hidden");
+            highlightedMesh = null; lastSelectedMeshForCard = null; laserHitInfo = null;
+            inspectedPartBadge.classList.add("hidden");
+            didacticCard.classList.add("hidden");
+
             if (animationMixer) { animationMixer.stopAllAction(); animationMixer = null; }
             modelSlot.traverse((child) => {
                 if (child.geometry) child.geometry.dispose();
@@ -567,41 +1008,9 @@
             if (isScannerMode) setScannerMode(false);
         }
 
-        function buildProceduralMultiPartModel(shape) {
-            const root = new THREE.Group();
-            if (shape === "reactor") {
-                const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 1), new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.9, roughness: 0.15 })); core.name = "Núcleo de Paladio"; root.add(core);
-                const torus = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.11, 20, 48), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.25 })); torus.name = "Anillo Contenedor"; root.add(torus);
-                const backplate = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.62, 0.18, 32), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 })); backplate.rotation.x = Math.PI / 2; backplate.position.z = -0.28; backplate.name = "Placa Base de Titanio"; root.add(backplate);
-                for (let i = 0; i < 8; i++) {
-                    const angle = (i / 8) * Math.PI * 2;
-                    const coil = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.28, 0.26), new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.75, roughness: 0.25 }));
-                    coil.position.set(Math.cos(angle) * 0.85, Math.sin(angle) * 0.85, 0.05); coil.rotation.z = angle; coil.name = `Bobina Electromagnética #${i + 1}`; root.add(coil);
-                }
-                const lens = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.72, 32), new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: 0x06b6d4, emissiveIntensity: 0.4, side: THREE.DoubleSide, transparent: true, opacity: 0.75 })); lens.position.z = 0.24; lens.name = "Difusor Óptico Frontal"; root.add(lens);
-            } else if (shape === "drone") {
-                const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 24, 24), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.25 })); body.scale.set(1.2, 0.65, 1.2); body.name = "Chasis Central Blindado"; root.add(body);
-                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 20), new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.9 })); eye.position.set(0, 0, 0.58); eye.name = "Sensor Óptico Infrarrojo"; root.add(eye);
-                [[-0.85, 0.2, -0.75], [0.85, 0.2, -0.75], [-0.85, 0.2, 0.75], [0.85, 0.2, 0.75]].forEach(([x, y, z], idx) => {
-                    const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.14, 24), new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.6, roughness: 0.25 })); pod.position.set(x, y, z); pod.name = `Propulsor #${idx + 1}`; root.add(pod);
-                });
-            } else if (shape === "quantum") {
-                const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(0.48, 0), new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7e22ce, emissiveIntensity: 0.6, roughness: 0.2 })); inner.name = "Singularidad Central"; root.add(inner);
-                const shell = new THREE.Mesh(new THREE.DodecahedronGeometry(0.88, 0), new THREE.MeshStandardMaterial({ color: 0x38bdf8, wireframe: true })); shell.name = "Jaula Geodésica"; root.add(shell);
-                for (let i = 0; i < 6; i++) {
-                    const node = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.7, roughness: 0.2 }));
-                    const axis = i % 3; const sign = i < 3 ? 1 : -1; node.position.set(axis === 0 ? sign * 1.05 : 0, axis === 1 ? sign * 1.05 : 0, axis === 2 ? sign * 1.05 : 0); node.name = `Estabilizador #${i + 1}`; root.add(node);
-                }
-            } else {
-                const core = new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 24), new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.7 })); core.name = "Núcleo Térmico"; root.add(core);
-                const planet = new THREE.Mesh(new THREE.SphereGeometry(0.78, 32, 32), new THREE.MeshStandardMaterial({ color: 0x4f46e5, roughness: 0.35, metalness: 0.4, transparent: true, opacity: 0.85 })); planet.name = "Corteza Planetaria"; root.add(planet);
-                const ring = new THREE.Mesh(new THREE.RingGeometry(1.05, 1.55, 48), new THREE.MeshStandardMaterial({ color: 0x22d3ee, side: THREE.DoubleSide, transparent: true, opacity: 0.8 })); ring.rotation.x = Math.PI / 2.4; ring.name = "Anillo de Partículas"; root.add(ring);
-            }
-            return root;
-        }
-
         function mountNormalizedModel(rawObject, title, animations = [], playFx = true) {
             clearCurrentModel();
+            currentModelTitle = title;
             isDismissing = false; objectGroup.visible = true; hasActiveModel = true;
             objectGroup.position.set(0, 0, 0); objectGroup.quaternion.set(0, 0, 0, 1); objectGroup.scale.set(1, 1, 1);
             
@@ -624,8 +1033,25 @@
             const slotCenterWorld = new THREE.Vector3(); modelSlot.getWorldPosition(slotCenterWorld);
             modelSlot.traverse((child) => {
                 if (child.isMesh) {
-                    if (!child.name || child.name.trim() === "") child.name = `Componente #${partIndex}`;
-                    partIndex++; child.userData.origPos = child.position.clone();
+                    const rawName = (child.name && child.name.trim() !== "") ? child.name.trim() : `Componente #${partIndex}`;
+                    child.userData.rawName = rawName;
+                    partIndex++;
+
+                    // Revisar si el profesor guardó una ficha personalizada en localStorage
+                    const noteKey = getNoteKey(title, rawName);
+                    if (customTeacherNotes[noteKey]) {
+                        child.userData.didactic = { ...customTeacherNotes[noteKey] };
+                        child.name = customTeacherNotes[noteKey].title;
+                    } else if (!child.userData.didactic) {
+                        child.name = rawName;
+                        child.userData.didactic = {
+                            title: rawName,
+                            desc: `Estructura geométrica perteneciente al modelo ${title}.`,
+                            func: "Toca el ícono del lápiz para añadir una explicación docente."
+                        };
+                    }
+
+                    child.userData.origPos = child.position.clone();
                     const meshBox = new THREE.Box3().setFromObject(child); const meshCenterWorld = new THREE.Vector3(); meshBox.getCenter(meshCenterWorld);
                     const radialWorld = meshCenterWorld.clone().sub(slotCenterWorld);
                     if (radialWorld.lengthSq() < 0.002) radialWorld.set((Math.random() - 0.5) * 0.6, 0.35, 0.45); else radialWorld.normalize().multiplyScalar(1.35);
@@ -640,6 +1066,7 @@
 
             if (animations && animations.length > 0) { animationMixer = new THREE.AnimationMixer(rawObject); animations.forEach((clip) => animationMixer.clipAction(clip).play()); }
             if (isBlueprintMode) setBlueprintMode(true);
+            if (isSliceMode) applyClippingToMaterials(true);
             
             targetPos.set(0, 0, 0); targetQuat.setFromEuler(new THREE.Euler(0.25, 0.35, 0));
             targetScale = 1.0; targetExplode = 0.0; currentExplode = 0.0; gestureMode = "none";
@@ -651,6 +1078,65 @@
             if (isScannerMode) updateScannerStats();
         }
 
+        // ==========================================
+        // 8. FICHAS DIDÁCTICAS Y MODAL DOCENTE
+        // ==========================================
+        function showDidacticCardForMesh(mesh) {
+            if (!mesh || !mesh.userData.didactic) return;
+            lastSelectedMeshForCard = mesh;
+            const info = mesh.userData.didactic;
+            cardPartTitle.textContent = info.title;
+            cardPartDesc.textContent = info.desc;
+            cardPartFunc.textContent = info.func;
+            didacticCard.classList.remove("hidden");
+        }
+
+        function explainCurrentDidacticPiece() {
+            if (!lastSelectedMeshForCard || !lastSelectedMeshForCard.userData.didactic) {
+                chumingoSpeak("Señala primero una pieza con tu dedo índice.");
+                return;
+            }
+            const info = lastSelectedMeshForCard.userData.didactic;
+            chumingoSpeak(`${info.title}. ${info.desc} Su función principal es: ${info.func}`);
+        }
+
+        readPartBtn.addEventListener("click", explainCurrentDidacticPiece);
+
+        editPartBtn.addEventListener("click", () => {
+            if (!lastSelectedMeshForCard) return;
+            const info = lastSelectedMeshForCard.userData.didactic;
+            editTitleInput.value = info.title;
+            editDescInput.value = info.desc;
+            editFuncInput.value = info.func;
+            editNoteModal.classList.remove("hidden");
+        });
+
+        function closeModal() { editNoteModal.classList.add("hidden"); }
+        closeEditModal.addEventListener("click", closeModal);
+        cancelEditBtn.addEventListener("click", closeModal);
+
+        saveEditBtn.addEventListener("click", () => {
+            if (!lastSelectedMeshForCard) return;
+            const updated = {
+                title: editTitleInput.value.trim() || lastSelectedMeshForCard.name,
+                desc: editDescInput.value.trim() || "Sin descripción.",
+                func: editFuncInput.value.trim() || "Sin función definida."
+            };
+            lastSelectedMeshForCard.name = updated.title;
+            lastSelectedMeshForCard.userData.didactic = updated;
+
+            const noteKey = getNoteKey(currentModelTitle, lastSelectedMeshForCard.userData.rawName);
+            customTeacherNotes[noteKey] = updated;
+            saveTeacherNotes();
+
+            showDidacticCardForMesh(lastSelectedMeshForCard);
+            closeModal();
+            chumingoSpeak("Ficha didáctica guardada.");
+        });
+
+        // ==========================================
+        // 9. CARRUSEL EDUCATIVO Y CARGA DE ARCHIVOS
+        // ==========================================
         function refreshCarouselSelect() {
             shapeSelect.innerHTML = "";
             modelCarousel.forEach((item, idx) => {
@@ -669,7 +1155,7 @@
             refreshCarouselSelect();
             const item = modelCarousel[currentCarouselIndex];
             if (item.type === "builtin") {
-                const obj = buildProceduralMultiPartModel(item.shape);
+                const obj = buildEducationalModel(item.shape);
                 mountNormalizedModel(obj, item.name, [], playFx);
             } else if (item.type === "file") {
                 await loadFileItemToStage(item, playFx);
@@ -717,7 +1203,7 @@
         window.addEventListener("drop", (e) => { e.preventDefault(); dragOverlay.classList.add("hidden"); enqueue3DFiles(e.dataTransfer.files); });
 
         // ==========================================
-        // STARK DISMISS Y RESET
+        // 10. STARK DISMISS Y RESET
         // ==========================================
         function spawnHologramBurst(originPos) {
             if (!THREE || !scene) return;
@@ -739,8 +1225,9 @@
             if (impactPx) shockwaves.push({ x: impactPx.x, y: impactPx.y, radius: 18, alpha: 1.0 });
             spawnHologramBurst(objectGroup.position);
             gestureBadge.textContent = "Holograma Cerrado"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400";
-            statusText.textContent = "Junta índice y medio y desliza, o usa la voz para invocar otro modelo.";
+            statusText.textContent = "Desliza Índice+Medio o usa la voz para invocar otro modelo.";
             if (isScannerMode) setScannerMode(false);
+            if (isSliceMode) setSliceMode(false);
             
             setTimeout(() => {
                 clearCurrentModel(); objectGroup.visible = false; hasActiveModel = false; isDismissing = false;
@@ -762,24 +1249,24 @@
         });
 
         // ==========================================
-        // COMANDOS DE VOZ J.A.R.V.I.S. (LATINO Y PRECISO)
+        // 11. COMANDOS DE VOZ CHUMINGO 3D
         // ==========================================
-        let jarvisRecognition = null, isJarvisListening = false;
+        let chumingoRecognition = null, isChumingoListening = false;
         
-        function setupJarvisVoice() {
+        function setupChumingoVoice() {
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRec) { statusText.textContent = "Navegador sin soporte de voz."; return; }
-            jarvisRecognition = new SpeechRec();
-            jarvisRecognition.lang = "es-CL";
-            jarvisRecognition.continuous = true;
-            jarvisRecognition.interimResults = true;
+            chumingoRecognition = new SpeechRec();
+            chumingoRecognition.lang = "es-CL";
+            chumingoRecognition.continuous = true;
+            chumingoRecognition.interimResults = true;
             
-            jarvisRecognition.onstart = () => {
-                isJarvisListening = true; voiceTranscript.classList.remove("hidden");
-                jarvisVoiceBtn.classList.add("bg-indigo-600", "text-white", "jarvis-active"); jarvisMicIcon.className = "fa-solid fa-microphone-lines animate-pulse";
+            chumingoRecognition.onstart = () => {
+                isChumingoListening = true; voiceTranscript.classList.remove("hidden");
+                chumingoVoiceBtn.classList.add("bg-indigo-600", "text-white", "chumingo-active"); chumingoMicIcon.className = "fa-solid fa-microphone-lines animate-pulse";
             };
             
-            jarvisRecognition.onresult = (event) => {
+            chumingoRecognition.onresult = (event) => {
                 const last = event.results[event.results.length - 1];
                 const rawText = last[0].transcript.trim();
                 voiceTranscript.innerHTML = `<i class="fa-solid fa-waveform-lines mr-1"></i> "${rawText}"`;
@@ -787,15 +1274,15 @@
                 executeVoiceCommand(rawText);
             };
             
-            jarvisRecognition.onerror = (e) => {
+            chumingoRecognition.onerror = (e) => {
                 if (e.error === "not-allowed" || e.error === "audio-capture") {
-                    isJarvisListening = false; voiceTranscript.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Micrófono bloqueado.`;
+                    isChumingoListening = false; voiceTranscript.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Micrófono bloqueado.`;
                 }
             };
             
-            jarvisRecognition.onend = () => {
-                if (isJarvisListening) { setTimeout(() => { try { jarvisRecognition.start(); } catch (e) {} }, 100); } 
-                else { voiceTranscript.classList.add("hidden"); jarvisVoiceBtn.classList.remove("bg-indigo-600", "text-white", "jarvis-active"); jarvisMicIcon.className = "fa-solid fa-microphone-slash"; }
+            chumingoRecognition.onend = () => {
+                if (isChumingoListening) { setTimeout(() => { try { chumingoRecognition.start(); } catch (e) {} }, 100); } 
+                else { voiceTranscript.classList.add("hidden"); chumingoVoiceBtn.classList.remove("bg-indigo-600", "text-white", "chumingo-active"); chumingoMicIcon.className = "fa-solid fa-microphone-slash"; }
             };
         }
 
@@ -813,148 +1300,155 @@
             const cmd = normalizeVoiceText(rawCmd);
 
             const hasTurnOff =
-                cmd.includes("desactiva") ||
-                cmd.includes("desactivar") ||
-                cmd.includes("quitar") ||
-                cmd.includes("quita") ||
-                cmd.includes("apaga") ||
-                cmd.includes("apagar") ||
-                cmd.includes("oculta") ||
-                cmd.includes("ocultar") ||
-                cmd.includes("esconde") ||
-                cmd.includes("deten") ||
-                cmd.includes("salir") ||
-                cmd.includes("sin ");
+                cmd.includes("desactiva") || cmd.includes("desactivar") ||
+                cmd.includes("quitar") || cmd.includes("quita") ||
+                cmd.includes("apaga") || cmd.includes("apagar") ||
+                cmd.includes("oculta") || cmd.includes("ocultar") ||
+                cmd.includes("esconde") || cmd.includes("deten") ||
+                cmd.includes("salir") || cmd.includes("sin ");
 
+            // 1. EXPLICAR PIEZA SELECCIONADA (FICHA DIDÁCTICA)
+            if (cmd.includes("explica") || cmd.includes("que es") || cmd.includes("funcion") || cmd.includes("leer ficha")) {
+                explainCurrentDidacticPiece();
+                return;
+            }
+
+            // 2. CORTE TRANSVERSAL / SECCIÓN
+            if (cmd.includes("corte") || cmd.includes("seccion") || cmd.includes("cortar") || cmd.includes("interior")) {
+                if (hasTurnOff) {
+                    setSliceMode(false);
+                    chumingoSpeak("Corte transversal desactivado.");
+                } else {
+                    setSliceMode(true);
+                    chumingoSpeak("Corte transversal activado.");
+                }
+                return;
+            }
+
+            // 3. PIZARRA ESPACIAL 3D
+            if (cmd.includes("pizarra") || cmd.includes("dibuj") || cmd.includes("trazo")) {
+                if (cmd.includes("borra") || cmd.includes("limpia")) {
+                    clearSpatialBoard();
+                    chumingoSpeak("Pizarra espacial borrada.");
+                } else if (hasTurnOff) {
+                    setDrawMode(false);
+                    chumingoSpeak("Modo pizarra desactivado.");
+                } else {
+                    setDrawMode(true);
+                    chumingoSpeak("Modo pizarra activado. Apunta con tu índice para dibujar.");
+                }
+                return;
+            }
+
+            // 4. MODO PLANO / BLUEPRINT
             if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("esquema")) {
                 if (hasTurnOff) {
                     setBlueprintMode(false);
-                    jarvisSpeak("Modo plano desactivado. Mostrando modelo normal.");
+                    chumingoSpeak("Modo plano desactivado. Mostrando modelo normal.");
                 } else {
                     setBlueprintMode(true);
-                    jarvisSpeak("Modo plano activado.");
+                    chumingoSpeak("Modo plano activado.");
                 }
                 return;
             }
 
             if (cmd.includes("modelo normal") || cmd.includes("modo normal") || cmd.includes("solido") || cmd.includes("textura")) {
                 setBlueprintMode(false);
-                jarvisSpeak("Mostrando modelo normal.");
+                chumingoSpeak("Mostrando modelo normal.");
                 return;
             }
 
-            if (
-                cmd.includes("expand") ||
-                cmd.includes("explot") ||
-                cmd.includes("desarm") ||
-                cmd.includes("despiece") ||
-                cmd.includes("abrir pieza") ||
-                cmd.includes("separa")
-            ) {
+            // 5. EXPANDIR / CONTRAER PIEZAS
+            if (cmd.includes("expand") || cmd.includes("explot") || cmd.includes("desarm") || cmd.includes("despiece") || cmd.includes("abrir pieza") || cmd.includes("separa")) {
                 if (!hasActiveModel) loadCarouselItem(currentCarouselIndex, false);
                 targetExplode = 0.95;
                 playSummonSound();
-                jarvisSpeak("Expandiendo modelo.");
+                chumingoSpeak("Expandiendo modelo.");
                 return;
             }
 
-            if (
-                cmd.includes("contra") ||
-                cmd.includes("arma") ||
-                cmd.includes("ensambl") ||
-                cmd.includes("junta") ||
-                cmd.includes("unir") ||
-                cmd.includes("une") ||
-                cmd.includes("cierra pieza") ||
-                cmd.includes("normalidad")
-            ) {
+            if (cmd.includes("contra") || cmd.includes("arma") || cmd.includes("ensambl") || cmd.includes("junta") || cmd.includes("unir") || cmd.includes("une") || cmd.includes("normalidad")) {
                 targetExplode = 0.0;
                 playLockSound();
-                jarvisSpeak("Contrayendo modelo a su estado normal.");
+                chumingoSpeak("Contrayendo modelo a su estado normal.");
                 return;
             }
 
+            // 6. CENTRAR HOLOGRAMA
             if (cmd.includes("centra") || cmd.includes("centro") || cmd.includes("reinicia") || cmd.includes("restaura")) {
                 resetObject();
-                jarvisSpeak("Holograma centrado.");
+                chumingoSpeak("Holograma centrado.");
                 return;
             }
 
+            // 7. ESCÁNER LÁSER
             if (cmd.includes("escan") || cmd.includes("analisis")) {
                 if (hasTurnOff) {
                     setScannerMode(false);
-                    jarvisSpeak("Escáner desactivado.");
+                    chumingoSpeak("Escáner desactivado.");
                 } else {
                     setScannerMode(true);
-                    jarvisSpeak("Iniciando escáner estructural.");
+                    chumingoSpeak("Iniciando escáner estructural.");
                 }
                 return;
             }
 
+            // 8. BIBLIOTECA DE MODELOS EDUCATIVOS POR NOMBRE O CARRUSEL
+            if (cmd.includes("volcan")) { loadCarouselItem(0, true); chumingoSpeak("Cargando volcán en capas."); return; }
+            if (cmd.includes("adn") || cmd.includes("molecula")) { loadCarouselItem(1, true); chumingoSpeak("Cargando molécula de A D N."); return; }
+            if (cmd.includes("atomo") || cmd.includes("bohr")) { loadCarouselItem(2, true); chumingoSpeak("Cargando átomo de Bohr."); return; }
+            if (cmd.includes("solar") || cmd.includes("planeta")) { loadCarouselItem(3, true); chumingoSpeak("Cargando sistema solar."); return; }
+            if (cmd.includes("motor")) { loadCarouselItem(4, true); chumingoSpeak("Cargando motor de cuatro tiempos."); return; }
+
             if (cmd.includes("siguiente") || cmd.includes("cambia")) {
                 cycleCarousel(1);
-                jarvisSpeak("Cargando siguiente modelo.");
+                chumingoSpeak("Cargando siguiente modelo.");
                 return;
             }
             if (cmd.includes("anterior")) {
                 cycleCarousel(-1);
-                jarvisSpeak("Cargando modelo anterior.");
+                chumingoSpeak("Cargando modelo anterior.");
                 return;
             }
 
+            // 9. ANILLOS Y SENSORES
             if (cmd.includes("anillo") || cmd.includes("telemetria")) {
-                if (hasTurnOff) {
-                    showRingsCheckbox.checked = false;
-                    telemetryGroup.visible = false;
-                    jarvisSpeak("Anillos ocultos.");
-                } else {
-                    showRingsCheckbox.checked = true;
-                    telemetryGroup.visible = true;
-                    jarvisSpeak("Anillos visibles.");
-                }
+                if (hasTurnOff) { showRingsCheckbox.checked = false; telemetryGroup.visible = false; chumingoSpeak("Anillos ocultos."); }
+                else { showRingsCheckbox.checked = true; telemetryGroup.visible = true; chumingoSpeak("Anillos visibles."); }
                 return;
             }
             if (cmd.includes("mano") || cmd.includes("esqueleto") || cmd.includes("sensor")) {
-                if (hasTurnOff) {
-                    showSkeletonCheckbox.checked = false;
-                    jarvisSpeak("Sensores de mano ocultos.");
-                } else {
-                    showSkeletonCheckbox.checked = true;
-                    jarvisSpeak("Sensores de mano visibles.");
-                }
+                if (hasTurnOff) { showSkeletonCheckbox.checked = false; chumingoSpeak("Sensores de mano ocultos."); }
+                else { showSkeletonCheckbox.checked = true; chumingoSpeak("Sensores de mano visibles."); }
                 return;
             }
 
+            // 10. ESCALA
             if (cmd.includes("agrand") || cmd.includes("aumenta") || cmd.includes("mas grande")) {
-                if (hasActiveModel) {
-                    targetScale = Math.min(3.5, targetScale * 1.45);
-                    jarvisSpeak("Agrandando modelo.");
-                }
+                if (hasActiveModel) { targetScale = Math.min(3.5, targetScale * 1.45); chumingoSpeak("Agrandando modelo."); }
                 return;
             }
             if (cmd.includes("achic") || cmd.includes("reduc") || cmd.includes("mas pequeno")) {
-                if (hasActiveModel) {
-                    targetScale = Math.max(0.25, targetScale * 0.65);
-                    jarvisSpeak("Achicando modelo.");
-                }
+                if (hasActiveModel) { targetScale = Math.max(0.25, targetScale * 0.65); chumingoSpeak("Achicando modelo."); }
                 return;
             }
 
+            // 11. CERRAR PROYECCIÓN
             if (cmd.includes("cerra") || cmd.includes("cierra") || cmd.includes("elimina") || cmd.includes("borra") || hasTurnOff) {
                 triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 });
-                jarvisSpeak("Cerrando proyección.");
+                chumingoSpeak("Cerrando proyección.");
             }
         }
 
-        jarvisVoiceBtn.addEventListener("click", () => {
-            if (!jarvisRecognition) return;
-            isJarvisListening = !isJarvisListening;
-            if (isJarvisListening) { try { jarvisRecognition.start(); jarvisSpeak("Micrófono activo."); } catch (e) {} }
-            else { jarvisRecognition.stop(); jarvisSpeak("Micrófono silenciado."); }
+        chumingoVoiceBtn.addEventListener("click", () => {
+            if (!chumingoRecognition) return;
+            isChumingoListening = !isChumingoListening;
+            if (isChumingoListening) { try { chumingoRecognition.start(); chumingoSpeak("Micrófono de Chumingo activo."); } catch (e) {} }
+            else { chumingoRecognition.stop(); chumingoSpeak("Micrófono silenciado."); }
         });
 
         // ==========================================
-        // UPDATE DE LÁSER (Puntero 3D)
+        // 12. LÁSER DE INSPECCIÓN Y FICHAS DIDÁCTICAS
         // ==========================================
         function updateLaserInspection(indexTipPx) {
             if (!THREE || !raycaster || !hasActiveModel || inspectableMeshes.length === 0) { clearLaserHighlight(); return; }
@@ -977,8 +1471,13 @@
                 if (highlightedMesh !== selectedMesh) {
                     clearLaserHighlight(); highlightedMesh = selectedMesh;
                     if (!selectedMesh.userData.preHighlightMat) selectedMesh.userData.preHighlightMat = selectedMesh.material;
-                    selectedMesh.material = new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.85, roughness: 0.2 });
+                    selectedMesh.material = new THREE.MeshStandardMaterial({
+                        color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.85, roughness: 0.2,
+                        clippingPlanes: isSliceMode ? [clippingPlane] : [],
+                        side: isSliceMode ? THREE.DoubleSide : THREE.FrontSide
+                    });
                     playScanBeep();
+                    showDidacticCardForMesh(selectedMesh);
                 }
                 const projected = hitPoint3D.clone().project(camera);
                 const hitCanvas = normToScreenPx({ x: (projected.x + 1) / 2, y: (-projected.y + 1) / 2 });
@@ -998,13 +1497,14 @@
             if (highlightedMesh) {
                 if (isBlueprintMode) setBlueprintMode(true);
                 else if (highlightedMesh.userData.preHighlightMat) highlightedMesh.material = highlightedMesh.userData.preHighlightMat;
+                if (isSliceMode) applyClippingToMaterials(true);
                 highlightedMesh.userData.preHighlightMat = null; highlightedMesh = null;
             }
             laserHitInfo = null; inspectedPartBadge.classList.add("hidden");
         }
 
         // ==========================================
-        // ARRANQUE DEL SISTEMA
+        // 13. ARRANQUE DEL SISTEMA
         // ==========================================
         let handLandmarker = null, lastVideoTime = -1, isLoopRunning = false, prevRotY = 0;
         const starkGesture = { armed: false, armedAt: 0, lastPalmDist: 1 };
@@ -1013,17 +1513,17 @@
         function showError(msg) { overlayError.textContent = msg; overlayError.classList.remove("hidden"); statusText.textContent = msg; statusDot.className = "w-2.5 h-2.5 rounded-full bg-red-500"; }
 
         async function startSystem() {
-            overlayError.classList.add("hidden"); launchBtn.disabled = true; launchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Iniciando...';
+            overlayError.classList.add("hidden"); launchBtn.disabled = true; launchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Iniciando CHUMINGO 3D...';
             await initSfx();
             loadLatinAmericanVoice();
 
             if (window.location.protocol === "file:") { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError('Abre el archivo con Live Server (localhost) o HTTPS.'); return; }
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError("Cámara bloqueada o sin soporte."); return; }
             
-            setupJarvisVoice();
-            if (jarvisRecognition) {
-                isJarvisListening = true;
-                try { jarvisRecognition.start(); jarvisSpeak("Sistemas en línea."); } catch(e){}
+            setupChumingoVoice();
+            if (chumingoRecognition) {
+                isChumingoListening = true;
+                try { chumingoRecognition.start(); chumingoSpeak("Chumingo 3D en línea. Listo para la clase."); } catch(e){}
             }
 
             try {
@@ -1055,7 +1555,7 @@
         }
 
         // ==========================================
-        // MAIN LOOP (RENDER 3D Y GESTOS)
+        // 14. MAIN LOOP (RENDER 3D Y GESTOS)
         // ==========================================
         function mainLoop() {
             if (handCanvas.width !== window.innerWidth || handCanvas.height !== window.innerHeight) {
@@ -1091,7 +1591,7 @@
                         objectGroup.rotation.y += 0.36;
                         const s = objectGroup.scale.x * 0.72; objectGroup.scale.set(s, s, s);
                     } else {
-                        if (gestureMode === "none" && !highlightedMesh) { 
+                        if (gestureMode === "none" && !highlightedMesh && !isDrawMode) { 
                             targetQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.0035)); 
                         }
 
@@ -1120,6 +1620,10 @@
 
                         if (scannerBar && isScannerMode) {
                             scannerBar.visible = true; scannerBar.position.y = Math.sin(elapsed * 2.6) * 1.15;
+                        }
+
+                        if (sliceVisualPlane && isSliceMode) {
+                            sliceVisualPlane.position.set(objectGroup.position.x, clippingPlane.constant, objectGroup.position.z);
                         }
 
                         scaleDisplay.textContent = `${Math.round(nextS * 100)}%`;
@@ -1166,7 +1670,11 @@
                 }
             }
 
-            if (!pointingHand && (highlightedMesh || laserHitInfo)) clearLaserHighlight();
+            if (!pointingHand) {
+                if (highlightedMesh || laserHitInfo) clearLaserHighlight();
+                activeStrokeLine = null;
+                activeStrokePoints = [];
+            }
 
             // 1. GOLPE IRON MAN (PUÑO + PALMA)
             if (hasActiveModel && !isDismissing) {
@@ -1220,20 +1728,32 @@
                 if (gestureMode === "swipe") gestureMode = "none";
             }
 
-            // 3. ROTACIÓN LIBRE CON 1 PALMA ABIERTA
+            // 3. PALMA ABIERTA: AJUSTE DE CORTE TRANSVERSAL O GIRO LIBRE 3D
             const singleOpenHand = (detectedHands.length === 1 && openHands.length === 1) ? openHands[0] : null;
-            if (singleOpenHand && !starkGesture.armed) {
-                if (hasActiveModel && !isDismissing) {
-                    if (gestureMode !== "spin") {
-                        gestureMode = "spin"; grabAnchor.handQuat.copy(singleOpenHand.quat); grabAnchor.objQuat.copy(targetQuat);
-                        gestureBadge.textContent = "Palma Libre: Giro 3D"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-sky-400";
+            if (singleOpenHand && !starkGesture.armed && hasActiveModel && !isDismissing) {
+                if (isSliceMode) {
+                    if (gestureMode !== "slice") {
+                        gestureMode = "slice";
+                        grabAnchor.sliceStartY = singleOpenHand.world.y;
+                        grabAnchor.sliceStartConst = clippingPlane.constant;
+                        gestureBadge.textContent = "Desliza Palma: Altura Corte";
+                        gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-300";
                     } else {
-                        const deltaWristQuat = singleOpenHand.quat.clone().multiply(grabAnchor.handQuat.clone().invert());
-                        targetQuat.copy(scaleQuaternionAngle(deltaWristQuat, 1.45)).multiply(grabAnchor.objQuat).normalize();
+                        const dy = singleOpenHand.world.y - grabAnchor.sliceStartY;
+                        clippingPlane.constant = Math.min(objectGroup.position.y + 1.3, Math.max(objectGroup.position.y - 1.3, grabAnchor.sliceStartConst + dy * 1.1));
                     }
                     return;
                 }
-            } else if (gestureMode === "spin") {
+
+                if (gestureMode !== "spin") {
+                    gestureMode = "spin"; grabAnchor.handQuat.copy(singleOpenHand.quat); grabAnchor.objQuat.copy(targetQuat);
+                    gestureBadge.textContent = "Palma Libre: Giro 3D"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-sky-400";
+                } else {
+                    const deltaWristQuat = singleOpenHand.quat.clone().multiply(grabAnchor.handQuat.clone().invert());
+                    targetQuat.copy(scaleQuaternionAngle(deltaWristQuat, 1.45)).multiply(grabAnchor.objQuat).normalize();
+                }
+                return;
+            } else if (gestureMode === "spin" || gestureMode === "slice") {
                 gestureMode = "none";
             }
             
@@ -1292,17 +1812,28 @@
                 return;
             }
 
-            // 7. PUNTERO LÁSER
+            // 7. DEDO ÍNDICE: PIZARRA ESPACIAL 3D O LÁSER DIDÁCTICO
             if (pointingHand) {
-                gestureMode = "point"; gestureBadge.textContent = "Láser Activo"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-rose-400";
-                updateLaserInspection(pointingHand.px); return;
+                if (isDrawMode) {
+                    gestureMode = "draw";
+                    gestureBadge.textContent = "Pizarra 3D: Dibujando";
+                    gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-fuchsia-300";
+                    drawRing(pointingHand.px.x, pointingHand.px.y, "#e879f9", 10, 3);
+                    addSpatialStrokePoint(pointingHand.px);
+                } else {
+                    gestureMode = "point";
+                    gestureBadge.textContent = "Láser Didáctico Activo";
+                    gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-rose-400";
+                    updateLaserInspection(pointingHand.px);
+                }
+                return;
             }
 
             if (gestureMode !== "none" && !starkGesture.armed) { gestureMode = "none"; gestureBadge.textContent = "Holograma Activo"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300"; }
         }
 
         // ==========================================
-        // DIBUJO EN CANVAS 2D
+        // 15. DIBUJO EN CANVAS 2D
         // ==========================================
         function drawSwipeTrail() {
             if (swipeTracker.samples.length < 2) return;
