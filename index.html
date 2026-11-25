@@ -165,10 +165,10 @@
                 <p class="text-[11px] font-mono text-cyan-400/80">Laboratorio Interactivo para Enseñanza</p>
             </div>
             <div class="text-[11px] text-gray-300 leading-relaxed text-left space-y-1.5 bg-gray-950/70 p-3.5 rounded-2xl border border-gray-800">
-                <p><strong class="text-rose-400">Dedo Índice (Láser):</strong> Estira el índice para señalar piezas o dibujar en el aire en <em>Modo Pizarra</em>.</p>
-                <p><strong class="text-amber-400">Corte Transversal:</strong> Di <em>"Corte transversal"</em> para ver el interior del modelo en tiempo real.</p>
+                <p><strong class="text-sky-400">Palma Abierta:</strong> Gira tu muñeca para rotar el modelo (queda quieto al soltarlo para apuntar fácil).</p>
+                <p><strong class="text-rose-400">Dedo Índice (Láser):</strong> Estira el índice para señalar piezas o dibujar en <em>Modo Pizarra</em>.</p>
                 <p><strong class="text-purple-400">Índice + Medio Juntos:</strong> Desliza para cambiar entre modelos educativos.</p>
-                <p><strong class="text-emerald-400">Voz Chumingo:</strong> <em>"Explica esta pieza"</em>, <em>"Expandir"</em>, <em>"Contrae modelo"</em>, <em>"Modo pizarra"</em>, <em>"Borrar pizarra"</em>, <em>"Activa modo plano"</em>.</p>
+                <p><strong class="text-emerald-400">Voz Chumingo:</strong> <em>"Detener animación"</em>, <em>"Activar animación"</em>, <em>"Explica esta pieza"</em>, <em>"Expandir"</em>, <em>"Corte transversal"</em>.</p>
             </div>
             <button id="launch-btn" class="w-full py-3.5 px-5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-power-off"></i> Iniciar CHUMINGO 3D
@@ -209,6 +209,11 @@
                     <select id="shape-select" class="bg-transparent text-xs text-gray-100 font-semibold py-2 px-1 focus:outline-none cursor-pointer max-w-[135px] sm:max-w-[175px] truncate"></select>
                     <button id="next-model-btn" class="px-2 py-2 text-cyan-400 hover:bg-gray-800 transition cursor-pointer"><i class="fa-solid fa-chevron-right text-xs"></i></button>
                 </div>
+
+                <!-- Control de Animación del Modelo (.glb) -->
+                <button id="anim-toggle-btn" title="Pausar o activar animación del modelo" class="hidden bg-teal-600 text-white border border-teal-400/50 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                    <i id="anim-toggle-icon" class="fa-solid fa-pause"></i><span class="hidden md:inline">Animación</span>
+                </button>
 
                 <!-- Corte Transversal -->
                 <button id="slice-btn" title="Corte Transversal en Tiempo Real" class="bg-gray-950/90 hover:bg-gray-800 text-amber-300 border border-amber-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
@@ -280,6 +285,8 @@
         const dragOverlay = document.getElementById("drag-overlay"), prevModelBtn = document.getElementById("prev-model-btn");
         const nextModelBtn = document.getElementById("next-model-btn"), shapeSelect = document.getElementById("shape-select");
 
+        const animToggleBtn = document.getElementById("anim-toggle-btn");
+        const animToggleIcon = document.getElementById("anim-toggle-icon");
         const sliceBtn = document.getElementById("slice-btn");
         const drawBtn = document.getElementById("draw-btn");
         const clearDrawBtn = document.getElementById("clear-draw-btn");
@@ -437,7 +444,6 @@
 
         // ==========================================
         // 5. CLASIFICADOR DE POSTURAS 3D
-        // (Detección independiente de la punta del índice)
         // ==========================================
         function classifyHandPose(landmarks) {
             const wrist = landmarks[0], thumbTip = landmarks[4], indexTip = landmarks[8], middleTip = landmarks[12];
@@ -469,14 +475,13 @@
                 return "switch";
             }
 
-            // 2. Puño cerrado (todos los dedos recogidos, incluido el índice)
+            // 2. Puño cerrado
             if (curledCount >= 3 && ratios[0] < 1.35) return "fist";
 
-            // 3. Pinza: pulgar e índice tocándose
+            // 3. Pinza
             if (dist3D(thumbTip, indexTip) < 0.085) return "pinch";
 
-            // 4. Punta del dedo índice: basta con que el índice esté estirado,
-            // sin importar la postura de los demás dedos
+            // 4. Punta del dedo índice independiente
             if (ratios[0] > 1.38 && openFingerCount < 3) {
                 return "point";
             }
@@ -501,12 +506,15 @@
         }
 
         // ==========================================
-        // 6. THREE.JS, CORTE TRANSVERSAL Y PIZARRA 3D
+        // 6. THREE.JS, ANIMACIÓN Y CORTE TRANSVERSAL
         // ==========================================
         let THREE = null, GLTFLoader = null, DRACOLoader = null, OBJLoader = null, STLLoader = null;
         let scene, camera, renderer, objectGroup, modelSlot, drawingGroup, telemetryGroup, scannerBar, sliceVisualPlane, clock, raycaster;
         let clippingPlane = null;
         let animationMixer = null;
+        let isAnimationPlaying = true;
+        let hasModelAnimation = false;
+
         let targetPos, targetQuat, grabAnchor;
         let targetScale = 1.0, targetExplode = 0.0, currentExplode = 0.0;
 
@@ -626,6 +634,28 @@
             sliceVisualPlane.visible = false;
             scene.add(sliceVisualPlane);
         }
+
+        // Control de Animación del Modelo 3D (.glb/.gltf)
+        function setModelAnimationState(play) {
+            isAnimationPlaying = play;
+            if (animationMixer) {
+                animationMixer.timeScale = play ? 1.0 : 0.0;
+            }
+            animToggleBtn.classList.toggle("bg-teal-600", play);
+            animToggleBtn.classList.toggle("text-white", play);
+            animToggleBtn.classList.toggle("bg-gray-950/90", !play);
+            animToggleBtn.classList.toggle("text-teal-300", !play);
+            animToggleIcon.className = play ? "fa-solid fa-pause" : "fa-solid fa-play";
+            if (hasActiveModel && hasModelAnimation) {
+                statusText.textContent = play ? `Animación activa: ${currentModelTitle}` : `Animación pausada: ${currentModelTitle}`;
+            }
+        }
+
+        animToggleBtn.addEventListener("click", () => {
+            if (!hasModelAnimation) return;
+            setModelAnimationState(!isAnimationPlaying);
+            chumingoSpeak(isAnimationPlaying ? "Animación activada." : "Animación detenida.");
+        });
 
         function setSliceMode(enabled) {
             isSliceMode = enabled;
@@ -988,6 +1018,8 @@
             highlightedMesh = null; lastSelectedMeshForCard = null; laserHitInfo = null;
             inspectedPartBadge.classList.add("hidden");
             didacticCard.classList.add("hidden");
+            hasModelAnimation = false;
+            animToggleBtn.classList.add("hidden");
 
             if (animationMixer) { animationMixer.stopAllAction(); animationMixer = null; }
             modelSlot.traverse((child) => {
@@ -1057,7 +1089,14 @@
                 }
             });
 
-            if (animations && animations.length > 0) { animationMixer = new THREE.AnimationMixer(rawObject); animations.forEach((clip) => animationMixer.clipAction(clip).play()); }
+            if (animations && animations.length > 0) {
+                hasModelAnimation = true;
+                animationMixer = new THREE.AnimationMixer(rawObject);
+                animations.forEach((clip) => animationMixer.clipAction(clip).play());
+                animToggleBtn.classList.remove("hidden");
+                setModelAnimationState(true); // Por defecto se mueve si tiene animación
+            }
+
             if (isBlueprintMode) setBlueprintMode(true);
             if (isSliceMode) applyClippingToMaterials(true);
             
@@ -1298,13 +1337,33 @@
                 cmd.includes("apaga") || cmd.includes("apagar") ||
                 cmd.includes("oculta") || cmd.includes("ocultar") ||
                 cmd.includes("esconde") || cmd.includes("deten") ||
-                cmd.includes("salir") || cmd.includes("sin ");
+                cmd.includes("detener") || cmd.includes("pausa") ||
+                cmd.includes("pausar") || cmd.includes("salir") ||
+                cmd.includes("sin ");
 
+            // 1. CONTROL DE ANIMACIÓN DEL MODELO 3D
+            if (cmd.includes("animacion") || cmd.includes("movimiento")) {
+                if (!hasModelAnimation) {
+                    chumingoSpeak("Este modelo no tiene una animación integrada.");
+                    return;
+                }
+                if (hasTurnOff) {
+                    setModelAnimationState(false);
+                    chumingoSpeak("Animación detenida.");
+                } else {
+                    setModelAnimationState(true);
+                    chumingoSpeak("Animación activada.");
+                }
+                return;
+            }
+
+            // 2. EXPLICAR PIEZA SELECCIONADA (FICHA DIDÁCTICA)
             if (cmd.includes("explica") || cmd.includes("que es") || cmd.includes("funcion") || cmd.includes("leer ficha")) {
                 explainCurrentDidacticPiece();
                 return;
             }
 
+            // 3. CORTE TRANSVERSAL / SECCIÓN
             if (cmd.includes("corte") || cmd.includes("seccion") || cmd.includes("cortar") || cmd.includes("interior")) {
                 if (hasTurnOff) {
                     setSliceMode(false);
@@ -1316,6 +1375,7 @@
                 return;
             }
 
+            // 4. PIZARRA ESPACIAL 3D
             if (cmd.includes("pizarra") || cmd.includes("dibuj") || cmd.includes("trazo")) {
                 if (cmd.includes("borra") || cmd.includes("limpia")) {
                     clearSpatialBoard();
@@ -1330,6 +1390,7 @@
                 return;
             }
 
+            // 5. MODO PLANO / BLUEPRINT
             if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("esquema")) {
                 if (hasTurnOff) {
                     setBlueprintMode(false);
@@ -1347,6 +1408,7 @@
                 return;
             }
 
+            // 6. EXPANDIR / CONTRAER PIEZAS
             if (cmd.includes("expand") || cmd.includes("explot") || cmd.includes("desarm") || cmd.includes("despiece") || cmd.includes("abrir pieza") || cmd.includes("separa")) {
                 if (!hasActiveModel) loadCarouselItem(currentCarouselIndex, false);
                 targetExplode = 0.95;
@@ -1362,12 +1424,14 @@
                 return;
             }
 
+            // 7. CENTRAR HOLOGRAMA
             if (cmd.includes("centra") || cmd.includes("centro") || cmd.includes("reinicia") || cmd.includes("restaura")) {
                 resetObject();
                 chumingoSpeak("Holograma centrado.");
                 return;
             }
 
+            // 8. ESCÁNER LÁSER
             if (cmd.includes("escan") || cmd.includes("analisis")) {
                 if (hasTurnOff) {
                     setScannerMode(false);
@@ -1379,6 +1443,7 @@
                 return;
             }
 
+            // 9. BIBLIOTECA DE MODELOS EDUCATIVOS
             if (cmd.includes("volcan")) { loadCarouselItem(0, true); chumingoSpeak("Cargando volcán en capas."); return; }
             if (cmd.includes("adn") || cmd.includes("molecula")) { loadCarouselItem(1, true); chumingoSpeak("Cargando molécula de A D N."); return; }
             if (cmd.includes("atomo") || cmd.includes("bohr")) { loadCarouselItem(2, true); chumingoSpeak("Cargando átomo de Bohr."); return; }
@@ -1396,6 +1461,7 @@
                 return;
             }
 
+            // 10. ANILLOS Y SENSORES
             if (cmd.includes("anillo") || cmd.includes("telemetria")) {
                 if (hasTurnOff) { showRingsCheckbox.checked = false; telemetryGroup.visible = false; chumingoSpeak("Anillos ocultos."); }
                 else { showRingsCheckbox.checked = true; telemetryGroup.visible = true; chumingoSpeak("Anillos visibles."); }
@@ -1407,6 +1473,7 @@
                 return;
             }
 
+            // 11. ESCALA
             if (cmd.includes("agrand") || cmd.includes("aumenta") || cmd.includes("mas grande")) {
                 if (hasActiveModel) { targetScale = Math.min(3.5, targetScale * 1.45); chumingoSpeak("Agrandando modelo."); }
                 return;
@@ -1416,6 +1483,7 @@
                 return;
             }
 
+            // 12. CERRAR PROYECCIÓN
             if (cmd.includes("cerra") || cmd.includes("cierra") || cmd.includes("elimina") || cmd.includes("borra") || hasTurnOff) {
                 triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 });
                 chumingoSpeak("Cerrando proyección.");
@@ -1556,7 +1624,9 @@
 
             if (renderer && scene && camera && objectGroup) {
                 const delta = clock.getDelta(); const elapsed = clock.getElapsedTime();
-                if (animationMixer) animationMixer.update(delta);
+                if (animationMixer && isAnimationPlaying) {
+                    animationMixer.update(delta);
+                }
 
                 if (burstParticles && burstLife > 0) {
                     burstLife -= delta * 2.2;
@@ -1573,10 +1643,7 @@
                         objectGroup.rotation.y += 0.36;
                         const s = objectGroup.scale.x * 0.72; objectGroup.scale.set(s, s, s);
                     } else {
-                        if (gestureMode === "none" && !highlightedMesh && !isDrawMode) { 
-                            targetQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.0035)); 
-                        }
-
+                        // Modelo quieto por defecto: solo gira cuando tú rotas la muñeca
                         objectGroup.position.lerp(targetPos, 0.45); 
                         objectGroup.quaternion.slerp(targetQuat, 0.45);
                         const currentS = objectGroup.scale.x; 
