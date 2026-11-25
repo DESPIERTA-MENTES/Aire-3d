@@ -109,12 +109,14 @@
             </div>
             <div>
                 <h2 class="text-xl font-black tracking-wider text-cyan-50">J.A.R.V.I.S. 3D LAB</h2>
-                <p class="text-[11px] font-mono text-cyan-400/80">Gestos Rigurosos y Control por Voz</p>
+                <p class="text-[11px] font-mono text-cyan-400/80">Control por Voz Latino y Gestos 3D</p>
             </div>
             <div class="text-[11px] text-gray-300 leading-relaxed text-left space-y-1.5 bg-gray-950/70 p-3.5 rounded-2xl border border-gray-800">
-                <p><strong class="text-sky-400">Voz Activa:</strong> Habla directo ("Centra holograma", "Expande holograma", "Escanear", "Modo Plano").</p>
-                <p><strong class="text-cyan-400">Manos Libres:</strong> Pinza para Mover/Escalar. Palma abierta para girar.</p>
+                <p><strong class="text-purple-400">Cambiar Modelo:</strong> Junta <strong>Índice + Medio</strong> estirados (demás dedos cerrados) y desliza de lado a lado.</p>
+                <p><strong class="text-sky-400">Palma Abierta:</strong> Gira libremente el objeto 3D con tu muñeca.</p>
+                <p><strong class="text-cyan-400">Pinzas (1 o 2):</strong> Mover y agrandar/achicar el modelo.</p>
                 <p><strong class="text-rose-400">Dedo Índice:</strong> Láser de inspección técnica.</p>
+                <p><strong class="text-emerald-400">Voz Activa:</strong> <em>"Expandir"</em>, <em>"Contrae modelo"</em>, <em>"Activa modo plano"</em>, <em>"Desactivar modo plano"</em>, <em>"Escanear"</em>, <em>"Centra holograma"</em>.</p>
             </div>
             <button id="launch-btn" class="w-full py-3.5 px-5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-power-off"></i> Iniciar Laboratorio Holográfico
@@ -217,13 +219,46 @@
         function dist3D(a, b) { return Math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2 + (a.z - b.z)**2); }
 
         // ==========================================
-        // SINTETIZADOR DE AUDIO FUTURISTA
+        // SINTETIZADOR DE AUDIO Y VOZ EN ESPAÑOL LATINO
         // ==========================================
         let sfxCtx = null;
+        let selectedLatinVoice = null;
+
         async function initSfx() {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             if (!sfxCtx) sfxCtx = new AudioCtx();
             if (sfxCtx.state === "suspended") await sfxCtx.resume();
+        }
+
+        function loadLatinAmericanVoice() {
+            if (!("speechSynthesis" in window)) return;
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices.length) return;
+
+            const preferredLocales = ["es-cl", "es-mx", "es-ar", "es-co", "es-pe", "es-ve", "es-419", "es-us"];
+            for (const loc of preferredLocales) {
+                const match = voices.find(v => v.lang.toLowerCase().replace("_", "-") === loc);
+                if (match) {
+                    selectedLatinVoice = match;
+                    return;
+                }
+            }
+
+            const anyLatin = voices.find(v => {
+                const lang = v.lang.toLowerCase().replace("_", "-");
+                return lang.startsWith("es-") && lang !== "es-es";
+            });
+            if (anyLatin) {
+                selectedLatinVoice = anyLatin;
+                return;
+            }
+
+            selectedLatinVoice = voices.find(v => v.lang.toLowerCase().startsWith("es")) || null;
+        }
+
+        if ("speechSynthesis" in window) {
+            loadLatinAmericanVoice();
+            window.speechSynthesis.onvoiceschanged = loadLatinAmericanVoice;
         }
 
         function playTone(freqStart, freqEnd, duration, type = "sine", vol = 0.25) {
@@ -245,9 +280,19 @@
 
         function jarvisSpeak(text) {
             if (!("speechSynthesis" in window)) return;
+            if (!selectedLatinVoice) loadLatinAmericanVoice();
+
             window.speechSynthesis.cancel();
             const utter = new SpeechSynthesisUtterance(text);
-            utter.lang = "es-ES"; utter.rate = 1.08; utter.pitch = 0.92; utter.volume = 0.85;
+            if (selectedLatinVoice) {
+                utter.voice = selectedLatinVoice;
+                utter.lang = selectedLatinVoice.lang;
+            } else {
+                utter.lang = "es-CL";
+            }
+            utter.rate = 1.05;
+            utter.pitch = 0.94;
+            utter.volume = 0.9;
             window.speechSynthesis.speak(utter);
         }
 
@@ -293,11 +338,16 @@
         }
 
         // ==========================================
-        // CLASIFICADOR DE POSTURAS 3D (Anti-Perspectiva)
+        // CLASIFICADOR DE POSTURAS 3D
         // ==========================================
         function classifyHandPose(landmarks) {
-            const wrist = landmarks[0], thumbTip = landmarks[4], indexTip = landmarks[8];
-            const fingerJoints = [{ tip: 8, mcp: 5 }, { tip: 12, mcp: 9 }, { tip: 16, mcp: 13 }, { tip: 20, mcp: 17 }];
+            const wrist = landmarks[0], thumbTip = landmarks[4], indexTip = landmarks[8], middleTip = landmarks[12];
+            const fingerJoints = [
+                { tip: 8, mcp: 5 },   // 0: Índice
+                { tip: 12, mcp: 9 },  // 1: Medio
+                { tip: 16, mcp: 13 }, // 2: Anular
+                { tip: 20, mcp: 17 }  // 3: Meñique
+            ];
             
             let curledCount = 0, openFingerCount = 0; const ratios = [];
             for (const f of fingerJoints) {
@@ -305,9 +355,21 @@
                 const dMcp = dist3D(landmarks[f.mcp], wrist);
                 const ratio = dTip / Math.max(dMcp, 0.001);
                 ratios.push(ratio);
-                if (ratio < 1.30) curledCount++;     
-                if (ratio > 1.55) openFingerCount++; 
+                if (ratio < 1.32) curledCount++;
+                if (ratio > 1.54) openFingerCount++;
             }
+
+            // Gesto de Cambio de Modelo: Índice + Medio estirados y juntos; Anular + Meñique cerrados
+            const indexExtended = ratios[0] > 1.48;
+            const middleExtended = ratios[1] > 1.48;
+            const ringCurled = ratios[2] < 1.36;
+            const pinkyCurled = ratios[3] < 1.36;
+            const indexMiddleClose = dist3D(indexTip, middleTip) < 0.085;
+
+            if (indexExtended && middleExtended && ringCurled && pinkyCurled && indexMiddleClose) {
+                return "switch";
+            }
+
             if (curledCount >= 3) return "fist";
             if (dist3D(thumbTip, indexTip) < 0.085) return "pinch";
 
@@ -458,6 +520,9 @@
                     if (mesh.userData.blueprintWire) mesh.userData.blueprintWire.visible = false;
                 }
             });
+            if (hasActiveModel) {
+                statusText.textContent = enabled ? "Modo plano activado." : "Modelo normal restaurado.";
+            }
         }
 
         function setScannerMode(enabled) {
@@ -474,8 +539,14 @@
             }
         }
 
-        blueprintBtn.addEventListener("click", () => setBlueprintMode(!isBlueprintMode));
-        scannerBtn.addEventListener("click", () => setScannerMode(!isScannerMode));
+        blueprintBtn.addEventListener("click", () => {
+            setBlueprintMode(!isBlueprintMode);
+            jarvisSpeak(isBlueprintMode ? "Modo plano activado." : "Modo plano desactivado.");
+        });
+        scannerBtn.addEventListener("click", () => {
+            setScannerMode(!isScannerMode);
+            jarvisSpeak(isScannerMode ? "Escáner láser iniciado." : "Escáner desactivado.");
+        });
 
         // ==========================================
         // PROCEDURALES Y CARGA DE MODELOS 3D
@@ -668,7 +739,7 @@
             if (impactPx) shockwaves.push({ x: impactPx.x, y: impactPx.y, radius: 18, alpha: 1.0 });
             spawnHologramBurst(objectGroup.position);
             gestureBadge.textContent = "Holograma Cerrado"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400";
-            statusText.textContent = "Desliza (Swipe) o usa la voz para invocar otro modelo.";
+            statusText.textContent = "Junta índice y medio y desliza, o usa la voz para invocar otro modelo.";
             if (isScannerMode) setScannerMode(false);
             
             setTimeout(() => {
@@ -691,14 +762,17 @@
         });
 
         // ==========================================
-        // COMANDOS DE VOZ J.A.R.V.I.S.
+        // COMANDOS DE VOZ J.A.R.V.I.S. (LATINO Y PRECISO)
         // ==========================================
         let jarvisRecognition = null, isJarvisListening = false;
         
         function setupJarvisVoice() {
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRec) { statusText.textContent = "Navegador sin soporte de voz."; return; }
-            jarvisRecognition = new SpeechRec(); jarvisRecognition.lang = "es-ES"; jarvisRecognition.continuous = true; jarvisRecognition.interimResults = true;
+            jarvisRecognition = new SpeechRec();
+            jarvisRecognition.lang = "es-CL";
+            jarvisRecognition.continuous = true;
+            jarvisRecognition.interimResults = true;
             
             jarvisRecognition.onstart = () => {
                 isJarvisListening = true; voiceTranscript.classList.remove("hidden");
@@ -707,10 +781,10 @@
             
             jarvisRecognition.onresult = (event) => {
                 const last = event.results[event.results.length - 1];
-                const text = last[0].transcript.trim().toLowerCase();
-                voiceTranscript.innerHTML = `<i class="fa-solid fa-waveform-lines mr-1"></i> "${text}"`;
+                const rawText = last[0].transcript.trim();
+                voiceTranscript.innerHTML = `<i class="fa-solid fa-waveform-lines mr-1"></i> "${rawText}"`;
                 if (!last.isFinal) return;
-                executeVoiceCommand(text);
+                executeVoiceCommand(rawText);
             };
             
             jarvisRecognition.onerror = (e) => {
@@ -725,49 +799,158 @@
             };
         }
 
-        function executeVoiceCommand(cmd) {
-            const isDeactivate = cmd.includes("desactiva") || cmd.includes("quitar") || cmd.includes("quita") || cmd.includes("apaga") || cmd.includes("deten") || cmd.includes("detén") || cmd.includes("salir") || cmd.includes("sin ");
-            
-            // Prioridad absoluta a las acciones
-            if (cmd.includes("centra") || cmd.includes("reiniciar") || cmd.includes("restaurar") || cmd.includes("centro")) {
-                resetObject(); jarvisSpeak("Holograma centrado.");
-            } else if (cmd.includes("expande") || cmd.includes("explotar") || cmd.includes("desarmar") || cmd.includes("despiece") || cmd.includes("abrir piezas")) {
+        function normalizeVoiceText(str) {
+            return str
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[.,!?¿¡]/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
+        }
+
+        function executeVoiceCommand(rawCmd) {
+            const cmd = normalizeVoiceText(rawCmd);
+
+            const hasTurnOff =
+                cmd.includes("desactiva") ||
+                cmd.includes("desactivar") ||
+                cmd.includes("quitar") ||
+                cmd.includes("quita") ||
+                cmd.includes("apaga") ||
+                cmd.includes("apagar") ||
+                cmd.includes("oculta") ||
+                cmd.includes("ocultar") ||
+                cmd.includes("esconde") ||
+                cmd.includes("deten") ||
+                cmd.includes("salir") ||
+                cmd.includes("sin ");
+
+            if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("esquema")) {
+                if (hasTurnOff) {
+                    setBlueprintMode(false);
+                    jarvisSpeak("Modo plano desactivado. Mostrando modelo normal.");
+                } else {
+                    setBlueprintMode(true);
+                    jarvisSpeak("Modo plano activado.");
+                }
+                return;
+            }
+
+            if (cmd.includes("modelo normal") || cmd.includes("modo normal") || cmd.includes("solido") || cmd.includes("textura")) {
+                setBlueprintMode(false);
+                jarvisSpeak("Mostrando modelo normal.");
+                return;
+            }
+
+            if (
+                cmd.includes("expand") ||
+                cmd.includes("explot") ||
+                cmd.includes("desarm") ||
+                cmd.includes("despiece") ||
+                cmd.includes("abrir pieza") ||
+                cmd.includes("separa")
+            ) {
                 if (!hasActiveModel) loadCarouselItem(currentCarouselIndex, false);
-                targetExplode = 0.95; playSummonSound(); jarvisSpeak("Desplegando componentes.");
-            } else if (cmd.includes("armar") || cmd.includes("ensamblar") || cmd.includes("juntar") || cmd.includes("unir") || cmd.includes("cierra piezas")) {
-                targetExplode = 0.0; playLockSound(); jarvisSpeak("Componentes ensamblados.");
-            } else if (cmd.includes("escáner") || cmd.includes("escaner") || cmd.includes("escanear") || cmd.includes("análisis")) {
-                if (isDeactivate) { setScannerMode(false); jarvisSpeak("Escáner desactivado."); }
-                else { setScannerMode(true); jarvisSpeak("Escáner láser iniciado."); }
-            } else if (cmd.includes("cerrar") || cmd.includes("eliminar") || cmd.includes("borrar") || (cmd.includes("apaga") && !cmd.includes("plano") && !cmd.includes("escáner") && !cmd.includes("anillos"))) {
-                triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 }); jarvisSpeak("Cerrando proyección.");
-            } else if (cmd.includes("siguiente") || cmd.includes("cambiar")) {
-                cycleCarousel(1); jarvisSpeak("Cargando siguiente modelo.");
-            } else if (cmd.includes("anterior")) {
-                cycleCarousel(-1); jarvisSpeak("Modelo anterior.");
-            } else if (cmd.includes("anillos") || cmd.includes("telemetría")) {
-                if (isDeactivate) { showRingsCheckbox.checked = false; telemetryGroup.visible = false; jarvisSpeak("Anillos ocultos."); }
-                else { showRingsCheckbox.checked = true; telemetryGroup.visible = true; jarvisSpeak("Anillos visibles."); }
-            } else if (cmd.includes("manos") || cmd.includes("esqueleto") || cmd.includes("sensores")) {
-                if (isDeactivate) { showSkeletonCheckbox.checked = false; jarvisSpeak("Sensores ocultos."); }
-                else { showSkeletonCheckbox.checked = true; jarvisSpeak("Sensores visibles."); }
-            } else if (cmd.includes("agrandar") || cmd.includes("aumentar") || cmd.includes("más grande")) {
-                if (hasActiveModel) { targetScale *= 1.5; jarvisSpeak("Aumentando escala."); }
-            } else if (cmd.includes("achicar") || cmd.includes("reducir") || cmd.includes("más pequeño")) {
-                if (hasActiveModel) { targetScale *= 0.6; jarvisSpeak("Reduciendo escala."); }
-            } else if (cmd.includes("sólido") || cmd.includes("solido") || cmd.includes("normal") || cmd.includes("textura")) {
-                setBlueprintMode(false); jarvisSpeak("Texturas restauradas.");
-            } else if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("holograma") || cmd.includes("esquema")) {
-                if (isDeactivate) { setBlueprintMode(false); jarvisSpeak("Modo plano desactivado."); }
-                else { setBlueprintMode(true); jarvisSpeak("Modo plano activado."); }
+                targetExplode = 0.95;
+                playSummonSound();
+                jarvisSpeak("Expandiendo modelo.");
+                return;
+            }
+
+            if (
+                cmd.includes("contra") ||
+                cmd.includes("arma") ||
+                cmd.includes("ensambl") ||
+                cmd.includes("junta") ||
+                cmd.includes("unir") ||
+                cmd.includes("une") ||
+                cmd.includes("cierra pieza") ||
+                cmd.includes("normalidad")
+            ) {
+                targetExplode = 0.0;
+                playLockSound();
+                jarvisSpeak("Contrayendo modelo a su estado normal.");
+                return;
+            }
+
+            if (cmd.includes("centra") || cmd.includes("centro") || cmd.includes("reinicia") || cmd.includes("restaura")) {
+                resetObject();
+                jarvisSpeak("Holograma centrado.");
+                return;
+            }
+
+            if (cmd.includes("escan") || cmd.includes("analisis")) {
+                if (hasTurnOff) {
+                    setScannerMode(false);
+                    jarvisSpeak("Escáner desactivado.");
+                } else {
+                    setScannerMode(true);
+                    jarvisSpeak("Iniciando escáner estructural.");
+                }
+                return;
+            }
+
+            if (cmd.includes("siguiente") || cmd.includes("cambia")) {
+                cycleCarousel(1);
+                jarvisSpeak("Cargando siguiente modelo.");
+                return;
+            }
+            if (cmd.includes("anterior")) {
+                cycleCarousel(-1);
+                jarvisSpeak("Cargando modelo anterior.");
+                return;
+            }
+
+            if (cmd.includes("anillo") || cmd.includes("telemetria")) {
+                if (hasTurnOff) {
+                    showRingsCheckbox.checked = false;
+                    telemetryGroup.visible = false;
+                    jarvisSpeak("Anillos ocultos.");
+                } else {
+                    showRingsCheckbox.checked = true;
+                    telemetryGroup.visible = true;
+                    jarvisSpeak("Anillos visibles.");
+                }
+                return;
+            }
+            if (cmd.includes("mano") || cmd.includes("esqueleto") || cmd.includes("sensor")) {
+                if (hasTurnOff) {
+                    showSkeletonCheckbox.checked = false;
+                    jarvisSpeak("Sensores de mano ocultos.");
+                } else {
+                    showSkeletonCheckbox.checked = true;
+                    jarvisSpeak("Sensores de mano visibles.");
+                }
+                return;
+            }
+
+            if (cmd.includes("agrand") || cmd.includes("aumenta") || cmd.includes("mas grande")) {
+                if (hasActiveModel) {
+                    targetScale = Math.min(3.5, targetScale * 1.45);
+                    jarvisSpeak("Agrandando modelo.");
+                }
+                return;
+            }
+            if (cmd.includes("achic") || cmd.includes("reduc") || cmd.includes("mas pequeno")) {
+                if (hasActiveModel) {
+                    targetScale = Math.max(0.25, targetScale * 0.65);
+                    jarvisSpeak("Achicando modelo.");
+                }
+                return;
+            }
+
+            if (cmd.includes("cerra") || cmd.includes("cierra") || cmd.includes("elimina") || cmd.includes("borra") || hasTurnOff) {
+                triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 });
+                jarvisSpeak("Cerrando proyección.");
             }
         }
 
         jarvisVoiceBtn.addEventListener("click", () => {
             if (!jarvisRecognition) return;
             isJarvisListening = !isJarvisListening;
-            if (isJarvisListening) { try { jarvisRecognition.start(); jarvisSpeak("Micro abierto."); } catch (e) {} }
-            else { jarvisRecognition.stop(); jarvisSpeak("Micro silenciado."); }
+            if (isJarvisListening) { try { jarvisRecognition.start(); jarvisSpeak("Micrófono activo."); } catch (e) {} }
+            else { jarvisRecognition.stop(); jarvisSpeak("Micrófono silenciado."); }
         });
 
         // ==========================================
@@ -832,6 +1015,8 @@
         async function startSystem() {
             overlayError.classList.add("hidden"); launchBtn.disabled = true; launchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Iniciando...';
             await initSfx();
+            loadLatinAmericanVoice();
+
             if (window.location.protocol === "file:") { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError('Abre el archivo con Live Server (localhost) o HTTPS.'); return; }
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError("Cámara bloqueada o sin soporte."); return; }
             
@@ -906,12 +1091,10 @@
                         objectGroup.rotation.y += 0.36;
                         const s = objectGroup.scale.x * 0.72; objectGroup.scale.set(s, s, s);
                     } else {
-                        // Solo rota en el eje Y si no lo estás agarrando, para que "no flote"
                         if (gestureMode === "none" && !highlightedMesh) { 
                             targetQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.0035)); 
                         }
 
-                        // Lerp ajustado para que la traslación siga la mano de forma más rígida sin sentirse en hielo
                         objectGroup.position.lerp(targetPos, 0.45); 
                         objectGroup.quaternion.slerp(targetQuat, 0.45);
                         const currentS = objectGroup.scale.x; 
@@ -952,7 +1135,7 @@
 
         function processHands(results) {
             if (!THREE || !objectGroup) return;
-            const activePinches = [], openHands = [], detectedHands = []; let pointingHand = null; const now = performance.now();
+            const activePinches = [], openHands = [], switchHands = [], detectedHands = []; let pointingHand = null; const now = performance.now();
             
             if (results.landmarks) {
                 for (let i = 0; i < results.landmarks.length; i++) {
@@ -962,6 +1145,17 @@
                     detectedHands.push({ pose, palmNorm, palmPx, landmarks, quat: handQuat });
                     
                     if (pose === "fist") { drawRing(palmPx.x, palmPx.y, "#f97316", 28, 4); drawLabel("PUÑO", palmPx.x, palmPx.y - 36, "#fb923c"); }
+                    else if (pose === "switch") {
+                        const pairMid = {
+                            x: (landmarks[8].x + landmarks[12].x) / 2,
+                            y: (landmarks[8].y + landmarks[12].y) / 2,
+                            z: (landmarks[8].z + landmarks[12].z) / 2
+                        };
+                        const pairPx = normToScreenPx(pairMid);
+                        drawRing(pairPx.x, pairPx.y, "#c084fc", 20, 3.5);
+                        drawLabel("CAMBIO 3D", pairPx.x, pairPx.y - 30, "#d8b4fe");
+                        switchHands.push({ norm: pairMid, px: pairPx });
+                    }
                     else if (pose === "open") { drawRing(palmPx.x, palmPx.y, "#22d3ee", 24, 3); openHands.push({ world: normToWorld(palmNorm), norm: palmNorm, px: palmPx, quat: handQuat }); }
                     else if (pose === "point") { pointingHand = { norm: landmarks[8], px: normToScreenPx(landmarks[8]) }; }
                     else if (pose === "pinch") {
@@ -996,23 +1190,40 @@
                 } else if (detectedHands.length === 1 && starkGesture.armed && starkGesture.lastPalmDist < 0.28) { starkGesture.armed = false; triggerStarkDismissal(detectedHands[0].palmPx); return; }
             }
 
-            // 2. SWIPE Y ROTACIÓN LIBRE CON PALMA ABIERTA
-            const singleOpenHand = (detectedHands.length === 1 && openHands.length === 1) ? openHands[0] : null;
-            if (singleOpenHand && !starkGesture.armed) {
-                swipeTracker.missedFrames = 0; const screenNormX = singleOpenHand.px.x / handCanvas.width;
-                swipeTracker.samples.push({ x: screenNormX, px: singleOpenHand.px, t: now });
-                swipeTracker.samples = swipeTracker.samples.filter(s => (now - s.t) < 650);
+            // 2. SWIPE PARA CAMBIAR DE MODELO (ÍNDICE + MEDIO JUNTOS, DEMÁS CERRADOS)
+            if (switchHands.length === 1 && !starkGesture.armed) {
+                const swHand = switchHands[0];
+                swipeTracker.missedFrames = 0;
+                const screenNormX = swHand.px.x / handCanvas.width;
+                swipeTracker.samples.push({ x: screenNormX, px: swHand.px, t: now });
+                swipeTracker.samples = swipeTracker.samples.filter(s => (now - s.t) < 700);
 
-                let isSwiping = false;
-                if (swipeTracker.samples.length >= 3 && (now - swipeTracker.lastSwipeAt) > 900) {
+                gestureMode = "swipe";
+                gestureBadge.textContent = "Desliza Índice+Medio";
+                gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-purple-300";
+
+                if (swipeTracker.samples.length >= 3 && (now - swipeTracker.lastSwipeAt) > 850) {
                     const dx = screenNormX - swipeTracker.samples[0].x;
-                    if (Math.abs(dx) > 0.15) {
-                        isSwiping = true; swipeTracker.lastSwipeAt = now; swipeTracker.samples = []; const step = dx > 0 ? 1 : -1; cycleCarousel(step);
-                        gestureMode = "swipe"; gestureBadge.textContent = step > 0 ? "Swipe →" : "← Swipe"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
-                        return;
+                    if (Math.abs(dx) > 0.14) {
+                        swipeTracker.lastSwipeAt = now;
+                        swipeTracker.samples = [];
+                        const step = dx > 0 ? 1 : -1;
+                        cycleCarousel(step);
+                        gestureBadge.textContent = step > 0 ? "Siguiente Modelo →" : "← Modelo Anterior";
+                        gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
                     }
                 }
-                if (!isSwiping && hasActiveModel && !isDismissing) {
+                return;
+            } else {
+                swipeTracker.missedFrames++;
+                if (swipeTracker.missedFrames > 3) swipeTracker.samples = [];
+                if (gestureMode === "swipe") gestureMode = "none";
+            }
+
+            // 3. ROTACIÓN LIBRE CON 1 PALMA ABIERTA
+            const singleOpenHand = (detectedHands.length === 1 && openHands.length === 1) ? openHands[0] : null;
+            if (singleOpenHand && !starkGesture.armed) {
+                if (hasActiveModel && !isDismissing) {
                     if (gestureMode !== "spin") {
                         gestureMode = "spin"; grabAnchor.handQuat.copy(singleOpenHand.quat); grabAnchor.objQuat.copy(targetQuat);
                         gestureBadge.textContent = "Palma Libre: Giro 3D"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-sky-400";
@@ -1022,11 +1233,13 @@
                     }
                     return;
                 }
-            } else { swipeTracker.missedFrames++; if (swipeTracker.missedFrames > 2) swipeTracker.samples = []; if (gestureMode === "spin") gestureMode = "none"; }
+            } else if (gestureMode === "spin") {
+                gestureMode = "none";
+            }
             
             if (!hasActiveModel || isDismissing) return;
 
-            // 3. MODO 2 PINZAS (ESCALA + ROTACIÓN + MOVER)
+            // 4. MODO 2 PINZAS (ESCALA + ROTACIÓN + MOVER)
             if (activePinches.length >= 2) {
                 const sorted = activePinches.slice(0, 2).sort((a, b) => a.world.x - b.world.x); const hLeft = sorted[0], hRight = sorted[1];
                 drawLine(hLeft.px, hRight.px, "#818cf8", 3);
@@ -1049,7 +1262,7 @@
                 return;
             }
 
-            // 4. VISTA EXPLOSIVA (2 PALMAS ABIERTAS)
+            // 5. VISTA EXPLOSIVA (2 PALMAS ABIERTAS)
             if (openHands.length >= 2 && !starkGesture.armed) {
                 const sorted = openHands.slice(0, 2).sort((a, b) => a.world.x - b.world.x); const pLeft = sorted[0], pRight = sorted[1];
                 const spanWorld = pLeft.world.distanceTo(pRight.world); drawLine(pLeft.px, pRight.px, "#22d3ee", 3);
@@ -1065,7 +1278,7 @@
                 return;
             }
 
-            // 5. MODO 1 PINZA (MOVER Y GIRAR ESTRICTO)
+            // 6. MODO 1 PINZA (MOVER Y GIRAR ESTRICTO)
             if (activePinches.length === 1) {
                 const hand = activePinches[0];
                 if (gestureMode !== "one") {
@@ -1079,7 +1292,7 @@
                 return;
             }
 
-            // 6. PUNTERO LÁSER
+            // 7. PUNTERO LÁSER
             if (pointingHand) {
                 gestureMode = "point"; gestureBadge.textContent = "Láser Activo"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-rose-400";
                 updateLaserInspection(pointingHand.px); return;
@@ -1095,7 +1308,7 @@
             if (swipeTracker.samples.length < 2) return;
             handCtx.save(); handCtx.beginPath(); handCtx.moveTo(swipeTracker.samples[0].px.x, swipeTracker.samples[0].px.y);
             for (let i = 1; i < swipeTracker.samples.length; i++) handCtx.lineTo(swipeTracker.samples[i].px.x, swipeTracker.samples[i].px.y);
-            handCtx.strokeStyle = "rgba(34, 211, 238, 0.55)"; handCtx.lineWidth = 4; handCtx.lineCap = "round"; handCtx.stroke(); handCtx.restore();
+            handCtx.strokeStyle = "rgba(192, 132, 252, 0.7)"; handCtx.lineWidth = 4; handCtx.lineCap = "round"; handCtx.stroke(); handCtx.restore();
         }
         function drawLaserAndHudCallouts() {
             if (!laserHitInfo) return;
@@ -1122,10 +1335,15 @@
         function drawRing(x, y, color, radius, lineWidth) { handCtx.beginPath(); handCtx.arc(x, y, radius, 0, Math.PI * 2); handCtx.strokeStyle = color; handCtx.lineWidth = lineWidth; handCtx.stroke(); }
         function drawLine(p1, p2, color, width) { handCtx.beginPath(); handCtx.moveTo(p1.x, p1.y); handCtx.lineTo(p2.x, p2.y); handCtx.strokeStyle = color; handCtx.lineWidth = width; handCtx.setLineDash([8, 6]); handCtx.stroke(); handCtx.setLineDash([]); }
         function drawSkeleton(landmarks, pose) {
-            handCtx.strokeStyle = pose === "fist" ? "rgba(249, 115, 22, 0.55)" : pose === "point" ? "rgba(244, 63, 94, 0.65)" : "rgba(255, 255, 255, 0.35)"; handCtx.lineWidth = 1.5;
+            handCtx.strokeStyle = pose === "fist" ? "rgba(249, 115, 22, 0.55)" : pose === "point" ? "rgba(244, 63, 94, 0.65)" : pose === "switch" ? "rgba(192, 132, 252, 0.7)" : "rgba(255, 255, 255, 0.35)"; handCtx.lineWidth = 1.5;
             const connections = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
             for (const [a, b] of connections) { const pa = normToScreenPx(landmarks[a]), pb = normToScreenPx(landmarks[b]); handCtx.beginPath(); handCtx.moveTo(pa.x, pa.y); handCtx.lineTo(pb.x, pb.y); handCtx.stroke(); }
-            for (let i = 0; i < landmarks.length; i++) { const pt = normToScreenPx(landmarks[i]), isTip = i === 4 || i === 8; handCtx.beginPath(); handCtx.arc(pt.x, pt.y, isTip ? 5 : 2.5, 0, Math.PI * 2); handCtx.fillStyle = pose === "fist" ? "#fb923c" : (pose === "point" && i === 8 ? "#f43f5e" : (isTip ? "#facc15" : "#38bdf8")); handCtx.fill(); }
+            for (let i = 0; i < landmarks.length; i++) {
+                const pt = normToScreenPx(landmarks[i]), isTip = i === 4 || i === 8;
+                handCtx.beginPath(); handCtx.arc(pt.x, pt.y, isTip ? 5 : 2.5, 0, Math.PI * 2);
+                handCtx.fillStyle = pose === "fist" ? "#fb923c" : (pose === "point" && i === 8 ? "#f43f5e" : (pose === "switch" && (i === 8 || i === 12) ? "#c084fc" : (isTip ? "#facc15" : "#38bdf8")));
+                handCtx.fill();
+            }
         }
     </script>
 </body>
