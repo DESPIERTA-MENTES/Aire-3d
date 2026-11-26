@@ -171,7 +171,7 @@
                 <p><strong class="text-cyan-400">Escena Limpia al Iniciar:</strong> Elige un modelo del menú superior, carga tu archivo 3D o pídelo por voz (<em>"Abrir volcán"</em>, <em>"Abrir sistema solar"</em>).</p>
                 <p><strong class="text-rose-400">Dedo Índice (Láser):</strong> Estira el índice para seleccionar una pieza y ver su ficha didáctica.</p>
                 <p><strong class="text-violet-400">Aislar Pieza:</strong> Señala una parte y di <em>"Aislar pieza"</em> para estudiarla sola; di <em>"Mostrar todo"</em> para volver.</p>
-                <p><strong class="text-emerald-400">Voz Chumingo:</strong> <em>"Aumenta tamaño 10%"</em>, <em>"Reduce tamaño 20%"</em>, <em>"Activa 360"</em>, <em>"Expandir"</em>, <em>"Corte transversal"</em>.</p>
+                <p><strong class="text-emerald-400">Voz Continua Activa:</strong> <em>"Aumenta tamaño 10%"</em>, <em>"Reduce tamaño 20%"</em>, <em>"Activa 360"</em>, <em>"Expandir"</em>, <em>"Corte transversal"</em>.</p>
             </div>
             <button id="launch-btn" class="w-full py-3.5 px-5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-power-off"></i> Iniciar CHUMINGO 3D
@@ -196,8 +196,8 @@
                 <p id="status-text" class="text-[11px] font-mono text-gray-300 truncate max-w-[290px] sm:max-w-sm">
                     Inicia la cámara para comenzar la clase interactiva.
                 </p>
-                <p id="voice-transcript" class="hidden text-[10px] font-mono text-emerald-300 truncate">
-                    <i class="fa-solid fa-waveform-lines mr-1"></i> Escuchando comandos...
+                <p id="voice-transcript" class="text-[10px] font-mono text-emerald-300 truncate">
+                    <i class="fa-solid fa-microphone-lines mr-1"></i> Listo para activar micrófono...
                 </p>
             </div>
 
@@ -251,8 +251,8 @@
                     <i class="fa-solid fa-barcode"></i><span class="hidden xl:inline">Escáner</span>
                 </button>
 
-                <button id="chumingo-voice-btn" title="Micrófono CHUMINGO" class="bg-gray-950/90 hover:bg-gray-800 text-indigo-300 border border-indigo-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i id="chumingo-mic-icon" class="fa-solid fa-microphone-slash"></i>
+                <button id="chumingo-voice-btn" title="Micrófono CHUMINGO (Siempre activo)" class="bg-indigo-600 text-white border border-indigo-400/50 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer chumingo-active">
+                    <i id="chumingo-mic-icon" class="fa-solid fa-microphone-lines"></i>
                 </button>
 
                 <button id="reset-btn" title="Centrar holograma" class="bg-gray-950/90 hover:bg-gray-800 text-amber-300 border border-amber-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
@@ -356,6 +356,7 @@
         // ==========================================
         let sfxCtx = null;
         let selectedLatinVoice = null;
+        let isSpeakingNow = false;
 
         async function initSfx() {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -413,9 +414,12 @@
             } else {
                 utter.lang = "es-CL";
             }
-            utter.rate = 1.04;
+            utter.rate = 1.05;
             utter.pitch = 0.95;
             utter.volume = 0.92;
+            utter.onstart = () => { isSpeakingNow = true; };
+            utter.onend = () => { setTimeout(() => { isSpeakingNow = false; }, 250); };
+            utter.onerror = () => { isSpeakingNow = false; };
             window.speechSynthesis.speak(utter);
         }
 
@@ -1451,41 +1455,118 @@
         });
 
         // ==========================================
-        // 11. COMANDOS DE VOZ CHUMINGO 3D
+        // 11. COMANDOS DE VOZ CHUMINGO 3D (SIEMPRE ACTIVO Y CERTERO)
         // ==========================================
-        let chumingoRecognition = null, isChumingoListening = false;
-        
+        let chumingoRecognition = null;
+        let wantMicActive = true;
+        let isRecognitionRunning = false;
+        let voiceWatchdogTimer = null;
+        let lastExecutedKey = "";
+        let lastExecutedAt = 0;
+
+        function updateMicButtonUI(active, errorMsg = null) {
+            chumingoVoiceBtn.classList.toggle("bg-indigo-600", active);
+            chumingoVoiceBtn.classList.toggle("text-white", active);
+            chumingoVoiceBtn.classList.toggle("chumingo-active", active);
+            chumingoVoiceBtn.classList.toggle("bg-gray-950/90", !active);
+            chumingoVoiceBtn.classList.toggle("text-indigo-300", !active);
+            chumingoMicIcon.className = active
+                ? "fa-solid fa-microphone-lines animate-pulse"
+                : "fa-solid fa-microphone-slash";
+
+            if (errorMsg) {
+                voiceTranscript.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1 text-amber-400"></i> ${errorMsg}`;
+            } else if (active) {
+                voiceTranscript.innerHTML = `<i class="fa-solid fa-waveform-lines mr-1"></i> Micrófono activo (escuchando)...`;
+            } else {
+                voiceTranscript.innerHTML = `<i class="fa-solid fa-microphone-slash mr-1 text-gray-400"></i> Micrófono pausado manualmente.`;
+            }
+        }
+
+        function safeStartRecognition() {
+            if (!wantMicActive || isRecognitionRunning) return;
+            if (!chumingoRecognition) setupChumingoVoice();
+            if (!chumingoRecognition) return;
+            try {
+                chumingoRecognition.start();
+            } catch (e) {
+                // Ignorar si ya estaba iniciando
+            }
+        }
+
         function setupChumingoVoice() {
+            if (chumingoRecognition) return;
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRec) { statusText.textContent = "Navegador sin soporte de voz."; return; }
+            if (!SpeechRec) {
+                updateMicButtonUI(false, "Navegador sin soporte de voz (usa Chrome o Edge).");
+                return;
+            }
+
             chumingoRecognition = new SpeechRec();
             chumingoRecognition.lang = "es-CL";
             chumingoRecognition.continuous = true;
             chumingoRecognition.interimResults = true;
-            
+            chumingoRecognition.maxAlternatives = 3;
+
             chumingoRecognition.onstart = () => {
-                isChumingoListening = true; voiceTranscript.classList.remove("hidden");
-                chumingoVoiceBtn.classList.add("bg-indigo-600", "text-white", "chumingo-active"); chumingoMicIcon.className = "fa-solid fa-microphone-lines animate-pulse";
+                isRecognitionRunning = true;
+                updateMicButtonUI(true);
             };
-            
+
             chumingoRecognition.onresult = (event) => {
                 const last = event.results[event.results.length - 1];
-                const rawText = last[0].transcript.trim();
-                voiceTranscript.innerHTML = `<i class="fa-solid fa-waveform-lines mr-1"></i> "${rawText}"`;
-                if (!last.isFinal) return;
-                executeVoiceCommand(rawText);
+                // Evaluar la mejor alternativa disponible
+                let rawText = last[0].transcript.trim();
+                for (let a = 0; a < last.length; a++) {
+                    const alt = last[a].transcript.trim();
+                    if (alt.length > rawText.length) rawText = alt;
+                }
+
+                if (rawText) {
+                    voiceTranscript.innerHTML = `<i class="fa-solid fa-waveform-lines mr-1"></i> "${rawText}"`;
+                }
+
+                // Evitar que Chumingo se escuche a sí mismo mientras habla
+                if (isSpeakingNow) return;
+
+                // Ejecutar tanto en resultado final como en parciales claros para respuesta instantánea
+                executeVoiceCommand(rawText, last.isFinal);
             };
-            
+
             chumingoRecognition.onerror = (e) => {
-                if (e.error === "not-allowed" || e.error === "audio-capture") {
-                    isChumingoListening = false; voiceTranscript.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Micrófono bloqueado.`;
+                isRecognitionRunning = false;
+                if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+                    wantMicActive = false;
+                    updateMicButtonUI(false, "Permiso de micrófono denegado en el navegador.");
+                    return;
+                }
+                if (e.error === "audio-capture") {
+                    updateMicButtonUI(false, "No se detectó micrófono disponible.");
+                    return;
+                }
+                // En errores pasajeros (no-speech, aborted, network), mantener estado activo y reintentar
+                if (wantMicActive) {
+                    setTimeout(safeStartRecognition, 250);
                 }
             };
-            
+
             chumingoRecognition.onend = () => {
-                if (isChumingoListening) { setTimeout(() => { try { chumingoRecognition.start(); } catch (e) {} }, 100); } 
-                else { voiceTranscript.classList.add("hidden"); chumingoVoiceBtn.classList.remove("bg-indigo-600", "text-white", "chumingo-active"); chumingoMicIcon.className = "fa-solid fa-microphone-slash"; }
+                isRecognitionRunning = false;
+                if (wantMicActive) {
+                    setTimeout(safeStartRecognition, 120);
+                } else {
+                    updateMicButtonUI(false);
+                }
             };
+
+            // Guardián cada 1.2s para asegurar que el micrófono nunca quede caído
+            if (!voiceWatchdogTimer) {
+                voiceWatchdogTimer = setInterval(() => {
+                    if (wantMicActive && !isRecognitionRunning) {
+                        safeStartRecognition();
+                    }
+                }, 1200);
+            }
         }
 
         function normalizeVoiceText(str) {
@@ -1494,6 +1575,7 @@
                 .normalize("NFD")
                 .replace(/[\u0300-\u036f]/g, "")
                 .replace(/[.,!?¿¡%]/g, "")
+                .replace(/\b(chumingo|sumingo|domingo|yumingo|por favor|oye|hola)\b/g, " ")
                 .replace(/\s+/g, " ")
                 .trim();
         }
@@ -1515,8 +1597,19 @@
             return fallback;
         }
 
-        function executeVoiceCommand(rawCmd) {
+        function canRunAction(actionKey) {
+            const now = performance.now();
+            if (lastExecutedKey === actionKey && (now - lastExecutedAt) < 1200) {
+                return false;
+            }
+            lastExecutedKey = actionKey;
+            lastExecutedAt = now;
+            return true;
+        }
+
+        function executeVoiceCommand(rawCmd, isFinal = true) {
             const cmd = normalizeVoiceText(rawCmd);
+            if (!cmd) return;
 
             const hasTurnOff =
                 cmd.includes("desactiva") || cmd.includes("desactivar") ||
@@ -1531,14 +1624,17 @@
             // 1. AISLAR PIEZA INDIVIDUAL O VOLVER A VER TODO
             if (cmd.includes("aisla") || cmd.includes("enfoca") || cmd.includes("solo esta") || cmd.includes("individual")) {
                 if (hasTurnOff) {
+                    if (!canRunAction("isolate_off")) return;
                     exitPartIsolation(true);
-                } else if (isolateSelectedPart()) {
-                    chumingoSpeak(`Aislando ${isolatedMesh.name}.`);
+                } else {
+                    if (!canRunAction("isolate_on")) return;
+                    if (isolateSelectedPart()) chumingoSpeak(`Aislando ${isolatedMesh.name}.`);
                 }
                 return;
             }
 
             if (cmd.includes("mostrar todo") || cmd.includes("muestra todo") || cmd.includes("ver todo") || cmd.includes("modelo completo") || cmd.includes("restaurar piezas")) {
+                if (!canRunAction("isolate_off")) return;
                 exitPartIsolation(true);
                 return;
             }
@@ -1546,9 +1642,11 @@
             // 2. MODO GIRO CONTINUO 360°
             if (cmd.includes("360") || cmd.includes("trescientos sesenta") || cmd.includes("giro continuo") || cmd.includes("rotacion continua")) {
                 if (hasTurnOff) {
+                    if (!canRunAction("360_off")) return;
                     setAutoSpin360(false);
                     chumingoSpeak("Giro 360 detenido.");
                 } else {
+                    if (!canRunAction("360_on")) return;
                     if (!hasActiveModel) loadCarouselItem(currentCarouselIndex, false);
                     setAutoSpin360(true);
                     chumingoSpeak("Modo 360 activado.");
@@ -1558,14 +1656,14 @@
 
             // 3. CONTROL DE ANIMACIÓN DEL MODELO 3D
             if (cmd.includes("animacion") || cmd.includes("movimiento")) {
-                if (!hasModelAnimation) {
-                    chumingoSpeak("Este modelo no tiene una animación integrada.");
-                    return;
-                }
                 if (hasTurnOff) {
+                    if (!canRunAction("anim_off")) return;
+                    if (!hasModelAnimation) { chumingoSpeak("Este modelo no tiene una animación integrada."); return; }
                     setModelAnimationState(false);
                     chumingoSpeak("Animación detenida.");
                 } else {
+                    if (!canRunAction("anim_on")) return;
+                    if (!hasModelAnimation) { chumingoSpeak("Este modelo no tiene una animación integrada."); return; }
                     setModelAnimationState(true);
                     chumingoSpeak("Animación activada.");
                 }
@@ -1574,6 +1672,7 @@
 
             // 4. EXPLICAR PIEZA SELECCIONADA (FICHA DIDÁCTICA)
             if (cmd.includes("explica") || cmd.includes("que es") || cmd.includes("funcion") || cmd.includes("leer ficha")) {
+                if (!canRunAction("explain")) return;
                 explainCurrentDidacticPiece();
                 return;
             }
@@ -1581,9 +1680,11 @@
             // 5. CORTE TRANSVERSAL / SECCIÓN
             if (cmd.includes("corte") || cmd.includes("seccion") || cmd.includes("cortar") || cmd.includes("interior")) {
                 if (hasTurnOff) {
+                    if (!canRunAction("slice_off")) return;
                     setSliceMode(false);
                     chumingoSpeak("Corte transversal desactivado.");
                 } else {
+                    if (!canRunAction("slice_on")) return;
                     setSliceMode(true);
                     chumingoSpeak("Corte transversal activado.");
                 }
@@ -1593,12 +1694,15 @@
             // 6. PIZARRA ESPACIAL 3D
             if (cmd.includes("pizarra") || cmd.includes("dibuj") || cmd.includes("trazo")) {
                 if (cmd.includes("borra") || cmd.includes("limpia")) {
+                    if (!canRunAction("draw_clear")) return;
                     clearSpatialBoard();
                     chumingoSpeak("Pizarra espacial borrada.");
                 } else if (hasTurnOff) {
+                    if (!canRunAction("draw_off")) return;
                     setDrawMode(false);
                     chumingoSpeak("Modo pizarra desactivado.");
                 } else {
+                    if (!canRunAction("draw_on")) return;
                     setDrawMode(true);
                     chumingoSpeak("Modo pizarra activado. Apunta con tu índice para dibujar.");
                 }
@@ -1606,11 +1710,13 @@
             }
 
             // 7. MODO PLANO / BLUEPRINT
-            if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("esquema")) {
+            if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("rayos equis") || cmd.includes("esquema")) {
                 if (hasTurnOff) {
+                    if (!canRunAction("bp_off")) return;
                     setBlueprintMode(false);
                     chumingoSpeak("Modo plano desactivado. Mostrando modelo normal.");
                 } else {
+                    if (!canRunAction("bp_on")) return;
                     setBlueprintMode(true);
                     chumingoSpeak("Modo plano activado.");
                 }
@@ -1618,15 +1724,18 @@
             }
 
             if (cmd.includes("modelo normal") || cmd.includes("modo normal") || cmd.includes("solido") || cmd.includes("textura")) {
+                if (!canRunAction("bp_off")) return;
                 setBlueprintMode(false);
                 chumingoSpeak("Mostrando modelo normal.");
                 return;
             }
 
-            // 8. ESCALA PORCENTUAL
+            // 8. ESCALA PORCENTUAL (Esperar frase final si lleva número para no cortar cifras como "25")
             if (cmd.includes("aumenta") || cmd.includes("agrand") || cmd.includes("sube") || cmd.includes("mas grande") || cmd.includes("amplia")) {
+                if (!isFinal && /\d/.test(cmd)) return;
                 if (hasActiveModel) {
                     const pct = extractSpokenPercentage(cmd, 15);
+                    if (!canRunAction(`scale_up_${pct}`)) return;
                     targetScale = Math.min(4.0, Math.max(0.15, targetScale + (pct / 100)));
                     const finalPct = Math.round(targetScale * 100);
                     chumingoSpeak(`Tamaño aumentado un ${pct} por ciento. Escala actual al ${finalPct} por ciento.`);
@@ -1634,17 +1743,20 @@
                 return;
             }
             if (cmd.includes("reduce") || cmd.includes("reduci") || cmd.includes("achic") || cmd.includes("disminuy") || cmd.includes("baja") || cmd.includes("mas pequeno")) {
+                if (!isFinal && /\d/.test(cmd)) return;
                 if (hasActiveModel) {
                     const pct = extractSpokenPercentage(cmd, 15);
+                    if (!canRunAction(`scale_dn_${pct}`)) return;
                     targetScale = Math.min(4.0, Math.max(0.15, targetScale - (pct / 100)));
                     const finalPct = Math.round(targetScale * 100);
                     chumingoSpeak(`Tamaño reducido un ${pct} por ciento. Escala actual al ${finalPct} por ciento.`);
                 }
                 return;
             }
-            if ((cmd.includes("tamano") || cmd.includes("escala")) && (cmd.includes("por ciento") || /\d+/.test(cmd))) {
+            if (isFinal && (cmd.includes("tamano") || cmd.includes("escala")) && (cmd.includes("por ciento") || /\d+/.test(cmd))) {
                 if (hasActiveModel) {
                     const directPct = extractSpokenPercentage(cmd, 100);
+                    if (!canRunAction(`scale_set_${directPct}`)) return;
                     targetScale = Math.min(4.0, Math.max(0.15, directPct / 100));
                     chumingoSpeak(`Escala ajustada al ${Math.round(targetScale * 100)} por ciento.`);
                 }
@@ -1652,7 +1764,8 @@
             }
 
             // 9. EXPANDIR / CONTRAER PIEZAS
-            if (cmd.includes("expand") || cmd.includes("explot") || cmd.includes("desarm") || cmd.includes("despiece") || cmd.includes("abrir pieza") || cmd.includes("separa")) {
+            if (cmd.includes("expand") || cmd.includes("espand") || cmd.includes("explot") || cmd.includes("desarm") || cmd.includes("despiece") || cmd.includes("abrir pieza") || cmd.includes("separa")) {
+                if (!canRunAction("explode_on")) return;
                 if (!hasActiveModel) loadCarouselItem(currentCarouselIndex, false);
                 if (isolatedMesh) exitPartIsolation(false);
                 targetExplode = 0.95;
@@ -1662,6 +1775,7 @@
             }
 
             if (cmd.includes("contra") || cmd.includes("arma") || cmd.includes("ensambl") || cmd.includes("junta") || cmd.includes("unir") || cmd.includes("une") || cmd.includes("normalidad")) {
+                if (!canRunAction("explode_off")) return;
                 if (isolatedMesh) exitPartIsolation(false);
                 targetExplode = 0.0;
                 playLockSound();
@@ -1671,6 +1785,7 @@
 
             // 10. CENTRAR HOLOGRAMA
             if (cmd.includes("centra") || cmd.includes("centro") || cmd.includes("reinicia") || cmd.includes("restaura")) {
+                if (!canRunAction("center")) return;
                 resetObject();
                 chumingoSpeak("Holograma centrado.");
                 return;
@@ -1679,9 +1794,11 @@
             // 11. ESCÁNER LÁSER
             if (cmd.includes("escan") || cmd.includes("analisis")) {
                 if (hasTurnOff) {
+                    if (!canRunAction("scan_off")) return;
                     setScannerMode(false);
                     chumingoSpeak("Escáner desactivado.");
                 } else {
+                    if (!canRunAction("scan_on")) return;
                     setScannerMode(true);
                     chumingoSpeak("Iniciando escáner estructural.");
                 }
@@ -1689,23 +1806,41 @@
             }
 
             // 12. ABRIR MODELOS EDUCATIVOS POR VOZ
-            if (cmd.includes("volcan")) { loadCarouselItem(0, true); chumingoSpeak("Proyectando volcán en capas."); return; }
-            if (cmd.includes("adn") || cmd.includes("molecula")) { loadCarouselItem(1, true); chumingoSpeak("Proyectando molécula de A D N."); return; }
-            if (cmd.includes("atomo") || cmd.includes("bohr")) { loadCarouselItem(2, true); chumingoSpeak("Proyectando átomo de Bohr."); return; }
-            if (cmd.includes("solar") || cmd.includes("planeta")) { loadCarouselItem(3, true); chumingoSpeak("Proyectando sistema solar."); return; }
-            if (cmd.includes("motor")) { loadCarouselItem(4, true); chumingoSpeak("Proyectando motor de cuatro tiempos."); return; }
+            if (cmd.includes("volcan")) {
+                if (!canRunAction("model_0")) return;
+                loadCarouselItem(0, true); chumingoSpeak("Proyectando volcán en capas."); return;
+            }
+            if (cmd.includes("adn") || cmd.includes("molecula")) {
+                if (!canRunAction("model_1")) return;
+                loadCarouselItem(1, true); chumingoSpeak("Proyectando molécula de A D N."); return;
+            }
+            if (cmd.includes("atomo") || cmd.includes("bohr")) {
+                if (!canRunAction("model_2")) return;
+                loadCarouselItem(2, true); chumingoSpeak("Proyectando átomo de Bohr."); return;
+            }
+            if (cmd.includes("solar") || cmd.includes("planeta")) {
+                if (!canRunAction("model_3")) return;
+                loadCarouselItem(3, true); chumingoSpeak("Proyectando sistema solar."); return;
+            }
+            if (cmd.includes("motor")) {
+                if (!canRunAction("model_4")) return;
+                loadCarouselItem(4, true); chumingoSpeak("Proyectando motor de cuatro tiempos."); return;
+            }
             if (cmd.includes("abrir modelo") || cmd.includes("abre modelo") || cmd.includes("mostrar modelo") || cmd.includes("proyectar")) {
+                if (!canRunAction("model_open")) return;
                 loadCarouselItem(currentCarouselIndex, true);
                 chumingoSpeak("Proyectando modelo 3D.");
                 return;
             }
 
             if (cmd.includes("siguiente") || cmd.includes("cambia")) {
+                if (!canRunAction("model_next")) return;
                 cycleCarousel(1);
                 chumingoSpeak("Cargando siguiente modelo.");
                 return;
             }
             if (cmd.includes("anterior")) {
+                if (!canRunAction("model_prev")) return;
                 cycleCarousel(-1);
                 chumingoSpeak("Cargando modelo anterior.");
                 return;
@@ -1713,28 +1848,47 @@
 
             // 13. ANILLOS Y SENSORES
             if (cmd.includes("anillo") || cmd.includes("telemetria")) {
-                if (hasTurnOff) { showRingsCheckbox.checked = false; telemetryGroup.visible = false; chumingoSpeak("Anillos ocultos."); }
-                else { showRingsCheckbox.checked = true; telemetryGroup.visible = true; chumingoSpeak("Anillos visibles."); }
+                if (hasTurnOff) {
+                    if (!canRunAction("rings_off")) return;
+                    showRingsCheckbox.checked = false; telemetryGroup.visible = false; chumingoSpeak("Anillos ocultos.");
+                } else {
+                    if (!canRunAction("rings_on")) return;
+                    showRingsCheckbox.checked = true; telemetryGroup.visible = true; chumingoSpeak("Anillos visibles.");
+                }
                 return;
             }
             if (cmd.includes("mano") || cmd.includes("esqueleto") || cmd.includes("sensor")) {
-                if (hasTurnOff) { showSkeletonCheckbox.checked = false; chumingoSpeak("Sensores de mano ocultos."); }
-                else { showSkeletonCheckbox.checked = true; chumingoSpeak("Sensores de mano visibles."); }
+                if (hasTurnOff) {
+                    if (!canRunAction("hands_off")) return;
+                    showSkeletonCheckbox.checked = false; chumingoSpeak("Sensores de mano ocultos.");
+                } else {
+                    if (!canRunAction("hands_on")) return;
+                    showSkeletonCheckbox.checked = true; chumingoSpeak("Sensores de mano visibles.");
+                }
                 return;
             }
 
-            // 14. CERRAR PROYECCIÓN
-            if (cmd.includes("cerra") || cmd.includes("cierra") || cmd.includes("elimina") || cmd.includes("borra") || hasTurnOff) {
+            // 14. CERRAR PROYECCIÓN (Solo en frase final para evitar cierres accidentales)
+            if (isFinal && (cmd.includes("cerra") || cmd.includes("cierra") || cmd.includes("elimina") || cmd.includes("borra") || cmd.includes("quitar modelo"))) {
+                if (!canRunAction("dismiss")) return;
                 triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 });
                 chumingoSpeak("Cerrando proyección.");
             }
         }
 
         chumingoVoiceBtn.addEventListener("click", () => {
-            if (!chumingoRecognition) return;
-            isChumingoListening = !isChumingoListening;
-            if (isChumingoListening) { try { chumingoRecognition.start(); chumingoSpeak("Micrófono de Chumingo activo."); } catch (e) {} }
-            else { chumingoRecognition.stop(); chumingoSpeak("Micrófono silenciado."); }
+            wantMicActive = !wantMicActive;
+            if (wantMicActive) {
+                safeStartRecognition();
+                updateMicButtonUI(true);
+                chumingoSpeak("Micrófono de Chumingo activado.");
+            } else {
+                if (chumingoRecognition && isRecognitionRunning) {
+                    try { chumingoRecognition.stop(); } catch (e) {}
+                }
+                updateMicButtonUI(false);
+                chumingoSpeak("Micrófono silenciado.");
+            }
         });
 
         // ==========================================
@@ -1804,18 +1958,21 @@
         function showError(msg) { overlayError.textContent = msg; overlayError.classList.remove("hidden"); statusText.textContent = msg; statusDot.className = "w-2.5 h-2.5 rounded-full bg-red-500"; }
 
         async function startSystem() {
-            overlayError.classList.add("hidden"); launchBtn.disabled = true; launchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Iniciando CHUMINGO 3D...';
-            await initSfx();
-            loadLatinAmericanVoice();
+            overlayError.classList.add("hidden");
+            launchBtn.disabled = true;
+            launchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Iniciando CHUMINGO 3D...';
 
             if (window.location.protocol === "file:") { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError('Abre el archivo con Live Server (localhost) o HTTPS.'); return; }
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError("Cámara bloqueada o sin soporte."); return; }
-            
+
+            // 1. Iniciar micrófono inmediatamente dentro del gesto directo de clic del usuario
+            wantMicActive = true;
             setupChumingoVoice();
-            if (chumingoRecognition) {
-                isChumingoListening = true;
-                try { chumingoRecognition.start(); chumingoSpeak("Chumingo 3D en línea. Elige un modelo cuando estés listo."); } catch(e){}
-            }
+            safeStartRecognition();
+
+            await initSfx();
+            loadLatinAmericanVoice();
+            chumingoSpeak("Chumingo 3D en línea. Elige un modelo cuando estés listo.");
 
             try {
                 await threeReadyPromise;
