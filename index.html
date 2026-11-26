@@ -1766,3 +1766,412 @@
                         color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.85, roughness: 0.2,
                         clippingPlanes: isSliceMode ? [clippingPlane] : [],
                         side: isSliceMode ? THREE.DoubleSide : THREE.FrontSide
+                    });
+                    playScanBeep();
+                    showDidacticCardForMesh(selectedMesh);
+                }
+                const projected = hitPoint3D.clone().project(camera);
+                const hitCanvas = normToScreenPx({ x: (projected.x + 1) / 2, y: (-projected.y + 1) / 2 });
+                const tris = selectedMesh.geometry.index ? Math.round(selectedMesh.geometry.index.count / 3) : (selectedMesh.geometry.attributes.position ? Math.round(selectedMesh.geometry.attributes.position.count / 3) : 0);
+                const box = new THREE.Box3().setFromObject(selectedMesh); const sz = new THREE.Vector3(); box.getSize(sz);
+                laserHitInfo = { fingerPx: indexTipPx, hitPx: hitCanvas, partName: selectedMesh.name, tris, dims: `${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)}m` };
+                inspectedPartBadge.classList.remove("hidden"); inspectedPartBadge.querySelector("span").textContent = selectedMesh.name;
+            } else {
+                clearLaserHighlight();
+                const objProj = objectGroup.position.clone().project(camera);
+                const objScreen = normToScreenPx({ x: (objProj.x + 1) / 2, y: (-objProj.y + 1) / 2 });
+                const angleToObj = Math.atan2(objScreen.y - indexTipPx.y, objScreen.x - indexTipPx.x);
+                laserHitInfo = { fingerPx: indexTipPx, hitPx: { x: indexTipPx.x + Math.cos(angleToObj) * 110, y: indexTipPx.y + Math.sin(angleToObj) * 110 }, partName: null };
+            }
+        }
+        function clearLaserHighlight() {
+            if (highlightedMesh) {
+                if (isBlueprintMode) setBlueprintMode(true);
+                else if (highlightedMesh.userData.preHighlightMat) highlightedMesh.material = highlightedMesh.userData.preHighlightMat;
+                if (isSliceMode) applyClippingToMaterials(true);
+                highlightedMesh.userData.preHighlightMat = null; highlightedMesh = null;
+            }
+            laserHitInfo = null; inspectedPartBadge.classList.add("hidden");
+        }
+
+        // ==========================================
+        // 13. ARRANQUE DEL SISTEMA
+        // ==========================================
+        let handLandmarker = null, lastVideoTime = -1, isLoopRunning = false, prevRotY = 0;
+        const starkGesture = { armed: false, armedAt: 0, lastPalmDist: 1 };
+        const swipeTracker = { samples: [], missedFrames: 0, lastSwipeAt: 0 };
+
+        function showError(msg) { overlayError.textContent = msg; overlayError.classList.remove("hidden"); statusText.textContent = msg; statusDot.className = "w-2.5 h-2.5 rounded-full bg-red-500"; }
+
+        async function startSystem() {
+            overlayError.classList.add("hidden"); launchBtn.disabled = true; launchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Iniciando CHUMINGO 3D...';
+            await initSfx();
+            loadLatinAmericanVoice();
+
+            if (window.location.protocol === "file:") { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError('Abre el archivo con Live Server (localhost) o HTTPS.'); return; }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError("Cámara bloqueada o sin soporte."); return; }
+            
+            setupChumingoVoice();
+            if (chumingoRecognition) {
+                isChumingoListening = true;
+                try { chumingoRecognition.start(); chumingoSpeak("Chumingo 3D en línea. Elige un modelo cuando estés listo."); } catch(e){}
+            }
+
+            try {
+                await threeReadyPromise;
+                let stream;
+                try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }); }
+                catch (e) { stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); }
+                video.srcObject = stream; await video.play();
+                handCanvas.width = window.innerWidth; handCanvas.height = window.innerHeight;
+                startOverlay.classList.add("hidden"); statusDot.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse";
+                gestureBadge.textContent = "Calibrando IA..."; statusText.textContent = "Descargando sensores...";
+                if (!isLoopRunning) { isLoopRunning = true; requestAnimationFrame(mainLoop); }
+                await loadHandTracking();
+            } catch (err) { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError(`Error: ${err.message}`); }
+        }
+        launchBtn.addEventListener("click", startSystem);
+
+        async function loadHandTracking() {
+            try {
+                const visionModule = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
+                const { HandLandmarker, FilesetResolver } = visionModule;
+                const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+                handLandmarker = await HandLandmarker.createFromOptions(vision, {
+                    baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task", delegate: "GPU" },
+                    runningMode: "VIDEO", numHands: 2, minHandDetectionConfidence: 0.65, minHandPresenceConfidence: 0.65, minTrackingConfidence: 0.65
+                });
+                gestureBadge.textContent = "Escena Lista"; statusText.textContent = "Elige un modelo en el menú superior o carga un archivo 3D.";
+            } catch (err) { gestureBadge.textContent = "Error de IA"; statusText.textContent = `Fallo en sensores: ${err.message}`; }
+        }
+
+        // ==========================================
+        // 14. MAIN LOOP (RENDER 3D Y GESTOS)
+        // ==========================================
+        function mainLoop() {
+            if (handCanvas.width !== window.innerWidth || handCanvas.height !== window.innerHeight) {
+                handCanvas.width = window.innerWidth; handCanvas.height = window.innerHeight;
+            }
+
+            if (video.readyState >= 2 && video.videoWidth > 0) {
+                if (handLandmarker && lastVideoTime !== video.currentTime) {
+                    lastVideoTime = video.currentTime;
+                    const results = handLandmarker.detectForVideo(video, performance.now());
+                    handCtx.clearRect(0, 0, handCanvas.width, handCanvas.height);
+                    processHands(results);
+                    drawSwipeTrail(); drawLaserAndHudCallouts(); drawShockwaves();
+                }
+            }
+
+            if (renderer && scene && camera && objectGroup) {
+                const delta = clock.getDelta(); const elapsed = clock.getElapsedTime();
+                if (animationMixer && isAnimationPlaying) {
+                    animationMixer.update(delta);
+                }
+
+                if (burstParticles && burstLife > 0) {
+                    burstLife -= delta * 2.2;
+                    const posAttr = burstParticles.geometry.attributes.position;
+                    for (let i = 0; i < burstVelocities.length; i++) {
+                        posAttr.array[i * 3] += burstVelocities[i].x * delta; posAttr.array[i * 3 + 1] += burstVelocities[i].y * delta; posAttr.array[i * 3 + 2] += burstVelocities[i].z * delta;
+                    }
+                    posAttr.needsUpdate = true; burstParticles.material.opacity = Math.max(0, burstLife);
+                    if (burstLife <= 0) { scene.remove(burstParticles); burstParticles.geometry.dispose(); burstParticles.material.dispose(); burstParticles = null; }
+                }
+
+                if (hasActiveModel) {
+                    if (isDismissing) {
+                        objectGroup.rotation.y += 0.36;
+                        const s = objectGroup.scale.x * 0.72; objectGroup.scale.set(s, s, s);
+                    } else {
+                        if (isAutoSpin360 && gestureMode === "none" && !highlightedMesh && !isDrawMode) {
+                            targetQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.014));
+                        }
+
+                        objectGroup.position.lerp(targetPos, 0.45); 
+                        objectGroup.quaternion.slerp(targetQuat, 0.45);
+                        const currentS = objectGroup.scale.x; 
+                        const nextS = currentS + (targetScale - currentS) * 0.45; 
+                        objectGroup.scale.set(nextS, nextS, nextS);
+
+                        if (!isolatedMesh) {
+                            currentExplode += (targetExplode - currentExplode) * 0.18;
+                            for (const mesh of inspectableMeshes) {
+                                if (mesh.userData.origPos && mesh.userData.localExplodeDelta) {
+                                    mesh.position.copy(mesh.userData.origPos).addScaledVector(mesh.userData.localExplodeDelta, currentExplode);
+                                }
+                            }
+                        }
+
+                        if (telemetryGroup) {
+                            telemetryGroup.visible = showRingsCheckbox.checked;
+                            if (telemetryGroup.visible) {
+                                const angularVel = Math.abs(objectGroup.rotation.y - prevRotY) * 18; prevRotY = objectGroup.rotation.y;
+                                const { ring2, ticksGroup } = telemetryGroup.userData;
+                                ring2.rotation.z += (0.01 + angularVel * 0.15); ticksGroup.rotation.y -= (0.008 + angularVel * 0.1);
+                                const ringExpand = 1 + currentExplode * 0.35; telemetryGroup.scale.set(ringExpand, 1, ringExpand);
+                            }
+                        }
+
+                        if (scannerBar && isScannerMode) {
+                            scannerBar.visible = true; scannerBar.position.y = Math.sin(elapsed * 2.6) * 1.15;
+                        }
+
+                        if (sliceVisualPlane && isSliceMode) {
+                            sliceVisualPlane.position.set(objectGroup.position.x, clippingPlane.constant, objectGroup.position.z);
+                        }
+
+                        scaleDisplay.textContent = `${Math.round(nextS * 100)}%`;
+                        explodeDisplay.textContent = isolatedMesh ? "AISLADO" : `${Math.round(currentExplode * 100)}%`;
+                        const degX = Math.round(((objectGroup.rotation.x * 180) / Math.PI) % 360), degY = Math.round(((objectGroup.rotation.y * 180) / Math.PI) % 360);
+                        rotDisplay.textContent = `${degX}°, ${degY}°`;
+                    }
+                }
+                renderer.render(scene, camera);
+            }
+            requestAnimationFrame(mainLoop);
+        }
+
+        function processHands(results) {
+            if (!THREE || !objectGroup) return;
+            const activePinches = [], openHands = [], switchHands = [], detectedHands = []; let pointingHand = null; const now = performance.now();
+            
+            if (results.landmarks) {
+                for (let i = 0; i < results.landmarks.length; i++) {
+                    const landmarks = results.landmarks[i], pose = classifyHandPose(landmarks), handQuat = getHandQuaternion(landmarks);
+                    if (showSkeletonCheckbox.checked) drawSkeleton(landmarks, pose);
+                    const palmNorm = landmarks[9], palmPx = normToScreenPx(palmNorm);
+                    detectedHands.push({ pose, palmNorm, palmPx, landmarks, quat: handQuat });
+                    
+                    if (pose === "fist") { drawRing(palmPx.x, palmPx.y, "#f97316", 28, 4); drawLabel("PUÑO", palmPx.x, palmPx.y - 36, "#fb923c"); }
+                    else if (pose === "switch") {
+                        const pairMid = {
+                            x: (landmarks[8].x + landmarks[12].x) / 2,
+                            y: (landmarks[8].y + landmarks[12].y) / 2,
+                            z: (landmarks[8].z + landmarks[12].z) / 2
+                        };
+                        const pairPx = normToScreenPx(pairMid);
+                        drawRing(pairPx.x, pairPx.y, "#c084fc", 20, 3.5);
+                        drawLabel("CAMBIO 3D", pairPx.x, pairPx.y - 30, "#d8b4fe");
+                        switchHands.push({ norm: pairMid, px: pairPx });
+                    }
+                    else if (pose === "open") { drawRing(palmPx.x, palmPx.y, "#22d3ee", 24, 3); openHands.push({ world: normToWorld(palmNorm), norm: palmNorm, px: palmPx, quat: handQuat }); }
+                    else if (pose === "point") { pointingHand = { norm: landmarks[8], px: normToScreenPx(landmarks[8]) }; }
+                    else if (pose === "pinch") {
+                        const centerNorm = { x: (landmarks[4].x + landmarks[8].x) / 2, y: (landmarks[4].y + landmarks[8].y) / 2, z: (landmarks[4].z + landmarks[8].z) / 2 };
+                        const px = normToScreenPx(centerNorm); drawRing(px.x, px.y, "#38bdf8", 18, 4);
+                        activePinches.push({ world: normToWorld(centerNorm), norm: centerNorm, quat: handQuat, px });
+                    }
+                }
+            }
+
+            if (!pointingHand) {
+                if (highlightedMesh || laserHitInfo) clearLaserHighlight();
+                activeStrokeLine = null;
+                activeStrokePoints = [];
+            }
+
+            // 1. GOLPE IRON MAN (PUÑO + PALMA)
+            if (hasActiveModel && !isDismissing) {
+                if (starkGesture.armed && (now - starkGesture.armedAt) > 1500) starkGesture.armed = false;
+                if (detectedHands.length >= 2) {
+                    const fistHand = detectedHands.find(hd => hd.pose === "fist"), openHand = detectedHands.find(hd => hd.pose === "open");
+                    if (fistHand && openHand) {
+                        const { palmCenterDist, minTipDist } = getHandImpactDistance(openHand, fistHand);
+                        const midPx = { x: (fistHand.palmPx.x + openHand.palmPx.x) / 2, y: (fistHand.palmPx.y + openHand.palmPx.y) / 2 };
+                        drawLine(fistHand.palmPx, openHand.palmPx, "#f97316", 3);
+                        
+                        if (palmCenterDist > 0.25) { starkGesture.armed = true; starkGesture.armedAt = now; starkGesture.lastPalmDist = palmCenterDist; gestureBadge.textContent = "Gesto Stark Armado"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400"; }
+                        else if (starkGesture.armed) starkGesture.lastPalmDist = palmCenterDist;
+                        
+                        if (starkGesture.armed && (minTipDist < 0.12 || palmCenterDist < 0.15)) { starkGesture.armed = false; triggerStarkDismissal(midPx); return; }
+                    } else if (starkGesture.armed && activePinches.length === 0) {
+                        const dHands = dist3D(detectedHands[0].palmNorm, detectedHands[1].palmNorm);
+                        const midPx = { x: (detectedHands[0].palmPx.x + detectedHands[1].palmPx.x) / 2, y: (detectedHands[0].palmPx.y + detectedHands[1].palmPx.y) / 2 };
+                        if (dHands < 0.15) { starkGesture.armed = false; triggerStarkDismissal(midPx); return; }
+                    }
+                } else if (detectedHands.length === 1 && starkGesture.armed && starkGesture.lastPalmDist < 0.28) { starkGesture.armed = false; triggerStarkDismissal(detectedHands[0].palmPx); return; }
+            }
+
+            // 2. SWIPE PARA CAMBIAR DE MODELO (ÍNDICE + MEDIO JUNTOS, DEMÁS CERRADOS)
+            if (switchHands.length === 1 && !starkGesture.armed) {
+                const swHand = switchHands[0];
+                swipeTracker.missedFrames = 0;
+                const screenNormX = swHand.px.x / handCanvas.width;
+                swipeTracker.samples.push({ x: screenNormX, px: swHand.px, t: now });
+                swipeTracker.samples = swipeTracker.samples.filter(s => (now - s.t) < 700);
+
+                gestureMode = "swipe";
+                gestureBadge.textContent = "Desliza Índice+Medio";
+                gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-purple-300";
+
+                if (swipeTracker.samples.length >= 3 && (now - swipeTracker.lastSwipeAt) > 850) {
+                    const dx = screenNormX - swipeTracker.samples[0].x;
+                    if (Math.abs(dx) > 0.14) {
+                        swipeTracker.lastSwipeAt = now;
+                        swipeTracker.samples = [];
+                        const step = dx > 0 ? 1 : -1;
+                        cycleCarousel(step);
+                        gestureBadge.textContent = step > 0 ? "Siguiente Modelo →" : "← Modelo Anterior";
+                        gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
+                    }
+                }
+                return;
+            } else {
+                swipeTracker.missedFrames++;
+                if (swipeTracker.missedFrames > 3) swipeTracker.samples = [];
+                if (gestureMode === "swipe") gestureMode = "none";
+            }
+
+            // 3. PALMA ABIERTA: AJUSTE DE CORTE TRANSVERSAL O GIRO LIBRE 3D
+            const singleOpenHand = (detectedHands.length === 1 && openHands.length === 1) ? openHands[0] : null;
+            if (singleOpenHand && !starkGesture.armed && hasActiveModel && !isDismissing) {
+                if (isSliceMode) {
+                    if (gestureMode !== "slice") {
+                        gestureMode = "slice";
+                        grabAnchor.sliceStartY = singleOpenHand.world.y;
+                        grabAnchor.sliceStartConst = clippingPlane.constant;
+                        gestureBadge.textContent = "Desliza Palma: Altura Corte";
+                        gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-300";
+                    } else {
+                        const dy = singleOpenHand.world.y - grabAnchor.sliceStartY;
+                        clippingPlane.constant = Math.min(objectGroup.position.y + 1.3, Math.max(objectGroup.position.y - 1.3, grabAnchor.sliceStartConst + dy * 1.1));
+                    }
+                    return;
+                }
+
+                if (gestureMode !== "spin") {
+                    gestureMode = "spin"; grabAnchor.handQuat.copy(singleOpenHand.quat); grabAnchor.objQuat.copy(targetQuat);
+                    gestureBadge.textContent = "Palma Libre: Giro 3D"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-sky-400";
+                } else {
+                    const deltaWristQuat = singleOpenHand.quat.clone().multiply(grabAnchor.handQuat.clone().invert());
+                    targetQuat.copy(scaleQuaternionAngle(deltaWristQuat, 1.45)).multiply(grabAnchor.objQuat).normalize();
+                }
+                return;
+            } else if (gestureMode === "spin" || gestureMode === "slice") {
+                gestureMode = "none";
+            }
+            
+            if (!hasActiveModel || isDismissing) return;
+
+            // 4. MODO 2 PINZAS (ESCALA + ROTACIÓN + MOVER)
+            if (activePinches.length >= 2) {
+                const sorted = activePinches.slice(0, 2).sort((a, b) => a.world.x - b.world.x); const hLeft = sorted[0], hRight = sorted[1];
+                drawLine(hLeft.px, hRight.px, "#818cf8", 3);
+                const midWorld = new THREE.Vector3().addVectors(hLeft.world, hRight.world).multiplyScalar(0.5);
+                const distWorld = hLeft.world.distanceTo(hRight.world);
+                const angle2D = Math.atan2(hRight.world.y - hLeft.world.y, hRight.world.x - hLeft.world.x), depthDiff = hRight.norm.z - hLeft.norm.z;
+                
+                if (gestureMode !== "two") {
+                    gestureMode = "two"; grabAnchor.handPos.copy(midWorld); grabAnchor.objPos.copy(targetPos);
+                    grabAnchor.twoDist = Math.max(distWorld, 0.25); grabAnchor.twoAngle = angle2D; grabAnchor.twoDepthDiff = depthDiff;
+                    grabAnchor.twoLeftQuat.copy(hLeft.quat); grabAnchor.twoRightQuat.copy(hRight.quat); grabAnchor.objScale = targetScale; grabAnchor.objQuat.copy(targetQuat);
+                    gestureBadge.textContent = "2 Pinzas: Escala y Giro"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-indigo-400";
+                } else {
+                    targetPos.copy(grabAnchor.objPos).add(new THREE.Vector3().subVectors(midWorld, grabAnchor.handPos));
+                    targetScale = Math.min(4.0, Math.max(0.15, grabAnchor.objScale * (distWorld / grabAnchor.twoDist)));
+                    const avgWristDelta = hLeft.quat.clone().multiply(grabAnchor.twoLeftQuat.clone().invert()).slerp(hRight.quat.clone().multiply(grabAnchor.twoRightQuat.clone().invert()), 0.5);
+                    const twoHandTwist = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -(depthDiff - grabAnchor.twoDepthDiff) * 4.5, angle2D - grabAnchor.twoAngle));
+                    targetQuat.copy(twoHandTwist).multiply(scaleQuaternionAngle(avgWristDelta, 1.25)).multiply(grabAnchor.objQuat).normalize();
+                }
+                return;
+            }
+
+            // 5. VISTA EXPLOSIVA (2 PALMAS ABIERTAS)
+            if (openHands.length >= 2 && !starkGesture.armed) {
+                if (isolatedMesh) exitPartIsolation(false);
+                const sorted = openHands.slice(0, 2).sort((a, b) => a.world.x - b.world.x); const pLeft = sorted[0], pRight = sorted[1];
+                const spanWorld = pLeft.world.distanceTo(pRight.world); drawLine(pLeft.px, pRight.px, "#22d3ee", 3);
+                
+                if (gestureMode !== "explode") {
+                    gestureMode = "explode"; grabAnchor.explodeDist = Math.max(spanWorld, 0.35); grabAnchor.explodeStart = targetExplode;
+                    gestureBadge.textContent = "Despiece Explosivo"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
+                } else {
+                    const nextExp = Math.min(1.0, Math.max(0.0, grabAnchor.explodeStart + (spanWorld - grabAnchor.explodeDist) * 0.55));
+                    if (grabAnchor.explodeStart > 0.2 && nextExp === 0 && targetExplode > 0) playLockSound();
+                    targetExplode = nextExp;
+                }
+                return;
+            }
+
+            // 6. MODO 1 PINZA (MOVER Y GIRAR ESTRICTO)
+            if (activePinches.length === 1) {
+                const hand = activePinches[0];
+                if (gestureMode !== "one") {
+                    gestureMode = "one"; grabAnchor.handPos.copy(hand.world); grabAnchor.handQuat.copy(hand.quat); grabAnchor.objPos.copy(targetPos); grabAnchor.objQuat.copy(targetQuat);
+                    gestureBadge.textContent = "1 Pinza: Mover y Girar"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
+                } else {
+                    targetPos.copy(grabAnchor.objPos).add(new THREE.Vector3().subVectors(hand.world, grabAnchor.handPos));
+                    const deltaWristQuat = hand.quat.clone().multiply(grabAnchor.handQuat.clone().invert());
+                    targetQuat.copy(scaleQuaternionAngle(deltaWristQuat, 1.45)).multiply(grabAnchor.objQuat).normalize();
+                }
+                return;
+            }
+
+            // 7. PUNTA DEL DEDO ÍNDICE: PIZARRA ESPACIAL 3D O LÁSER DIDÁCTICO
+            if (pointingHand) {
+                if (isDrawMode) {
+                    gestureMode = "draw";
+                    gestureBadge.textContent = "Pizarra 3D: Dibujando";
+                    gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-fuchsia-300";
+                    drawRing(pointingHand.px.x, pointingHand.px.y, "#e879f9", 10, 3);
+                    addSpatialStrokePoint(pointingHand.px);
+                } else {
+                    gestureMode = "point";
+                    gestureBadge.textContent = "Láser Didáctico Activo";
+                    gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-rose-400";
+                    updateLaserInspection(pointingHand.px);
+                }
+                return;
+            }
+
+            if (gestureMode !== "none" && !starkGesture.armed) { gestureMode = "none"; gestureBadge.textContent = "Holograma Activo"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300"; }
+        }
+
+        // ==========================================
+        // 15. DIBUJO EN CANVAS 2D
+        // ==========================================
+        function drawSwipeTrail() {
+            if (swipeTracker.samples.length < 2) return;
+            handCtx.save(); handCtx.beginPath(); handCtx.moveTo(swipeTracker.samples[0].px.x, swipeTracker.samples[0].px.y);
+            for (let i = 1; i < swipeTracker.samples.length; i++) handCtx.lineTo(swipeTracker.samples[i].px.x, swipeTracker.samples[i].px.y);
+            handCtx.strokeStyle = "rgba(192, 132, 252, 0.7)"; handCtx.lineWidth = 4; handCtx.lineCap = "round"; handCtx.stroke(); handCtx.restore();
+        }
+        function drawLaserAndHudCallouts() {
+            if (!laserHitInfo) return;
+            const { fingerPx, hitPx, partName, tris, dims } = laserHitInfo;
+            handCtx.save(); handCtx.beginPath(); handCtx.moveTo(fingerPx.x, fingerPx.y); handCtx.lineTo(hitPx.x, hitPx.y);
+            handCtx.strokeStyle = partName ? "#f43f5e" : "rgba(244, 63, 94, 0.65)"; handCtx.lineWidth = partName ? 3.5 : 2.5; handCtx.shadowColor = "#f43f5e"; handCtx.shadowBlur = 12; handCtx.stroke(); handCtx.restore();
+            drawRing(fingerPx.x, fingerPx.y, "#f43f5e", 11, 2.5);
+            if (partName) {
+                drawRing(hitPx.x, hitPx.y, "#f43f5e", 14, 2.5);
+                const boxX = Math.min(handCanvas.width - 210, Math.max(15, hitPx.x + 28)), boxY = Math.max(70, hitPx.y - 68);
+                handCtx.beginPath(); handCtx.moveTo(hitPx.x, hitPx.y); handCtx.lineTo(boxX, boxY + 24); handCtx.strokeStyle = "#38bdf8"; handCtx.lineWidth = 1.5; handCtx.stroke();
+                handCtx.save(); handCtx.fillStyle = "rgba(3, 7, 18, 0.9)"; handCtx.strokeStyle = "#38bdf8"; handCtx.lineWidth = 1.5; handCtx.beginPath(); handCtx.roundRect(boxX, boxY, 195, 48, 8); handCtx.fill(); handCtx.stroke();
+                handCtx.font = "bold 11px monospace"; handCtx.fillStyle = "#38bdf8"; handCtx.textAlign = "left"; handCtx.fillText(partName.slice(0, 24), boxX + 10, boxY + 18);
+                handCtx.font = "10px monospace"; handCtx.fillStyle = "#cbd5e1"; handCtx.fillText(`${tris} tris | ${dims}`, boxX + 10, boxY + 36); handCtx.restore();
+            }
+        }
+        function drawLabel(text, x, y, color) { handCtx.save(); handCtx.font = "bold 13px monospace"; handCtx.textAlign = "center"; handCtx.fillStyle = color; handCtx.shadowColor = "rgba(0,0,0,0.9)"; handCtx.shadowBlur = 4; handCtx.fillText(text, x, y); handCtx.restore(); }
+        function drawShockwaves() {
+            for (let i = shockwaves.length - 1; i >= 0; i--) {
+                const sw = shockwaves[i]; handCtx.beginPath(); handCtx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2); handCtx.strokeStyle = `rgba(56, 189, 248, ${sw.alpha})`; handCtx.lineWidth = 6 * sw.alpha; handCtx.stroke();
+                sw.radius += 16; sw.alpha -= 0.045; if (sw.alpha <= 0) shockwaves.splice(i, 1);
+            }
+        }
+        function drawRing(x, y, color, radius, lineWidth) { handCtx.beginPath(); handCtx.arc(x, y, radius, 0, Math.PI * 2); handCtx.strokeStyle = color; handCtx.lineWidth = lineWidth; handCtx.stroke(); }
+        function drawLine(p1, p2, color, width) { handCtx.beginPath(); handCtx.moveTo(p1.x, p1.y); handCtx.lineTo(p2.x, p2.y); handCtx.strokeStyle = color; handCtx.lineWidth = width; handCtx.setLineDash([8, 6]); handCtx.stroke(); handCtx.setLineDash([]); }
+        function drawSkeleton(landmarks, pose) {
+            handCtx.strokeStyle = pose === "fist" ? "rgba(249, 115, 22, 0.55)" : pose === "point" ? "rgba(244, 63, 94, 0.65)" : pose === "switch" ? "rgba(192, 132, 252, 0.7)" : "rgba(255, 255, 255, 0.35)"; handCtx.lineWidth = 1.5;
+            const connections = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+            for (const [a, b] of connections) { const pa = normToScreenPx(landmarks[a]), pb = normToScreenPx(landmarks[b]); handCtx.beginPath(); handCtx.moveTo(pa.x, pa.y); handCtx.lineTo(pb.x, pb.y); handCtx.stroke(); }
+            for (let i = 0; i < landmarks.length; i++) {
+                const pt = normToScreenPx(landmarks[i]), isTip = i === 4 || i === 8;
+                handCtx.beginPath(); handCtx.arc(pt.x, pt.y, isTip ? 5 : 2.5, 0, Math.PI * 2);
+                handCtx.fillStyle = pose === "fist" ? "#fb923c" : (pose === "point" && i === 8 ? "#f43f5e" : (pose === "switch" && (i === 8 || i === 12) ? "#c084fc" : (isTip ? "#facc15" : "#38bdf8")));
+                handCtx.fill();
+            }
+        }
+    </script>
+</body>
+</html>
