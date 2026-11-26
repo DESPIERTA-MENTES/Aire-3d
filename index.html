@@ -82,6 +82,62 @@
         <canvas id="three_canvas"></canvas>
         <div class="hud-vignette"></div>
 
+        <!-- Ventana Holográfica Flotante de YouTube -->
+        <div id="youtube-hud-panel" class="hidden fixed z-25 w-[330px] sm:w-[400px] bg-gray-950/90 backdrop-blur-md border border-cyan-400/60 rounded-2xl shadow-[0_0_30px_rgba(6,182,212,0.3)] overflow-hidden pointer-events-auto select-none" style="top: 84px; right: 16px;">
+            <!-- Barra de Agarre (Pinza o Mouse para mover) -->
+            <div id="yt-drag-bar" class="bg-cyan-950/80 border-b border-cyan-500/30 px-3 py-2 flex items-center justify-between gap-2 cursor-move">
+                <div class="flex items-center gap-2 text-xs font-bold text-cyan-300">
+                    <i class="fa-brands fa-youtube text-rose-500 text-sm"></i>
+                    <span class="tracking-wider uppercase text-[10px]">Visor Multimedia HUD</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button id="yt-size-btn" title="Cambiar tamaño de pantalla" class="px-2 py-0.5 rounded bg-cyan-900/60 hover:bg-cyan-800 text-[10px] font-mono text-cyan-200 cursor-pointer">
+                        <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                    </button>
+                    <button id="yt-close-btn" title="Cerrar video" class="px-2 py-0.5 rounded bg-rose-900/60 hover:bg-rose-700 text-xs text-rose-200 cursor-pointer">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Barra de URL de YouTube -->
+            <div class="p-2 bg-gray-900/90 border-b border-gray-800 flex items-center gap-1.5">
+                <input type="text" id="yt-url-input" placeholder="Pega enlace de YouTube aquí..." class="flex-1 bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-gray-100 focus:border-cyan-400 focus:outline-none">
+                <button id="yt-load-btn" class="px-2.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold cursor-pointer">
+                    Cargar
+                </button>
+            </div>
+
+            <!-- Contenedor del Reproductor IFrame -->
+            <div class="relative w-full aspect-video bg-black">
+                <div id="yt-player-mount" class="w-full h-full"></div>
+                <div id="yt-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-gray-950/90 text-gray-400 text-xs space-y-2">
+                    <i class="fa-brands fa-youtube text-3xl text-rose-500"></i>
+                    <p>Pega un enlace de YouTube arriba o usa el video de ejemplo.</p>
+                </div>
+            </div>
+
+            <!-- Controles Interactivos (Voz, Mouse o Toque con Índice en el Aire) -->
+            <div class="px-3 py-2 bg-gray-950/95 border-t border-cyan-900/50 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5">
+                    <button id="yt-rewind-btn" title="Retroceder 15s" class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-200 text-xs cursor-pointer">
+                        <i class="fa-solid fa-backward-step"></i> -15s
+                    </button>
+                    <button id="yt-playpause-btn" title="Play / Pausa (También puedes apuntar con el índice)" class="relative overflow-hidden px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+                        <i id="yt-playpause-icon" class="fa-solid fa-play"></i>
+                        <span id="yt-playpause-label">Play</span>
+                        <span id="yt-dwell-bar" class="absolute bottom-0 left-0 h-1 bg-cyan-300 transition-all duration-75" style="width: 0%;"></span>
+                    </button>
+                    <button id="yt-forward-btn" title="Adelantar 15s" class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-200 text-xs cursor-pointer">
+                        +15s <i class="fa-solid fa-forward-step"></i>
+                    </button>
+                </div>
+                <button id="yt-mute-btn" title="Silenciar / Sonido" class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-300 text-xs cursor-pointer">
+                    <i id="yt-mute-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+        </div>
+
         <!-- Ficha Didáctica Flotante (Modo Clase) -->
         <div id="didactic-card" class="hidden absolute left-4 bottom-20 w-72 sm:w-80 bg-gray-950/90 backdrop-blur-md border border-cyan-400/60 rounded-2xl p-3.5 shadow-[0_0_25px_rgba(6,182,212,0.3)] z-20 pointer-events-auto space-y-2">
             <div class="flex items-start justify-between gap-2 border-b border-cyan-800/60 pb-1.5">
@@ -138,7 +194,7 @@
         </div>
 
         <!-- Panel HUD de Escáner -->
-        <div id="scanner-hud" class="hidden absolute right-4 top-20 w-56 sm:w-64 bg-sky-950/85 backdrop-blur-md border border-sky-400/50 rounded-xl p-3 shadow-[0_0_20px_rgba(14,165,233,0.3)] z-10">
+        <div id="scanner-hud" class="hidden absolute left-4 top-20 w-56 sm:w-64 bg-sky-950/85 backdrop-blur-md border border-sky-400/50 rounded-xl p-3 shadow-[0_0_20px_rgba(14,165,233,0.3)] z-10">
             <h3 class="text-sky-300 font-bold text-[11px] uppercase tracking-widest border-b border-sky-500/40 pb-1.5 mb-2.5 flex items-center gap-2">
                 <i class="fa-solid fa-satellite-dish animate-pulse"></i> Análisis Estructural
             </h3>
@@ -168,8 +224,8 @@
                 <p class="text-[11px] font-mono text-cyan-400/80">Laboratorio Interactivo para Enseñanza</p>
             </div>
             <div class="text-[11px] text-gray-300 leading-relaxed text-left space-y-1.5 bg-gray-950/70 p-3.5 rounded-2xl border border-gray-800">
-                <p><strong class="text-rose-400">Dedo Índice (Láser):</strong> Estira el índice para seleccionar una pieza y ver su ficha.</p>
-                <p><strong class="text-violet-400">Aislar Pieza:</strong> Señala una parte y di <em>"Aislar pieza"</em> para estudiarla sola; di <em>"Mostrar todo"</em> para volver.</p>
+                <p><strong class="text-rose-400">Visor YouTube HUD:</strong> Di <em>"Abrir video"</em>, <em>"Pausar video"</em>, <em>"Reproducir video"</em> o mueve la ventana haciendo pinza en su barra superior.</p>
+                <p><strong class="text-violet-400">Aislar Pieza:</strong> Señala una parte con el índice y di <em>"Aislar pieza"</em>; di <em>"Mostrar todo"</em> para volver.</p>
                 <p><strong class="text-sky-400">Palma Abierta:</strong> Gira tu muñeca para rotar el modelo o la pieza aislada.</p>
                 <p><strong class="text-emerald-400">Voz Chumingo:</strong> <em>"Aumenta tamaño 10%"</em>, <em>"Reduce tamaño 20%"</em>, <em>"Activa 360"</em>, <em>"Expandir"</em>, <em>"Corte transversal"</em>.</p>
             </div>
@@ -209,9 +265,14 @@
 
                 <div class="flex items-center bg-gray-950/90 border border-gray-700 rounded-xl overflow-hidden shadow-lg">
                     <button id="prev-model-btn" class="px-2 py-2 text-cyan-400 hover:bg-gray-800 transition cursor-pointer"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                    <select id="shape-select" class="bg-transparent text-xs text-gray-100 font-semibold py-2 px-1 focus:outline-none cursor-pointer max-w-[135px] sm:max-w-[175px] truncate"></select>
+                    <select id="shape-select" class="bg-transparent text-xs text-gray-100 font-semibold py-2 px-1 focus:outline-none cursor-pointer max-w-[130px] sm:max-w-[165px] truncate"></select>
                     <button id="next-model-btn" class="px-2 py-2 text-cyan-400 hover:bg-gray-800 transition cursor-pointer"><i class="fa-solid fa-chevron-right text-xs"></i></button>
                 </div>
+
+                <!-- Botón Visor YouTube -->
+                <button id="youtube-toggle-btn" title="Abrir o cerrar ventana flotante de YouTube" class="bg-gray-950/90 hover:bg-gray-800 text-rose-300 border border-rose-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                    <i class="fa-brands fa-youtube text-rose-500"></i><span class="hidden md:inline">Video</span>
+                </button>
 
                 <!-- Botón Aislar / Restaurar Pieza -->
                 <button id="isolate-btn" title="Aislar pieza seleccionada o mostrar modelo completo" class="bg-gray-950/90 hover:bg-gray-800 text-violet-300 border border-violet-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
@@ -220,12 +281,12 @@
 
                 <!-- Control de Giro 360 -->
                 <button id="spin360-btn" title="Activar o desactivar rotación continua 360°" class="bg-gray-950/90 hover:bg-gray-800 text-cyan-300 border border-cyan-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i id="spin360-icon" class="fa-solid fa-rotate"></i><span class="hidden md:inline">360°</span>
+                    <i id="spin360-icon" class="fa-solid fa-rotate"></i><span class="hidden lg:inline">360°</span>
                 </button>
 
                 <!-- Control de Animación del Modelo (.glb) -->
                 <button id="anim-toggle-btn" title="Pausar o activar animación del modelo" class="hidden bg-teal-600 text-white border border-teal-400/50 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i id="anim-toggle-icon" class="fa-solid fa-pause"></i><span class="hidden lg:inline">Animación</span>
+                    <i id="anim-toggle-icon" class="fa-solid fa-pause"></i><span class="hidden xl:inline">Animación</span>
                 </button>
 
                 <!-- Corte Transversal -->
@@ -298,6 +359,23 @@
         const dragOverlay = document.getElementById("drag-overlay"), prevModelBtn = document.getElementById("prev-model-btn");
         const nextModelBtn = document.getElementById("next-model-btn"), shapeSelect = document.getElementById("shape-select");
 
+        const youtubeToggleBtn = document.getElementById("youtube-toggle-btn");
+        const youtubeHudPanel = document.getElementById("youtube-hud-panel");
+        const ytDragBar = document.getElementById("yt-drag-bar");
+        const ytSizeBtn = document.getElementById("yt-size-btn");
+        const ytCloseBtn = document.getElementById("yt-close-btn");
+        const ytUrlInput = document.getElementById("yt-url-input");
+        const ytLoadBtn = document.getElementById("yt-load-btn");
+        const ytPlaceholder = document.getElementById("yt-placeholder");
+        const ytRewindBtn = document.getElementById("yt-rewind-btn");
+        const ytPlayPauseBtn = document.getElementById("yt-playpause-btn");
+        const ytPlayPauseIcon = document.getElementById("yt-playpause-icon");
+        const ytPlayPauseLabel = document.getElementById("yt-playpause-label");
+        const ytDwellBar = document.getElementById("yt-dwell-bar");
+        const ytForwardBtn = document.getElementById("yt-forward-btn");
+        const ytMuteBtn = document.getElementById("yt-mute-btn");
+        const ytMuteIcon = document.getElementById("yt-mute-icon");
+
         const isolateBtn = document.getElementById("isolate-btn");
         const isolateBtnLabel = document.getElementById("isolate-btn-label");
         const isolateCardBtn = document.getElementById("isolate-card-btn");
@@ -335,7 +413,185 @@
         function dist3D(a, b) { return Math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2 + (a.z - b.z)**2); }
 
         // ==========================================
-        // 2. PERSISTENCIA DE FICHAS DIDÁCTICAS DOCENTES
+        // 2. VISOR HOLOGRÁFICO DE YOUTUBE (API + GESTOS + VOZ)
+        // ==========================================
+        let ytPlayer = null;
+        let ytApiLoaded = false;
+        let isYtExpanded = false;
+        let pendingYtVideoId = "aqz-KE-bpKQ"; // Video demostrativo educativo por defecto
+        let ytDwellStart = 0;
+        let ytLastToggleAt = 0;
+
+        // Arrastre con mouse
+        let ytMouseDragging = false;
+        let ytMouseOffset = { x: 0, y: 0 };
+        // Arrastre con pinza aérea
+        let ytPinchDragging = false;
+        let ytPinchOffset = { x: 0, y: 0 };
+
+        function extractYouTubeId(urlOrId) {
+            const clean = urlOrId.trim();
+            if (/^[a-zA-Z0-9_-]{11}$/.test(clean)) return clean;
+            const regExp = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+            const match = clean.match(regExp);
+            return match ? match[1] : null;
+        }
+
+        function ensureYouTubeApi() {
+            if (ytApiLoaded) return;
+            ytApiLoaded = true;
+            const tag = document.createElement("script");
+            tag.src = "https://www.youtube.com/iframe_api";
+            document.head.appendChild(tag);
+        }
+
+        window.onYouTubeIframeAPIReady = function () {
+            if (pendingYtVideoId && !youtubeHudPanel.classList.contains("hidden")) {
+                mountYouTubePlayer(pendingYtVideoId);
+            }
+        };
+
+        function mountYouTubePlayer(videoId) {
+            ytPlaceholder.classList.add("hidden");
+            if (ytPlayer && typeof ytPlayer.loadVideoById === "function") {
+                ytPlayer.loadVideoById(videoId);
+                return;
+            }
+            if (window.YT && window.YT.Player) {
+                ytPlayer = new YT.Player("yt-player-mount", {
+                    videoId,
+                    playerVars: {
+                        autoplay: 1,
+                        rel: 0,
+                        modestbranding: 1,
+                        playsinline: 1
+                    },
+                    events: {
+                        onStateChange: (e) => {
+                            const playing = e.data === YT.PlayerState.PLAYING;
+                            ytPlayPauseIcon.className = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
+                            ytPlayPauseLabel.textContent = playing ? "Pausar" : "Play";
+                        }
+                    }
+                });
+            }
+        }
+
+        function openYouTubePanel(optionalUrl = null) {
+            youtubeHudPanel.classList.remove("hidden");
+            youtubeToggleBtn.classList.add("bg-rose-600", "text-white");
+            youtubeToggleBtn.classList.remove("bg-gray-950/90", "text-rose-300");
+            ensureYouTubeApi();
+
+            if (optionalUrl) {
+                const id = extractYouTubeId(optionalUrl);
+                if (id) pendingYtVideoId = id;
+            }
+            if (!ytUrlInput.value) {
+                ytUrlInput.value = `https://www.youtube.com/watch?v=${pendingYtVideoId}`;
+            }
+            if (window.YT && window.YT.Player) {
+                mountYouTubePlayer(pendingYtVideoId);
+            }
+        }
+
+        function closeYouTubePanel() {
+            youtubeHudPanel.classList.add("hidden");
+            youtubeToggleBtn.classList.remove("bg-rose-600", "text-white");
+            youtubeToggleBtn.classList.add("bg-gray-950/90", "text-rose-300");
+            if (ytPlayer && typeof ytPlayer.pauseVideo === "function") {
+                ytPlayer.pauseVideo();
+            }
+        }
+
+        function toggleYouTubePlayPause() {
+            if (!ytPlayer || typeof ytPlayer.getPlayerState !== "function") {
+                openYouTubePanel();
+                return;
+            }
+            const state = ytPlayer.getPlayerState();
+            if (state === 1) {
+                ytPlayer.pauseVideo();
+            } else {
+                ytPlayer.playVideo();
+            }
+        }
+
+        youtubeToggleBtn.addEventListener("click", () => {
+            if (youtubeHudPanel.classList.contains("hidden")) {
+                openYouTubePanel();
+                chumingoSpeak("Visor de video abierto.");
+            } else {
+                closeYouTubePanel();
+                chumingoSpeak("Visor de video cerrado.");
+            }
+        });
+
+        ytCloseBtn.addEventListener("click", closeYouTubePanel);
+
+        ytSizeBtn.addEventListener("click", () => {
+            isYtExpanded = !isYtExpanded;
+            youtubeHudPanel.style.width = isYtExpanded ? "min(92vw, 560px)" : "";
+        });
+
+        ytLoadBtn.addEventListener("click", () => {
+            const id = extractYouTubeId(ytUrlInput.value);
+            if (!id) {
+                statusText.textContent = "Enlace de YouTube no válido.";
+                chumingoSpeak("El enlace de YouTube no es válido.");
+                return;
+            }
+            pendingYtVideoId = id;
+            ensureYouTubeApi();
+            if (window.YT && window.YT.Player) {
+                mountYouTubePlayer(id);
+            }
+            playScanBeep();
+        });
+
+        ytPlayPauseBtn.addEventListener("click", toggleYouTubePlayPause);
+        ytRewindBtn.addEventListener("click", () => {
+            if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") {
+                ytPlayer.seekTo(Math.max(0, ytPlayer.getCurrentTime() - 15), true);
+            }
+        });
+        ytForwardBtn.addEventListener("click", () => {
+            if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") {
+                ytPlayer.seekTo(ytPlayer.getCurrentTime() + 15, true);
+            }
+        });
+        ytMuteBtn.addEventListener("click", () => {
+            if (!ytPlayer || typeof ytPlayer.isMuted !== "function") return;
+            if (ytPlayer.isMuted()) {
+                ytPlayer.unMute();
+                ytMuteIcon.className = "fa-solid fa-volume-high";
+            } else {
+                ytPlayer.mute();
+                ytMuteIcon.className = "fa-solid fa-volume-xmark text-rose-400";
+            }
+        });
+
+        // Arrastre con mouse sobre la barra superior del panel YouTube
+        ytDragBar.addEventListener("mousedown", (e) => {
+            if (e.target.closest("button")) return;
+            ytMouseDragging = true;
+            const rect = youtubeHudPanel.getBoundingClientRect();
+            youtubeHudPanel.style.right = "auto";
+            youtubeHudPanel.style.left = `${rect.left}px`;
+            youtubeHudPanel.style.top = `${rect.top}px`;
+            ytMouseOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        });
+        window.addEventListener("mousemove", (e) => {
+            if (!ytMouseDragging) return;
+            const maxX = window.innerWidth - youtubeHudPanel.offsetWidth;
+            const maxY = window.innerHeight - youtubeHudPanel.offsetHeight;
+            youtubeHudPanel.style.left = `${Math.min(maxX, Math.max(0, e.clientX - ytMouseOffset.x))}px`;
+            youtubeHudPanel.style.top = `${Math.min(maxY, Math.max(0, e.clientY - ytMouseOffset.y))}px`;
+        });
+        window.addEventListener("mouseup", () => { ytMouseDragging = false; });
+
+        // ==========================================
+        // 3. PERSISTENCIA DE FICHAS DIDÁCTICAS DOCENTES
         // ==========================================
         const STORAGE_KEY = "chumingo3d_didactic_notes_v1";
         let customTeacherNotes = {};
@@ -352,7 +608,7 @@
         }
 
         // ==========================================
-        // 3. AUDIO Y VOZ EN ESPAÑOL LATINO (CHUMINGO)
+        // 4. AUDIO Y VOZ EN ESPAÑOL LATINO (CHUMINGO)
         // ==========================================
         let sfxCtx = null;
         let selectedLatinVoice = null;
@@ -420,7 +676,7 @@
         }
 
         // ==========================================
-        // 4. PROYECCIÓN PANTALLA <-> CÁMARA
+        // 5. PROYECCIÓN PANTALLA <-> CÁMARA
         // ==========================================
         function normToScreenPx(lm) {
             const sw = handCanvas.width || window.innerWidth, sh = handCanvas.height || window.innerHeight;
@@ -461,7 +717,7 @@
         }
 
         // ==========================================
-        // 5. CLASIFICADOR DE POSTURAS 3D
+        // 6. CLASIFICADOR DE POSTURAS 3D
         // ==========================================
         function classifyHandPose(landmarks) {
             const wrist = landmarks[0], thumbTip = landmarks[4], indexTip = landmarks[8], middleTip = landmarks[12];
@@ -482,7 +738,6 @@
                 if (ratio > 1.54) openFingerCount++;
             }
 
-            // 1. Gesto de Cambio de Modelo: Índice + Medio estirados y juntos; Anular + Meñique cerrados
             const indexExtended = ratios[0] > 1.48;
             const middleExtended = ratios[1] > 1.48;
             const ringCurled = ratios[2] < 1.36;
@@ -493,18 +748,13 @@
                 return "switch";
             }
 
-            // 2. Puño cerrado
             if (curledCount >= 3 && ratios[0] < 1.35) return "fist";
-
-            // 3. Pinza
             if (dist3D(thumbTip, indexTip) < 0.085) return "pinch";
 
-            // 4. Punta del dedo índice independiente
             if (ratios[0] > 1.38 && openFingerCount < 3) {
                 return "point";
             }
             
-            // 5. Palma abierta
             if (openFingerCount >= 3) return "open";
             return "neutral";
         }
@@ -524,7 +774,7 @@
         }
 
         // ==========================================
-        // 6. THREE.JS, AISLAMIENTO DE PIEZA, GIRO 360 Y CORTE
+        // 7. THREE.JS, AISLAMIENTO, GIRO 360 Y CORTE
         // ==========================================
         let THREE = null, GLTFLoader = null, DRACOLoader = null, OBJLoader = null, STLLoader = null;
         let scene, camera, renderer, objectGroup, modelSlot, drawingGroup, telemetryGroup, scannerBar, sliceVisualPlane, clock, raycaster;
@@ -657,16 +907,12 @@
             scene.add(sliceVisualPlane);
         }
 
-        // ==========================================
-        // AISLAMIENTO INDIVIDUAL DE PIEZA
-        // ==========================================
         function isolateSelectedPart(targetMesh = null) {
             const meshToIsolate = targetMesh || highlightedMesh || lastSelectedMeshForCard;
             if (!meshToIsolate || !hasActiveModel) {
                 chumingoSpeak("Señala primero una pieza con tu dedo índice para aislarla.");
                 return false;
             }
-
             if (isolatedMesh === meshToIsolate) return true;
 
             if (!isolatedMesh) {
@@ -766,7 +1012,6 @@
             }
         });
 
-        // Control de Giro Continuo 360°
         function setAutoSpin360(enabled) {
             isAutoSpin360 = enabled;
             spin360Btn.classList.toggle("bg-cyan-600", enabled);
@@ -786,7 +1031,6 @@
             chumingoSpeak(isAutoSpin360 ? "Modo 360 activado." : "Modo 360 desactivado.");
         });
 
-        // Control de Animación del Modelo 3D (.glb/.gltf)
         function setModelAnimationState(play) {
             isAnimationPlaying = play;
             if (animationMixer) {
@@ -974,7 +1218,7 @@
         });
 
         // ==========================================
-        // 7. BIBLIOTECA EDUCATIVA CON FICHAS DIDÁCTICAS
+        // 8. BIBLIOTECA EDUCATIVA CON FICHAS DIDÁCTICAS
         // ==========================================
         function attachDidacticData(mesh, title, desc, func) {
             mesh.name = title;
@@ -1270,7 +1514,7 @@
         }
 
         // ==========================================
-        // 8. FICHAS DIDÁCTICAS Y MODAL DOCENTE
+        // 9. FICHAS DIDÁCTICAS Y MODAL DOCENTE
         // ==========================================
         function showDidacticCardForMesh(mesh) {
             if (!mesh || !mesh.userData.didactic) return;
@@ -1326,7 +1570,7 @@
         });
 
         // ==========================================
-        // 9. CARRUSEL EDUCATIVO Y CARGA DE ARCHIVOS
+        // 10. CARRUSEL EDUCATIVO Y CARGA DE ARCHIVOS
         // ==========================================
         function refreshCarouselSelect() {
             shapeSelect.innerHTML = "";
@@ -1394,7 +1638,7 @@
         window.addEventListener("drop", (e) => { e.preventDefault(); dragOverlay.classList.add("hidden"); enqueue3DFiles(e.dataTransfer.files); });
 
         // ==========================================
-        // 10. STARK DISMISS Y RESET
+        // 11. STARK DISMISS Y RESET
         // ==========================================
         function spawnHologramBurst(originPos) {
             if (!THREE || !scene) return;
@@ -1441,7 +1685,7 @@
         });
 
         // ==========================================
-        // 11. COMANDOS DE VOZ CHUMINGO 3D
+        // 12. COMANDOS DE VOZ CHUMINGO 3D
         // ==========================================
         let chumingoRecognition = null, isChumingoListening = false;
         
@@ -1488,7 +1732,6 @@
                 .trim();
         }
 
-        // Extrae el porcentaje dicho por voz (ej: "10", "veinte", "15 por ciento")
         function extractSpokenPercentage(cmd, fallback = 15) {
             const numMatch = cmd.match(/(\d+(?:[.,]\d+)?)/);
             if (numMatch) {
@@ -1519,7 +1762,40 @@
                 cmd.includes("pausar") || cmd.includes("salir") ||
                 cmd.includes("sin ");
 
-            // 1. AISLAR PIEZA INDIVIDUAL O VOLVER A VER TODO
+            // 1. CONTROL DE VENTANA DE YOUTUBE POR VOZ
+            if (cmd.includes("video") || cmd.includes("youtube")) {
+                if (cmd.includes("cerra") || cmd.includes("cierra") || hasTurnOff) {
+                    closeYouTubePanel();
+                    chumingoSpeak("Visor de video cerrado.");
+                } else if (cmd.includes("pausa") || cmd.includes("deten")) {
+                    if (ytPlayer && typeof ytPlayer.pauseVideo === "function") ytPlayer.pauseVideo();
+                    chumingoSpeak("Video pausado.");
+                } else if (cmd.includes("reproduc") || cmd.includes("continua") || cmd.includes("play")) {
+                    openYouTubePanel();
+                    if (ytPlayer && typeof ytPlayer.playVideo === "function") ytPlayer.playVideo();
+                    chumingoSpeak("Reproduciendo video.");
+                } else if (cmd.includes("adelanta")) {
+                    if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") ytPlayer.seekTo(ytPlayer.getCurrentTime() + 15, true);
+                    chumingoSpeak("Adelantando quince segundos.");
+                } else if (cmd.includes("retroced") || cmd.includes("atras")) {
+                    if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") ytPlayer.seekTo(Math.max(0, ytPlayer.getCurrentTime() - 15), true);
+                    chumingoSpeak("Retrocediendo quince segundos.");
+                } else if (cmd.includes("silencia") || cmd.includes("mute")) {
+                    if (ytPlayer && typeof ytPlayer.mute === "function") ytPlayer.mute();
+                    ytMuteIcon.className = "fa-solid fa-volume-xmark text-rose-400";
+                    chumingoSpeak("Video silenciado.");
+                } else if (cmd.includes("sonido") || cmd.includes("volumen")) {
+                    if (ytPlayer && typeof ytPlayer.unMute === "function") ytPlayer.unMute();
+                    ytMuteIcon.className = "fa-solid fa-volume-high";
+                    chumingoSpeak("Sonido activado.");
+                } else {
+                    openYouTubePanel();
+                    chumingoSpeak("Abriendo ventana de video.");
+                }
+                return;
+            }
+
+            // 2. AISLAR PIEZA INDIVIDUAL O VOLVER A VER TODO
             if (cmd.includes("aisla") || cmd.includes("enfoca") || cmd.includes("solo esta") || cmd.includes("individual")) {
                 if (hasTurnOff) {
                     exitPartIsolation(true);
@@ -1534,7 +1810,7 @@
                 return;
             }
 
-            // 2. MODO GIRO CONTINUO 360°
+            // 3. MODO GIRO CONTINUO 360°
             if (cmd.includes("360") || cmd.includes("trescientos sesenta") || cmd.includes("giro continuo") || cmd.includes("rotacion continua")) {
                 if (hasTurnOff) {
                     setAutoSpin360(false);
@@ -1547,7 +1823,7 @@
                 return;
             }
 
-            // 3. CONTROL DE ANIMACIÓN DEL MODELO 3D
+            // 4. CONTROL DE ANIMACIÓN DEL MODELO 3D
             if (cmd.includes("animacion") || cmd.includes("movimiento")) {
                 if (!hasModelAnimation) {
                     chumingoSpeak("Este modelo no tiene una animación integrada.");
@@ -1563,13 +1839,13 @@
                 return;
             }
 
-            // 4. EXPLICAR PIEZA SELECCIONADA (FICHA DIDÁCTICA)
+            // 5. EXPLICAR PIEZA SELECCIONADA (FICHA DIDÁCTICA)
             if (cmd.includes("explica") || cmd.includes("que es") || cmd.includes("funcion") || cmd.includes("leer ficha")) {
                 explainCurrentDidacticPiece();
                 return;
             }
 
-            // 5. CORTE TRANSVERSAL / SECCIÓN
+            // 6. CORTE TRANSVERSAL / SECCIÓN
             if (cmd.includes("corte") || cmd.includes("seccion") || cmd.includes("cortar") || cmd.includes("interior")) {
                 if (hasTurnOff) {
                     setSliceMode(false);
@@ -1581,7 +1857,7 @@
                 return;
             }
 
-            // 6. PIZARRA ESPACIAL 3D
+            // 7. PIZARRA ESPACIAL 3D
             if (cmd.includes("pizarra") || cmd.includes("dibuj") || cmd.includes("trazo")) {
                 if (cmd.includes("borra") || cmd.includes("limpia")) {
                     clearSpatialBoard();
@@ -1596,7 +1872,7 @@
                 return;
             }
 
-            // 7. MODO PLANO / BLUEPRINT
+            // 8. MODO PLANO / BLUEPRINT
             if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("esquema")) {
                 if (hasTurnOff) {
                     setBlueprintMode(false);
@@ -1614,7 +1890,7 @@
                 return;
             }
 
-            // 8. ESCALA PORCENTUAL (AUMENTAR / REDUCIR EN %)
+            // 9. ESCALA PORCENTUAL
             if (cmd.includes("aumenta") || cmd.includes("agrand") || cmd.includes("sube") || cmd.includes("mas grande") || cmd.includes("amplia")) {
                 if (hasActiveModel) {
                     const pct = extractSpokenPercentage(cmd, 15);
@@ -1642,7 +1918,7 @@
                 return;
             }
 
-            // 9. EXPANDIR / CONTRAER PIEZAS
+            // 10. EXPANDIR / CONTRAER PIEZAS
             if (cmd.includes("expand") || cmd.includes("explot") || cmd.includes("desarm") || cmd.includes("despiece") || cmd.includes("abrir pieza") || cmd.includes("separa")) {
                 if (!hasActiveModel) loadCarouselItem(currentCarouselIndex, false);
                 if (isolatedMesh) exitPartIsolation(false);
@@ -1660,14 +1936,14 @@
                 return;
             }
 
-            // 10. CENTRAR HOLOGRAMA
+            // 11. CENTRAR HOLOGRAMA
             if (cmd.includes("centra") || cmd.includes("centro") || cmd.includes("reinicia") || cmd.includes("restaura")) {
                 resetObject();
                 chumingoSpeak("Holograma centrado.");
                 return;
             }
 
-            // 11. ESCÁNER LÁSER
+            // 12. ESCÁNER LÁSER
             if (cmd.includes("escan") || cmd.includes("analisis")) {
                 if (hasTurnOff) {
                     setScannerMode(false);
@@ -1679,7 +1955,7 @@
                 return;
             }
 
-            // 12. BIBLIOTECA DE MODELOS EDUCATIVOS
+            // 13. BIBLIOTECA DE MODELOS EDUCATIVOS
             if (cmd.includes("volcan")) { loadCarouselItem(0, true); chumingoSpeak("Cargando volcán en capas."); return; }
             if (cmd.includes("adn") || cmd.includes("molecula")) { loadCarouselItem(1, true); chumingoSpeak("Cargando molécula de A D N."); return; }
             if (cmd.includes("atomo") || cmd.includes("bohr")) { loadCarouselItem(2, true); chumingoSpeak("Cargando átomo de Bohr."); return; }
@@ -1697,7 +1973,7 @@
                 return;
             }
 
-            // 13. ANILLOS Y SENSORES
+            // 14. ANILLOS Y SENSORES
             if (cmd.includes("anillo") || cmd.includes("telemetria")) {
                 if (hasTurnOff) { showRingsCheckbox.checked = false; telemetryGroup.visible = false; chumingoSpeak("Anillos ocultos."); }
                 else { showRingsCheckbox.checked = true; telemetryGroup.visible = true; chumingoSpeak("Anillos visibles."); }
@@ -1709,7 +1985,7 @@
                 return;
             }
 
-            // 14. CERRAR PROYECCIÓN
+            // 15. CERRAR PROYECCIÓN
             if (cmd.includes("cerra") || cmd.includes("cierra") || cmd.includes("elimina") || cmd.includes("borra") || hasTurnOff) {
                 triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 });
                 chumingoSpeak("Cerrando proyección.");
@@ -1724,7 +2000,7 @@
         });
 
         // ==========================================
-        // 12. LÁSER DE INSPECCIÓN Y FICHAS DIDÁCTICAS
+        // 13. LÁSER DE INSPECCIÓN Y FICHAS DIDÁCTICAS
         // ==========================================
         function updateLaserInspection(indexTipPx) {
             const visibleMeshes = inspectableMeshes.filter(m => m.visible);
@@ -1781,7 +2057,7 @@
         }
 
         // ==========================================
-        // 13. ARRANQUE DEL SISTEMA
+        // 14. ARRANQUE DEL SISTEMA
         // ==========================================
         let handLandmarker = null, lastVideoTime = -1, isLoopRunning = false, prevRotY = 0;
         const starkGesture = { armed: false, armedAt: 0, lastPalmDist: 1 };
@@ -1832,7 +2108,7 @@
         }
 
         // ==========================================
-        // 14. MAIN LOOP (RENDER 3D Y GESTOS)
+        // 15. MAIN LOOP (RENDER 3D Y GESTOS)
         // ==========================================
         function mainLoop() {
             if (handCanvas.width !== window.innerWidth || handCanvas.height !== window.innerHeight) {
@@ -1918,6 +2194,11 @@
             requestAnimationFrame(mainLoop);
         }
 
+        function isPointInRect(px, rect, margin = 8) {
+            return px.x >= (rect.left - margin) && px.x <= (rect.right + margin) &&
+                   px.y >= (rect.top - margin) && px.y <= (rect.bottom + margin);
+        }
+
         function processHands(results) {
             if (!THREE || !objectGroup) return;
             const activePinches = [], openHands = [], switchHands = [], detectedHands = []; let pointingHand = null; const now = performance.now();
@@ -1949,6 +2230,58 @@
                         activePinches.push({ world: normToWorld(centerNorm), norm: centerNorm, quat: handQuat, px });
                     }
                 }
+            }
+
+            const ytOpen = !youtubeHudPanel.classList.contains("hidden");
+
+            // --- INTERACCIÓN GESTUAL CON LA VENTANA DE YOUTUBE ---
+            // A) Pinza en la barra superior de YouTube -> Arrastrar ventana en pantalla
+            if (ytOpen && activePinches.length === 1) {
+                const pinchPx = activePinches[0].px;
+                const barRect = ytDragBar.getBoundingClientRect();
+                if (ytPinchDragging || isPointInRect(pinchPx, barRect, 14)) {
+                    const panelRect = youtubeHudPanel.getBoundingClientRect();
+                    if (!ytPinchDragging) {
+                        ytPinchDragging = true;
+                        youtubeHudPanel.style.right = "auto";
+                        youtubeHudPanel.style.left = `${panelRect.left}px`;
+                        youtubeHudPanel.style.top = `${panelRect.top}px`;
+                        ytPinchOffset = { x: pinchPx.x - panelRect.left, y: pinchPx.y - panelRect.top };
+                    }
+                    const maxX = window.innerWidth - youtubeHudPanel.offsetWidth;
+                    const maxY = window.innerHeight - youtubeHudPanel.offsetHeight;
+                    youtubeHudPanel.style.left = `${Math.min(maxX, Math.max(0, pinchPx.x - ytPinchOffset.x))}px`;
+                    youtubeHudPanel.style.top = `${Math.min(maxY, Math.max(0, pinchPx.y - ytPinchOffset.y))}px`;
+                    gestureBadge.textContent = "Moviendo Visor Video";
+                    gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
+                    return;
+                }
+            } else {
+                ytPinchDragging = false;
+            }
+
+            // B) Apuntar con el índice sobre el botón Play/Pausa del visor YouTube (Dwell 0.85s)
+            if (ytOpen && pointingHand) {
+                const btnRect = ytPlayPauseBtn.getBoundingClientRect();
+                if (isPointInRect(pointingHand.px, btnRect, 12)) {
+                    drawRing(pointingHand.px.x, pointingHand.px.y, "#22d3ee", 14, 3);
+                    if (ytDwellStart === 0) ytDwellStart = now;
+                    const progress = Math.min(1, (now - ytDwellStart) / 850);
+                    ytDwellBar.style.width = `${Math.round(progress * 100)}%`;
+
+                    if (progress >= 1 && (now - ytLastToggleAt) > 1200) {
+                        ytLastToggleAt = now;
+                        ytDwellStart = 0;
+                        ytDwellBar.style.width = "0%";
+                        toggleYouTubePlayPause();
+                        playScanBeep();
+                    }
+                    return;
+                }
+            }
+            if (ytDwellStart !== 0) {
+                ytDwellStart = 0;
+                ytDwellBar.style.width = "0%";
             }
 
             if (!pointingHand) {
@@ -2115,7 +2448,7 @@
         }
 
         // ==========================================
-        // 15. DIBUJO EN CANVAS 2D
+        // 16. DIBUJO EN CANVAS 2D
         // ==========================================
         function drawSwipeTrail() {
             if (swipeTracker.samples.length < 2) return;
