@@ -33,16 +33,23 @@
             z-index: 1;
         }
 
-        #hand_canvas, #three_canvas {
+        #hand_canvas {
             position: absolute;
             inset: 0;
             width: 100%;
             height: 100%;
-            z-index: 2;
+            z-index: 15;
             pointer-events: none;
         }
 
-        #three_canvas { z-index: 3; }
+        #three_canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+        }
 
         .hud-vignette {
             position: absolute;
@@ -83,27 +90,27 @@
         <div class="hud-vignette"></div>
 
         <!-- Ventana Holográfica Flotante de YouTube -->
-        <div id="youtube-hud-panel" class="hidden fixed z-25 w-[330px] sm:w-[400px] bg-gray-950/90 backdrop-blur-md border border-cyan-400/60 rounded-2xl shadow-[0_0_30px_rgba(6,182,212,0.3)] overflow-hidden pointer-events-auto select-none" style="top: 84px; right: 16px;">
+        <div id="youtube-hud-panel" class="hidden fixed z-20 w-[340px] sm:w-[420px] bg-gray-950/92 backdrop-blur-md border border-cyan-400/60 rounded-2xl shadow-[0_0_30px_rgba(6,182,212,0.3)] overflow-hidden pointer-events-auto select-none" style="top: 88px; right: 18px;">
             <!-- Barra de Agarre (Pinza o Mouse para mover) -->
-            <div id="yt-drag-bar" class="bg-cyan-950/80 border-b border-cyan-500/30 px-3 py-2 flex items-center justify-between gap-2 cursor-move">
+            <div id="yt-drag-bar" class="bg-cyan-950/85 border-b border-cyan-500/30 px-3 py-2 flex items-center justify-between gap-2 cursor-move">
                 <div class="flex items-center gap-2 text-xs font-bold text-cyan-300">
                     <i class="fa-brands fa-youtube text-rose-500 text-sm"></i>
                     <span class="tracking-wider uppercase text-[10px]">Visor Multimedia HUD</span>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <button id="yt-size-btn" title="Cambiar tamaño de pantalla" class="px-2 py-0.5 rounded bg-cyan-900/60 hover:bg-cyan-800 text-[10px] font-mono text-cyan-200 cursor-pointer">
+                    <button id="yt-size-btn" title="Agrandar o reducir ventana" class="px-2 py-1 rounded bg-cyan-900/60 hover:bg-cyan-800 text-[10px] font-mono text-cyan-200 cursor-pointer">
                         <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
                     </button>
-                    <button id="yt-close-btn" title="Cerrar video" class="px-2 py-0.5 rounded bg-rose-900/60 hover:bg-rose-700 text-xs text-rose-200 cursor-pointer">
+                    <button id="yt-close-btn" title="Cerrar video" class="px-2 py-1 rounded bg-rose-900/60 hover:bg-rose-700 text-xs text-rose-200 cursor-pointer">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
             </div>
 
             <!-- Barra de URL de YouTube -->
-            <div class="p-2 bg-gray-900/90 border-b border-gray-800 flex items-center gap-1.5">
-                <input type="text" id="yt-url-input" placeholder="Pega enlace de YouTube aquí..." class="flex-1 bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-gray-100 focus:border-cyan-400 focus:outline-none">
-                <button id="yt-load-btn" class="px-2.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold cursor-pointer">
+            <div class="p-2 bg-gray-900/95 border-b border-gray-800 flex items-center gap-1.5">
+                <input type="text" id="yt-url-input" placeholder="Pega enlace de YouTube y presiona Cargar..." class="flex-1 bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-gray-100 focus:border-cyan-400 focus:outline-none">
+                <button id="yt-load-btn" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold cursor-pointer">
                     Cargar
                 </button>
             </div>
@@ -111,29 +118,36 @@
             <!-- Contenedor del Reproductor IFrame -->
             <div class="relative w-full aspect-video bg-black">
                 <div id="yt-player-mount" class="w-full h-full"></div>
-                <div id="yt-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-gray-950/90 text-gray-400 text-xs space-y-2">
+                <!-- Escudo transparente mientras se arrastra para que el iframe no atrape el cursor -->
+                <div id="yt-drag-shield" class="hidden absolute inset-0 z-10 bg-transparent"></div>
+                <!-- Pantalla en espera hasta que el usuario cargue un enlace -->
+                <div id="yt-placeholder" class="absolute inset-0 z-5 flex flex-col items-center justify-center text-center p-4 bg-gray-950/95 text-gray-300 text-xs space-y-2">
                     <i class="fa-brands fa-youtube text-3xl text-rose-500"></i>
-                    <p>Pega un enlace de YouTube arriba o usa el video de ejemplo.</p>
+                    <p class="font-semibold text-cyan-200">Listo para proyectar video</p>
+                    <p class="text-[11px] text-gray-400">Pega arriba el enlace de YouTube y presiona <strong>Cargar</strong>.</p>
                 </div>
             </div>
 
-            <!-- Controles Interactivos (Voz, Mouse o Toque con Índice en el Aire) -->
+            <!-- Controles Interactivos (Voz, Mouse o Apuntar con Índice en el Aire) -->
             <div class="px-3 py-2 bg-gray-950/95 border-t border-cyan-900/50 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-1.5">
-                    <button id="yt-rewind-btn" title="Retroceder 15s" class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-200 text-xs cursor-pointer">
+                    <button id="yt-rewind-btn" data-yt-dwell="rewind" title="Retroceder 15s" class="relative overflow-hidden px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-200 text-xs cursor-pointer">
                         <i class="fa-solid fa-backward-step"></i> -15s
+                        <span class="yt-dwell-progress absolute bottom-0 left-0 h-0.5 bg-cyan-400" style="width: 0%;"></span>
                     </button>
-                    <button id="yt-playpause-btn" title="Play / Pausa (También puedes apuntar con el índice)" class="relative overflow-hidden px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+                    <button id="yt-playpause-btn" data-yt-dwell="playpause" title="Play / Pausa" class="relative overflow-hidden px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer">
                         <i id="yt-playpause-icon" class="fa-solid fa-play"></i>
                         <span id="yt-playpause-label">Play</span>
-                        <span id="yt-dwell-bar" class="absolute bottom-0 left-0 h-1 bg-cyan-300 transition-all duration-75" style="width: 0%;"></span>
+                        <span class="yt-dwell-progress absolute bottom-0 left-0 h-1 bg-cyan-300" style="width: 0%;"></span>
                     </button>
-                    <button id="yt-forward-btn" title="Adelantar 15s" class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-200 text-xs cursor-pointer">
+                    <button id="yt-forward-btn" data-yt-dwell="forward" title="Adelantar 15s" class="relative overflow-hidden px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-200 text-xs cursor-pointer">
                         +15s <i class="fa-solid fa-forward-step"></i>
+                        <span class="yt-dwell-progress absolute bottom-0 left-0 h-0.5 bg-cyan-400" style="width: 0%;"></span>
                     </button>
                 </div>
-                <button id="yt-mute-btn" title="Silenciar / Sonido" class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-300 text-xs cursor-pointer">
+                <button id="yt-mute-btn" data-yt-dwell="mute" title="Silenciar / Sonido" class="relative overflow-hidden px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-300 text-xs cursor-pointer">
                     <i id="yt-mute-icon" class="fa-solid fa-volume-high"></i>
+                    <span class="yt-dwell-progress absolute bottom-0 left-0 h-0.5 bg-cyan-400" style="width: 0%;"></span>
                 </button>
             </div>
         </div>
@@ -211,7 +225,7 @@
 
         <div id="drag-overlay" class="hidden fixed inset-4 z-30 border-2 border-dashed border-cyan-400 bg-cyan-950/75 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center text-center p-6 pointer-events-none">
             <i class="fa-solid fa-cloud-arrow-up text-5xl text-cyan-400 mb-3 animate-bounce"></i>
-            <p class="text-lg font-bold text-white">Suelta tus archivos 3D para añadirlos al carrusel</p>
+            <p class="text-lg font-bold text-white">Suelta tus archivos 3D para proyectarlos</p>
         </div>
 
         <!-- Pantalla de Inicio -->
@@ -224,10 +238,10 @@
                 <p class="text-[11px] font-mono text-cyan-400/80">Laboratorio Interactivo para Enseñanza</p>
             </div>
             <div class="text-[11px] text-gray-300 leading-relaxed text-left space-y-1.5 bg-gray-950/70 p-3.5 rounded-2xl border border-gray-800">
-                <p><strong class="text-rose-400">Visor YouTube HUD:</strong> Di <em>"Abrir video"</em>, <em>"Pausar video"</em>, <em>"Reproducir video"</em> o mueve la ventana haciendo pinza en su barra superior.</p>
+                <p><strong class="text-cyan-400">Escena Limpia al Iniciar:</strong> Elige un modelo del menú superior, carga tu archivo 3D o pídelo por voz (<em>"Abrir volcán"</em>, <em>"Abrir sistema solar"</em>).</p>
+                <p><strong class="text-rose-400">Visor YouTube HUD:</strong> Abre la ventana de video, pega tu enlace y contrólala con voz o gestos.</p>
                 <p><strong class="text-violet-400">Aislar Pieza:</strong> Señala una parte con el índice y di <em>"Aislar pieza"</em>; di <em>"Mostrar todo"</em> para volver.</p>
-                <p><strong class="text-sky-400">Palma Abierta:</strong> Gira tu muñeca para rotar el modelo o la pieza aislada.</p>
-                <p><strong class="text-emerald-400">Voz Chumingo:</strong> <em>"Aumenta tamaño 10%"</em>, <em>"Reduce tamaño 20%"</em>, <em>"Activa 360"</em>, <em>"Expandir"</em>, <em>"Corte transversal"</em>.</p>
+                <p><strong class="text-emerald-400">Voz Chumingo:</strong> <em>"Aumenta tamaño 10%"</em>, <em>"Activa 360"</em>, <em>"Expandir"</em>, <em>"Corte transversal"</em>.</p>
             </div>
             <button id="launch-btn" class="w-full py-3.5 px-5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-power-off"></i> Iniciar CHUMINGO 3D
@@ -247,7 +261,7 @@
                         <span class="text-gray-600">|</span>
                         <span id="gesture-badge" class="text-xs font-bold tracking-wider uppercase text-cyan-200">En espera</span>
                     </div>
-                    <span id="carousel-counter" class="text-[10px] font-mono bg-cyan-950/80 text-cyan-300 border border-cyan-700/50 px-2 py-0.5 rounded-full">1 / 5</span>
+                    <span id="carousel-counter" class="text-[10px] font-mono bg-cyan-950/80 text-cyan-300 border border-cyan-700/50 px-2 py-0.5 rounded-full">0 / 5</span>
                 </div>
                 <p id="status-text" class="text-[11px] font-mono text-gray-300 truncate max-w-[290px] sm:max-w-sm">
                     Inicia la cámara para comenzar la clase interactiva.
@@ -265,7 +279,7 @@
 
                 <div class="flex items-center bg-gray-950/90 border border-gray-700 rounded-xl overflow-hidden shadow-lg">
                     <button id="prev-model-btn" class="px-2 py-2 text-cyan-400 hover:bg-gray-800 transition cursor-pointer"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                    <select id="shape-select" class="bg-transparent text-xs text-gray-100 font-semibold py-2 px-1 focus:outline-none cursor-pointer max-w-[130px] sm:max-w-[165px] truncate"></select>
+                    <select id="shape-select" class="bg-transparent text-xs text-gray-100 font-semibold py-2 px-1 focus:outline-none cursor-pointer max-w-[145px] sm:max-w-[180px] truncate"></select>
                     <button id="next-model-btn" class="px-2 py-2 text-cyan-400 hover:bg-gray-800 transition cursor-pointer"><i class="fa-solid fa-chevron-right text-xs"></i></button>
                 </div>
 
@@ -324,9 +338,9 @@
 
         <div class="flex flex-wrap justify-between items-end gap-2 pointer-events-auto w-full">
             <div class="bg-gray-950/85 backdrop-blur border border-cyan-500/25 rounded-xl px-3.5 py-2 flex flex-wrap items-center gap-3 sm:gap-4 text-[11px] font-mono">
-                <div>Escala: <span id="scale-display" class="text-emerald-400 font-bold">100%</span></div>
-                <div>Despiece: <span id="explode-display" class="text-indigo-400 font-bold">0%</span></div>
-                <div>Rotación: <span id="rot-display" class="text-cyan-400 font-bold">0°, 0°</span></div>
+                <div>Escala: <span id="scale-display" class="text-emerald-400 font-bold">--</span></div>
+                <div>Despiece: <span id="explode-display" class="text-indigo-400 font-bold">--</span></div>
+                <div>Rotación: <span id="rot-display" class="text-cyan-400 font-bold">--</span></div>
                 <div id="inspected-part-badge" class="hidden text-rose-300 font-bold">
                     <i class="fa-solid fa-crosshairs mr-1"></i><span>--</span>
                 </div>
@@ -362,6 +376,7 @@
         const youtubeToggleBtn = document.getElementById("youtube-toggle-btn");
         const youtubeHudPanel = document.getElementById("youtube-hud-panel");
         const ytDragBar = document.getElementById("yt-drag-bar");
+        const ytDragShield = document.getElementById("yt-drag-shield");
         const ytSizeBtn = document.getElementById("yt-size-btn");
         const ytCloseBtn = document.getElementById("yt-close-btn");
         const ytUrlInput = document.getElementById("yt-url-input");
@@ -371,7 +386,6 @@
         const ytPlayPauseBtn = document.getElementById("yt-playpause-btn");
         const ytPlayPauseIcon = document.getElementById("yt-playpause-icon");
         const ytPlayPauseLabel = document.getElementById("yt-playpause-label");
-        const ytDwellBar = document.getElementById("yt-dwell-bar");
         const ytForwardBtn = document.getElementById("yt-forward-btn");
         const ytMuteBtn = document.getElementById("yt-mute-btn");
         const ytMuteIcon = document.getElementById("yt-mute-icon");
@@ -413,14 +427,17 @@
         function dist3D(a, b) { return Math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2 + (a.z - b.z)**2); }
 
         // ==========================================
-        // 2. VISOR HOLOGRÁFICO DE YOUTUBE (API + GESTOS + VOZ)
+        // 2. VISOR HOLOGRÁFICO DE YOUTUBE (SIN BUCLE NI AUTO-CARGA)
         // ==========================================
         let ytPlayer = null;
-        let ytApiLoaded = false;
+        let ytApiLoading = false;
         let isYtExpanded = false;
-        let pendingYtVideoId = "aqz-KE-bpKQ"; // Video demostrativo educativo por defecto
+        let loadedYtVideoId = null;
+
+        // Control de toque en el aire (Dwell) sobre cualquier botón del visor YouTube
+        let ytDwellTarget = null;
         let ytDwellStart = 0;
-        let ytLastToggleAt = 0;
+        let ytLastActionAt = 0;
 
         // Arrastre con mouse
         let ytMouseDragging = false;
@@ -430,7 +447,8 @@
         let ytPinchOffset = { x: 0, y: 0 };
 
         function extractYouTubeId(urlOrId) {
-            const clean = urlOrId.trim();
+            const clean = (urlOrId || "").trim();
+            if (!clean) return null;
             if (/^[a-zA-Z0-9_-]{11}$/.test(clean)) return clean;
             const regExp = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
             const match = clean.match(regExp);
@@ -438,42 +456,58 @@
         }
 
         function ensureYouTubeApi() {
-            if (ytApiLoaded) return;
-            ytApiLoaded = true;
+            if (window.YT && window.YT.Player) return;
+            if (ytApiLoading) return;
+            ytApiLoading = true;
             const tag = document.createElement("script");
             tag.src = "https://www.youtube.com/iframe_api";
             document.head.appendChild(tag);
         }
 
         window.onYouTubeIframeAPIReady = function () {
-            if (pendingYtVideoId && !youtubeHudPanel.classList.contains("hidden")) {
-                mountYouTubePlayer(pendingYtVideoId);
+            if (loadedYtVideoId && !ytPlayer) {
+                createYouTubePlayer(loadedYtVideoId);
             }
         };
 
-        function mountYouTubePlayer(videoId) {
+        function createYouTubePlayer(videoId) {
             ytPlaceholder.classList.add("hidden");
-            if (ytPlayer && typeof ytPlayer.loadVideoById === "function") {
-                ytPlayer.loadVideoById(videoId);
-                return;
-            }
-            if (window.YT && window.YT.Player) {
-                ytPlayer = new YT.Player("yt-player-mount", {
-                    videoId,
-                    playerVars: {
-                        autoplay: 1,
-                        rel: 0,
-                        modestbranding: 1,
-                        playsinline: 1
-                    },
-                    events: {
-                        onStateChange: (e) => {
-                            const playing = e.data === YT.PlayerState.PLAYING;
-                            ytPlayPauseIcon.className = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
-                            ytPlayPauseLabel.textContent = playing ? "Pausar" : "Play";
-                        }
+            ytPlayer = new YT.Player("yt-player-mount", {
+                videoId,
+                playerVars: {
+                    autoplay: 1,
+                    loop: 0,
+                    rel: 0,
+                    modestbranding: 1,
+                    playsinline: 1,
+                    origin: window.location.origin
+                },
+                events: {
+                    onStateChange: (e) => {
+                        const playing = e.data === YT.PlayerState.PLAYING;
+                        ytPlayPauseIcon.className = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
+                        ytPlayPauseLabel.textContent = playing ? "Pausar" : "Play";
                     }
-                });
+                }
+            });
+        }
+
+        function loadVideoIntoPlayer(videoId) {
+            if (!videoId) return;
+            loadedYtVideoId = videoId;
+            ytPlaceholder.classList.add("hidden");
+            ensureYouTubeApi();
+
+            if (ytPlayer && typeof ytPlayer.loadVideoById === "function") {
+                // Solo carga si es un video diferente o estaba detenido, evitando recargas en bucle
+                const currentData = typeof ytPlayer.getVideoData === "function" ? ytPlayer.getVideoData() : null;
+                if (!currentData || currentData.video_id !== videoId) {
+                    ytPlayer.loadVideoById({ videoId, startSeconds: 0 });
+                } else if (typeof ytPlayer.playVideo === "function") {
+                    ytPlayer.playVideo();
+                }
+            } else if (window.YT && window.YT.Player) {
+                createYouTubePlayer(videoId);
             }
         }
 
@@ -485,13 +519,10 @@
 
             if (optionalUrl) {
                 const id = extractYouTubeId(optionalUrl);
-                if (id) pendingYtVideoId = id;
-            }
-            if (!ytUrlInput.value) {
-                ytUrlInput.value = `https://www.youtube.com/watch?v=${pendingYtVideoId}`;
-            }
-            if (window.YT && window.YT.Player) {
-                mountYouTubePlayer(pendingYtVideoId);
+                if (id) {
+                    ytUrlInput.value = optionalUrl;
+                    loadVideoIntoPlayer(id);
+                }
             }
         }
 
@@ -506,7 +537,9 @@
 
         function toggleYouTubePlayPause() {
             if (!ytPlayer || typeof ytPlayer.getPlayerState !== "function") {
-                openYouTubePanel();
+                const id = extractYouTubeId(ytUrlInput.value);
+                if (id) loadVideoIntoPlayer(id);
+                else statusText.textContent = "Pega un enlace de YouTube y presiona Cargar.";
                 return;
             }
             const state = ytPlayer.getPlayerState();
@@ -514,6 +547,30 @@
                 ytPlayer.pauseVideo();
             } else {
                 ytPlayer.playVideo();
+            }
+        }
+
+        function triggerYouTubeButtonAction(action) {
+            if (action === "playpause") {
+                toggleYouTubePlayPause();
+            } else if (action === "rewind") {
+                if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") {
+                    ytPlayer.seekTo(Math.max(0, ytPlayer.getCurrentTime() - 15), true);
+                }
+            } else if (action === "forward") {
+                if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") {
+                    ytPlayer.seekTo(ytPlayer.getCurrentTime() + 15, true);
+                }
+            } else if (action === "mute") {
+                if (ytPlayer && typeof ytPlayer.isMuted === "function") {
+                    if (ytPlayer.isMuted()) {
+                        ytPlayer.unMute();
+                        ytMuteIcon.className = "fa-solid fa-volume-high";
+                    } else {
+                        ytPlayer.mute();
+                        ytMuteIcon.className = "fa-solid fa-volume-xmark text-rose-400";
+                    }
+                }
             }
         }
 
@@ -531,7 +588,7 @@
 
         ytSizeBtn.addEventListener("click", () => {
             isYtExpanded = !isYtExpanded;
-            youtubeHudPanel.style.width = isYtExpanded ? "min(92vw, 560px)" : "";
+            youtubeHudPanel.style.width = isYtExpanded ? "min(92vw, 580px)" : "";
         });
 
         ytLoadBtn.addEventListener("click", () => {
@@ -541,40 +598,24 @@
                 chumingoSpeak("El enlace de YouTube no es válido.");
                 return;
             }
-            pendingYtVideoId = id;
-            ensureYouTubeApi();
-            if (window.YT && window.YT.Player) {
-                mountYouTubePlayer(id);
-            }
+            loadVideoIntoPlayer(id);
             playScanBeep();
         });
 
-        ytPlayPauseBtn.addEventListener("click", toggleYouTubePlayPause);
-        ytRewindBtn.addEventListener("click", () => {
-            if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") {
-                ytPlayer.seekTo(Math.max(0, ytPlayer.getCurrentTime() - 15), true);
-            }
-        });
-        ytForwardBtn.addEventListener("click", () => {
-            if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") {
-                ytPlayer.seekTo(ytPlayer.getCurrentTime() + 15, true);
-            }
-        });
-        ytMuteBtn.addEventListener("click", () => {
-            if (!ytPlayer || typeof ytPlayer.isMuted !== "function") return;
-            if (ytPlayer.isMuted()) {
-                ytPlayer.unMute();
-                ytMuteIcon.className = "fa-solid fa-volume-high";
-            } else {
-                ytPlayer.mute();
-                ytMuteIcon.className = "fa-solid fa-volume-xmark text-rose-400";
-            }
+        ytUrlInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") ytLoadBtn.click();
         });
 
-        // Arrastre con mouse sobre la barra superior del panel YouTube
+        ytPlayPauseBtn.addEventListener("click", () => triggerYouTubeButtonAction("playpause"));
+        ytRewindBtn.addEventListener("click", () => triggerYouTubeButtonAction("rewind"));
+        ytForwardBtn.addEventListener("click", () => triggerYouTubeButtonAction("forward"));
+        ytMuteBtn.addEventListener("click", () => triggerYouTubeButtonAction("mute"));
+
+        // Arrastre fluido con mouse usando escudo sobre el iframe
         ytDragBar.addEventListener("mousedown", (e) => {
             if (e.target.closest("button")) return;
             ytMouseDragging = true;
+            ytDragShield.classList.remove("hidden");
             const rect = youtubeHudPanel.getBoundingClientRect();
             youtubeHudPanel.style.right = "auto";
             youtubeHudPanel.style.left = `${rect.left}px`;
@@ -588,7 +629,12 @@
             youtubeHudPanel.style.left = `${Math.min(maxX, Math.max(0, e.clientX - ytMouseOffset.x))}px`;
             youtubeHudPanel.style.top = `${Math.min(maxY, Math.max(0, e.clientY - ytMouseOffset.y))}px`;
         });
-        window.addEventListener("mouseup", () => { ytMouseDragging = false; });
+        window.addEventListener("mouseup", () => {
+            if (ytMouseDragging) {
+                ytMouseDragging = false;
+                ytDragShield.classList.add("hidden");
+            }
+        });
 
         // ==========================================
         // 3. PERSISTENCIA DE FICHAS DIDÁCTICAS DOCENTES
@@ -774,7 +820,7 @@
         }
 
         // ==========================================
-        // 7. THREE.JS, AISLAMIENTO, GIRO 360 Y CORTE
+        // 7. THREE.JS (INICIA SIN MODELO HASTA QUE LO ABRAS)
         // ==========================================
         let THREE = null, GLTFLoader = null, DRACOLoader = null, OBJLoader = null, STLLoader = null;
         let scene, camera, renderer, objectGroup, modelSlot, drawingGroup, telemetryGroup, scannerBar, sliceVisualPlane, clock, raycaster;
@@ -843,7 +889,9 @@
             const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 1.2); dirLight2.position.set(-5, -3, 4); scene.add(dirLight2);
             const backLight = new THREE.DirectionalLight(0xa855f7, 0.9); backLight.position.set(0, 4, -6); scene.add(backLight);
 
-            objectGroup = new THREE.Group(); scene.add(objectGroup);
+            objectGroup = new THREE.Group();
+            objectGroup.visible = false; // Inicia oculto sin proyectar ningún modelo hasta que lo abras
+            scene.add(objectGroup);
             modelSlot = new THREE.Group(); objectGroup.add(modelSlot);
             drawingGroup = new THREE.Group(); objectGroup.add(drawingGroup);
 
@@ -861,8 +909,7 @@
                 sliceStartY: 0, sliceStartConst: 0
             };
 
-            refreshCarouselSelect();
-            loadCarouselItem(0, false);
+            refreshCarouselSelect(true);
         }
 
         function buildTelemetryRings() {
@@ -1572,22 +1619,30 @@
         // ==========================================
         // 10. CARRUSEL EDUCATIVO Y CARGA DE ARCHIVOS
         // ==========================================
-        function refreshCarouselSelect() {
+        function refreshCarouselSelect(emptyPlaceholder = false) {
             shapeSelect.innerHTML = "";
+            if (emptyPlaceholder || !hasActiveModel) {
+                const ph = document.createElement("option");
+                ph.value = "-1";
+                ph.textContent = "-- Elegir modelo 3D --";
+                ph.selected = true;
+                shapeSelect.appendChild(ph);
+            }
             modelCarousel.forEach((item, idx) => {
                 const opt = document.createElement("option");
                 opt.value = idx; opt.textContent = item.name;
-                if (idx === currentCarouselIndex) opt.selected = true;
+                if (!emptyPlaceholder && hasActiveModel && idx === currentCarouselIndex) opt.selected = true;
                 shapeSelect.appendChild(opt);
             });
-            carouselCounter.textContent = `${currentCarouselIndex + 1} / ${modelCarousel.length}`;
+            carouselCounter.textContent = hasActiveModel
+                ? `${currentCarouselIndex + 1} / ${modelCarousel.length}`
+                : `0 / ${modelCarousel.length}`;
         }
 
         async function loadCarouselItem(index, playFx = true) {
             await threeReadyPromise;
             if (modelCarousel.length === 0) return;
             currentCarouselIndex = (index + modelCarousel.length) % modelCarousel.length;
-            refreshCarouselSelect();
             const item = modelCarousel[currentCarouselIndex];
             if (item.type === "builtin") {
                 const obj = buildEducationalModel(item.shape);
@@ -1595,12 +1650,24 @@
             } else if (item.type === "file") {
                 await loadFileItemToStage(item, playFx);
             }
+            refreshCarouselSelect(false);
         }
 
-        function cycleCarousel(step = 1) { loadCarouselItem(currentCarouselIndex + step, true); }
+        function cycleCarousel(step = 1) {
+            if (!hasActiveModel) {
+                loadCarouselItem(step > 0 ? 0 : modelCarousel.length - 1, true);
+                return;
+            }
+            loadCarouselItem(currentCarouselIndex + step, true);
+        }
         prevModelBtn.addEventListener("click", () => cycleCarousel(-1));
         nextModelBtn.addEventListener("click", () => cycleCarousel(1));
-        shapeSelect.addEventListener("change", (e) => loadCarouselItem(parseInt(e.target.value, 10), true));
+        shapeSelect.addEventListener("change", (e) => {
+            const idx = parseInt(e.target.value, 10);
+            if (!isNaN(idx) && idx >= 0) {
+                loadCarouselItem(idx, true);
+            }
+        });
 
         async function loadFileItemToStage(item, playFx) {
             const file = item.file; const ext = file.name.split(".").pop().toLowerCase(); const blobUrl = URL.createObjectURL(file);
@@ -1608,11 +1675,11 @@
             try {
                 if (ext === "glb" || ext === "gltf") {
                     const loader = new GLTFLoader(); const dracoLoader = new DRACOLoader(); dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/"); loader.setDRACOLoader(dracoLoader);
-                    loader.load(blobUrl, (gltf) => { mountNormalizedModel(gltf.scene, file.name, gltf.animations, playFx); URL.revokeObjectURL(blobUrl); dracoLoader.dispose(); }, undefined, (err) => { URL.revokeObjectURL(blobUrl); dracoLoader.dispose(); statusText.textContent = `Error: ${err.message}`; });
+                    loader.load(blobUrl, (gltf) => { mountNormalizedModel(gltf.scene, file.name, gltf.animations, playFx); refreshCarouselSelect(false); URL.revokeObjectURL(blobUrl); dracoLoader.dispose(); }, undefined, (err) => { URL.revokeObjectURL(blobUrl); dracoLoader.dispose(); statusText.textContent = `Error: ${err.message}`; });
                 } else if (ext === "obj") {
-                    const loader = new OBJLoader(); loader.load(blobUrl, (obj) => { obj.traverse((child) => { if (child.isMesh && !child.material) child.material = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3, metalness: 0.45 }); }); mountNormalizedModel(obj, file.name, [], playFx); URL.revokeObjectURL(blobUrl); });
+                    const loader = new OBJLoader(); loader.load(blobUrl, (obj) => { obj.traverse((child) => { if (child.isMesh && !child.material) child.material = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3, metalness: 0.45 }); }); mountNormalizedModel(obj, file.name, [], playFx); refreshCarouselSelect(false); URL.revokeObjectURL(blobUrl); });
                 } else if (ext === "stl") {
-                    const loader = new STLLoader(); loader.load(blobUrl, (geometry) => { geometry.computeVertexNormals(); const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0x818cf8, roughness: 0.28, metalness: 0.5 })); mountNormalizedModel(mesh, file.name, [], playFx); URL.revokeObjectURL(blobUrl); });
+                    const loader = new STLLoader(); loader.load(blobUrl, (geometry) => { geometry.computeVertexNormals(); const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0x818cf8, roughness: 0.28, metalness: 0.5 })); mountNormalizedModel(mesh, file.name, [], playFx); refreshCarouselSelect(false); URL.revokeObjectURL(blobUrl); });
                 }
             } catch (e) { URL.revokeObjectURL(blobUrl); statusText.textContent = `Error: ${e.message}`; }
         }
@@ -1659,13 +1726,14 @@
             isDismissing = true; gestureMode = "none"; playDismissSound();
             if (impactPx) shockwaves.push({ x: impactPx.x, y: impactPx.y, radius: 18, alpha: 1.0 });
             spawnHologramBurst(objectGroup.position);
-            gestureBadge.textContent = "Holograma Cerrado"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400";
-            statusText.textContent = "Desliza Índice+Medio o usa la voz para invocar otro modelo.";
+            gestureBadge.textContent = "Escena Limpia"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400";
+            statusText.textContent = "Escena vacía. Elige un modelo arriba o pídelo por voz.";
             if (isScannerMode) setScannerMode(false);
             if (isSliceMode) setSliceMode(false);
             
             setTimeout(() => {
                 clearCurrentModel(); objectGroup.visible = false; hasActiveModel = false; isDismissing = false;
+                refreshCarouselSelect(true);
                 scaleDisplay.textContent = "--"; explodeDisplay.textContent = "--"; rotDisplay.textContent = "--";
             }, 250);
         }
@@ -1955,12 +2023,17 @@
                 return;
             }
 
-            // 13. BIBLIOTECA DE MODELOS EDUCATIVOS
-            if (cmd.includes("volcan")) { loadCarouselItem(0, true); chumingoSpeak("Cargando volcán en capas."); return; }
-            if (cmd.includes("adn") || cmd.includes("molecula")) { loadCarouselItem(1, true); chumingoSpeak("Cargando molécula de A D N."); return; }
-            if (cmd.includes("atomo") || cmd.includes("bohr")) { loadCarouselItem(2, true); chumingoSpeak("Cargando átomo de Bohr."); return; }
-            if (cmd.includes("solar") || cmd.includes("planeta")) { loadCarouselItem(3, true); chumingoSpeak("Cargando sistema solar."); return; }
-            if (cmd.includes("motor")) { loadCarouselItem(4, true); chumingoSpeak("Cargando motor de cuatro tiempos."); return; }
+            // 13. ABRIR MODELOS EDUCATIVOS POR VOZ
+            if (cmd.includes("volcan")) { loadCarouselItem(0, true); chumingoSpeak("Proyectando volcán en capas."); return; }
+            if (cmd.includes("adn") || cmd.includes("molecula")) { loadCarouselItem(1, true); chumingoSpeak("Proyectando molécula de A D N."); return; }
+            if (cmd.includes("atomo") || cmd.includes("bohr")) { loadCarouselItem(2, true); chumingoSpeak("Proyectando átomo de Bohr."); return; }
+            if (cmd.includes("solar") || cmd.includes("planeta")) { loadCarouselItem(3, true); chumingoSpeak("Proyectando sistema solar."); return; }
+            if (cmd.includes("motor")) { loadCarouselItem(4, true); chumingoSpeak("Proyectando motor de cuatro tiempos."); return; }
+            if (cmd.includes("abrir modelo") || cmd.includes("abre modelo") || cmd.includes("mostrar modelo") || cmd.includes("proyectar")) {
+                loadCarouselItem(currentCarouselIndex, true);
+                chumingoSpeak("Proyectando modelo 3D.");
+                return;
+            }
 
             if (cmd.includes("siguiente") || cmd.includes("cambia")) {
                 cycleCarousel(1);
@@ -2076,7 +2149,7 @@
             setupChumingoVoice();
             if (chumingoRecognition) {
                 isChumingoListening = true;
-                try { chumingoRecognition.start(); chumingoSpeak("Chumingo 3D en línea. Listo para la clase."); } catch(e){}
+                try { chumingoRecognition.start(); chumingoSpeak("Chumingo 3D en línea. Elige un modelo cuando estés listo."); } catch(e){}
             }
 
             try {
@@ -2103,7 +2176,7 @@
                     baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task", delegate: "GPU" },
                     runningMode: "VIDEO", numHands: 2, minHandDetectionConfidence: 0.65, minHandPresenceConfidence: 0.65, minTrackingConfidence: 0.65
                 });
-                gestureBadge.textContent = "Sistemas En Línea"; statusText.textContent = `Proyectando: ${modelCarousel[currentCarouselIndex].name}`;
+                gestureBadge.textContent = "Escena Lista"; statusText.textContent = "Elige un modelo en el menú superior o carga un archivo 3D.";
             } catch (err) { gestureBadge.textContent = "Error de IA"; statusText.textContent = `Fallo en sensores: ${err.message}`; }
         }
 
@@ -2199,6 +2272,14 @@
                    px.y >= (rect.top - margin) && px.y <= (rect.bottom + margin);
         }
 
+        function resetYtDwellBars() {
+            ytDwellTarget = null;
+            ytDwellStart = 0;
+            document.querySelectorAll(".yt-dwell-progress").forEach(bar => {
+                bar.style.width = "0%";
+            });
+        }
+
         function processHands(results) {
             if (!THREE || !objectGroup) return;
             const activePinches = [], openHands = [], switchHands = [], detectedHands = []; let pointingHand = null; const now = performance.now();
@@ -2235,14 +2316,15 @@
             const ytOpen = !youtubeHudPanel.classList.contains("hidden");
 
             // --- INTERACCIÓN GESTUAL CON LA VENTANA DE YOUTUBE ---
-            // A) Pinza en la barra superior de YouTube -> Arrastrar ventana en pantalla
+            // A) Pinza en la barra superior de YouTube -> Arrastrar ventana sin interferencias del iframe
             if (ytOpen && activePinches.length === 1) {
                 const pinchPx = activePinches[0].px;
                 const barRect = ytDragBar.getBoundingClientRect();
-                if (ytPinchDragging || isPointInRect(pinchPx, barRect, 14)) {
+                if (ytPinchDragging || isPointInRect(pinchPx, barRect, 18)) {
                     const panelRect = youtubeHudPanel.getBoundingClientRect();
                     if (!ytPinchDragging) {
                         ytPinchDragging = true;
+                        ytDragShield.classList.remove("hidden");
                         youtubeHudPanel.style.right = "auto";
                         youtubeHudPanel.style.left = `${panelRect.left}px`;
                         youtubeHudPanel.style.top = `${panelRect.top}px`;
@@ -2256,32 +2338,46 @@
                     gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
                     return;
                 }
-            } else {
+            }
+            if (ytPinchDragging) {
                 ytPinchDragging = false;
+                ytDragShield.classList.add("hidden");
             }
 
-            // B) Apuntar con el índice sobre el botón Play/Pausa del visor YouTube (Dwell 0.85s)
+            // B) Apuntar con el índice sobre los botones inferiores del visor YouTube (Play/Pausa, -15s, +15s, Mute)
             if (ytOpen && pointingHand) {
-                const btnRect = ytPlayPauseBtn.getBoundingClientRect();
-                if (isPointInRect(pointingHand.px, btnRect, 12)) {
-                    drawRing(pointingHand.px.x, pointingHand.px.y, "#22d3ee", 14, 3);
-                    if (ytDwellStart === 0) ytDwellStart = now;
-                    const progress = Math.min(1, (now - ytDwellStart) / 850);
-                    ytDwellBar.style.width = `${Math.round(progress * 100)}%`;
+                const dwellButtons = document.querySelectorAll("[data-yt-dwell]");
+                let hoveredBtn = null;
+                for (const btn of dwellButtons) {
+                    if (isPointInRect(pointingHand.px, btn.getBoundingClientRect(), 10)) {
+                        hoveredBtn = btn;
+                        break;
+                    }
+                }
 
-                    if (progress >= 1 && (now - ytLastToggleAt) > 1200) {
-                        ytLastToggleAt = now;
-                        ytDwellStart = 0;
-                        ytDwellBar.style.width = "0%";
-                        toggleYouTubePlayPause();
+                if (hoveredBtn) {
+                    drawRing(pointingHand.px.x, pointingHand.px.y, "#22d3ee", 14, 3);
+                    if (ytDwellTarget !== hoveredBtn) {
+                        resetYtDwellBars();
+                        ytDwellTarget = hoveredBtn;
+                        ytDwellStart = now;
+                    }
+                    const progress = Math.min(1, (now - ytDwellStart) / 800);
+                    const bar = hoveredBtn.querySelector(".yt-dwell-progress");
+                    if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
+
+                    if (progress >= 1 && (now - ytLastActionAt) > 1100) {
+                        ytLastActionAt = now;
+                        const action = hoveredBtn.getAttribute("data-yt-dwell");
+                        resetYtDwellBars();
+                        triggerYouTubeButtonAction(action);
                         playScanBeep();
                     }
                     return;
                 }
             }
-            if (ytDwellStart !== 0) {
-                ytDwellStart = 0;
-                ytDwellBar.style.width = "0%";
+            if (ytDwellTarget) {
+                resetYtDwellBars();
             }
 
             if (!pointingHand) {
