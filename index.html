@@ -33,23 +33,16 @@
             z-index: 1;
         }
 
-        #hand_canvas {
+        #hand_canvas, #three_canvas {
             position: absolute;
             inset: 0;
             width: 100%;
             height: 100%;
-            z-index: 15;
+            z-index: 2;
             pointer-events: none;
         }
 
-        #three_canvas {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 3;
-            pointer-events: none;
-        }
+        #three_canvas { z-index: 3; }
 
         .hud-vignette {
             position: absolute;
@@ -88,69 +81,6 @@
         <canvas id="hand_canvas"></canvas>
         <canvas id="three_canvas"></canvas>
         <div class="hud-vignette"></div>
-
-        <!-- Ventana Holográfica Flotante de YouTube -->
-        <div id="youtube-hud-panel" class="hidden fixed z-20 w-[340px] sm:w-[420px] bg-gray-950/92 backdrop-blur-md border border-cyan-400/60 rounded-2xl shadow-[0_0_30px_rgba(6,182,212,0.3)] overflow-hidden pointer-events-auto select-none" style="top: 88px; right: 18px;">
-            <!-- Barra de Agarre (Pinza o Mouse para mover) -->
-            <div id="yt-drag-bar" class="bg-cyan-950/85 border-b border-cyan-500/30 px-3 py-2 flex items-center justify-between gap-2 cursor-move">
-                <div class="flex items-center gap-2 text-xs font-bold text-cyan-300">
-                    <i class="fa-brands fa-youtube text-rose-500 text-sm"></i>
-                    <span class="tracking-wider uppercase text-[10px]">Visor Multimedia HUD</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <button id="yt-size-btn" title="Agrandar o reducir ventana" class="px-2 py-1 rounded bg-cyan-900/60 hover:bg-cyan-800 text-[10px] font-mono text-cyan-200 cursor-pointer">
-                        <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
-                    </button>
-                    <button id="yt-close-btn" title="Cerrar video" class="px-2 py-1 rounded bg-rose-900/60 hover:bg-rose-700 text-xs text-rose-200 cursor-pointer">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Barra de URL de YouTube -->
-            <div class="p-2 bg-gray-900/95 border-b border-gray-800 flex items-center gap-1.5">
-                <input type="text" id="yt-url-input" placeholder="Pega enlace de YouTube y presiona Cargar..." class="flex-1 bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-gray-100 focus:border-cyan-400 focus:outline-none">
-                <button id="yt-load-btn" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold cursor-pointer">
-                    Cargar
-                </button>
-            </div>
-
-            <!-- Contenedor del Reproductor IFrame -->
-            <div class="relative w-full aspect-video bg-black">
-                <div id="yt-player-mount" class="w-full h-full"></div>
-                <!-- Escudo transparente mientras se arrastra para que el iframe no atrape el cursor -->
-                <div id="yt-drag-shield" class="hidden absolute inset-0 z-10 bg-transparent"></div>
-                <!-- Pantalla en espera hasta que el usuario cargue un enlace -->
-                <div id="yt-placeholder" class="absolute inset-0 z-5 flex flex-col items-center justify-center text-center p-4 bg-gray-950/95 text-gray-300 text-xs space-y-2">
-                    <i class="fa-brands fa-youtube text-3xl text-rose-500"></i>
-                    <p class="font-semibold text-cyan-200">Listo para proyectar video</p>
-                    <p class="text-[11px] text-gray-400">Pega arriba el enlace de YouTube y presiona <strong>Cargar</strong>.</p>
-                </div>
-            </div>
-
-            <!-- Controles Interactivos (Voz, Mouse o Apuntar con Índice en el Aire) -->
-            <div class="px-3 py-2 bg-gray-950/95 border-t border-cyan-900/50 flex items-center justify-between gap-2">
-                <div class="flex items-center gap-1.5">
-                    <button id="yt-rewind-btn" data-yt-dwell="rewind" title="Retroceder 15s" class="relative overflow-hidden px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-200 text-xs cursor-pointer">
-                        <i class="fa-solid fa-backward-step"></i> -15s
-                        <span class="yt-dwell-progress absolute bottom-0 left-0 h-0.5 bg-cyan-400" style="width: 0%;"></span>
-                    </button>
-                    <button id="yt-playpause-btn" data-yt-dwell="playpause" title="Play / Pausa" class="relative overflow-hidden px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer">
-                        <i id="yt-playpause-icon" class="fa-solid fa-play"></i>
-                        <span id="yt-playpause-label">Play</span>
-                        <span class="yt-dwell-progress absolute bottom-0 left-0 h-1 bg-cyan-300" style="width: 0%;"></span>
-                    </button>
-                    <button id="yt-forward-btn" data-yt-dwell="forward" title="Adelantar 15s" class="relative overflow-hidden px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-200 text-xs cursor-pointer">
-                        +15s <i class="fa-solid fa-forward-step"></i>
-                        <span class="yt-dwell-progress absolute bottom-0 left-0 h-0.5 bg-cyan-400" style="width: 0%;"></span>
-                    </button>
-                </div>
-                <button id="yt-mute-btn" data-yt-dwell="mute" title="Silenciar / Sonido" class="relative overflow-hidden px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-300 text-xs cursor-pointer">
-                    <i id="yt-mute-icon" class="fa-solid fa-volume-high"></i>
-                    <span class="yt-dwell-progress absolute bottom-0 left-0 h-0.5 bg-cyan-400" style="width: 0%;"></span>
-                </button>
-            </div>
-        </div>
 
         <!-- Ficha Didáctica Flotante (Modo Clase) -->
         <div id="didactic-card" class="hidden absolute left-4 bottom-20 w-72 sm:w-80 bg-gray-950/90 backdrop-blur-md border border-cyan-400/60 rounded-2xl p-3.5 shadow-[0_0_25px_rgba(6,182,212,0.3)] z-20 pointer-events-auto space-y-2">
@@ -208,7 +138,7 @@
         </div>
 
         <!-- Panel HUD de Escáner -->
-        <div id="scanner-hud" class="hidden absolute left-4 top-20 w-56 sm:w-64 bg-sky-950/85 backdrop-blur-md border border-sky-400/50 rounded-xl p-3 shadow-[0_0_20px_rgba(14,165,233,0.3)] z-10">
+        <div id="scanner-hud" class="hidden absolute right-4 top-20 w-56 sm:w-64 bg-sky-950/85 backdrop-blur-md border border-sky-400/50 rounded-xl p-3 shadow-[0_0_20px_rgba(14,165,233,0.3)] z-10">
             <h3 class="text-sky-300 font-bold text-[11px] uppercase tracking-widest border-b border-sky-500/40 pb-1.5 mb-2.5 flex items-center gap-2">
                 <i class="fa-solid fa-satellite-dish animate-pulse"></i> Análisis Estructural
             </h3>
@@ -239,9 +169,9 @@
             </div>
             <div class="text-[11px] text-gray-300 leading-relaxed text-left space-y-1.5 bg-gray-950/70 p-3.5 rounded-2xl border border-gray-800">
                 <p><strong class="text-cyan-400">Escena Limpia al Iniciar:</strong> Elige un modelo del menú superior, carga tu archivo 3D o pídelo por voz (<em>"Abrir volcán"</em>, <em>"Abrir sistema solar"</em>).</p>
-                <p><strong class="text-rose-400">Visor YouTube HUD:</strong> Abre la ventana de video, pega tu enlace y contrólala con voz o gestos.</p>
-                <p><strong class="text-violet-400">Aislar Pieza:</strong> Señala una parte con el índice y di <em>"Aislar pieza"</em>; di <em>"Mostrar todo"</em> para volver.</p>
-                <p><strong class="text-emerald-400">Voz Chumingo:</strong> <em>"Aumenta tamaño 10%"</em>, <em>"Activa 360"</em>, <em>"Expandir"</em>, <em>"Corte transversal"</em>.</p>
+                <p><strong class="text-rose-400">Dedo Índice (Láser):</strong> Estira el índice para seleccionar una pieza y ver su ficha didáctica.</p>
+                <p><strong class="text-violet-400">Aislar Pieza:</strong> Señala una parte y di <em>"Aislar pieza"</em> para estudiarla sola; di <em>"Mostrar todo"</em> para volver.</p>
+                <p><strong class="text-emerald-400">Voz Chumingo:</strong> <em>"Aumenta tamaño 10%"</em>, <em>"Reduce tamaño 20%"</em>, <em>"Activa 360"</em>, <em>"Expandir"</em>, <em>"Corte transversal"</em>.</p>
             </div>
             <button id="launch-btn" class="w-full py-3.5 px-5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-power-off"></i> Iniciar CHUMINGO 3D
@@ -283,11 +213,6 @@
                     <button id="next-model-btn" class="px-2 py-2 text-cyan-400 hover:bg-gray-800 transition cursor-pointer"><i class="fa-solid fa-chevron-right text-xs"></i></button>
                 </div>
 
-                <!-- Botón Visor YouTube -->
-                <button id="youtube-toggle-btn" title="Abrir o cerrar ventana flotante de YouTube" class="bg-gray-950/90 hover:bg-gray-800 text-rose-300 border border-rose-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i class="fa-brands fa-youtube text-rose-500"></i><span class="hidden md:inline">Video</span>
-                </button>
-
                 <!-- Botón Aislar / Restaurar Pieza -->
                 <button id="isolate-btn" title="Aislar pieza seleccionada o mostrar modelo completo" class="bg-gray-950/90 hover:bg-gray-800 text-violet-300 border border-violet-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
                     <i class="fa-solid fa-cube"></i><span id="isolate-btn-label" class="hidden md:inline">Aislar</span>
@@ -295,12 +220,12 @@
 
                 <!-- Control de Giro 360 -->
                 <button id="spin360-btn" title="Activar o desactivar rotación continua 360°" class="bg-gray-950/90 hover:bg-gray-800 text-cyan-300 border border-cyan-500/40 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i id="spin360-icon" class="fa-solid fa-rotate"></i><span class="hidden lg:inline">360°</span>
+                    <i id="spin360-icon" class="fa-solid fa-rotate"></i><span class="hidden md:inline">360°</span>
                 </button>
 
                 <!-- Control de Animación del Modelo (.glb) -->
                 <button id="anim-toggle-btn" title="Pausar o activar animación del modelo" class="hidden bg-teal-600 text-white border border-teal-400/50 text-xs font-bold py-2 px-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i id="anim-toggle-icon" class="fa-solid fa-pause"></i><span class="hidden xl:inline">Animación</span>
+                    <i id="anim-toggle-icon" class="fa-solid fa-pause"></i><span class="hidden lg:inline">Animación</span>
                 </button>
 
                 <!-- Corte Transversal -->
@@ -373,23 +298,6 @@
         const dragOverlay = document.getElementById("drag-overlay"), prevModelBtn = document.getElementById("prev-model-btn");
         const nextModelBtn = document.getElementById("next-model-btn"), shapeSelect = document.getElementById("shape-select");
 
-        const youtubeToggleBtn = document.getElementById("youtube-toggle-btn");
-        const youtubeHudPanel = document.getElementById("youtube-hud-panel");
-        const ytDragBar = document.getElementById("yt-drag-bar");
-        const ytDragShield = document.getElementById("yt-drag-shield");
-        const ytSizeBtn = document.getElementById("yt-size-btn");
-        const ytCloseBtn = document.getElementById("yt-close-btn");
-        const ytUrlInput = document.getElementById("yt-url-input");
-        const ytLoadBtn = document.getElementById("yt-load-btn");
-        const ytPlaceholder = document.getElementById("yt-placeholder");
-        const ytRewindBtn = document.getElementById("yt-rewind-btn");
-        const ytPlayPauseBtn = document.getElementById("yt-playpause-btn");
-        const ytPlayPauseIcon = document.getElementById("yt-playpause-icon");
-        const ytPlayPauseLabel = document.getElementById("yt-playpause-label");
-        const ytForwardBtn = document.getElementById("yt-forward-btn");
-        const ytMuteBtn = document.getElementById("yt-mute-btn");
-        const ytMuteIcon = document.getElementById("yt-mute-icon");
-
         const isolateBtn = document.getElementById("isolate-btn");
         const isolateBtnLabel = document.getElementById("isolate-btn-label");
         const isolateCardBtn = document.getElementById("isolate-card-btn");
@@ -427,217 +335,7 @@
         function dist3D(a, b) { return Math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2 + (a.z - b.z)**2); }
 
         // ==========================================
-        // 2. VISOR HOLOGRÁFICO DE YOUTUBE (SIN BUCLE NI AUTO-CARGA)
-        // ==========================================
-        let ytPlayer = null;
-        let ytApiLoading = false;
-        let isYtExpanded = false;
-        let loadedYtVideoId = null;
-
-        // Control de toque en el aire (Dwell) sobre cualquier botón del visor YouTube
-        let ytDwellTarget = null;
-        let ytDwellStart = 0;
-        let ytLastActionAt = 0;
-
-        // Arrastre con mouse
-        let ytMouseDragging = false;
-        let ytMouseOffset = { x: 0, y: 0 };
-        // Arrastre con pinza aérea
-        let ytPinchDragging = false;
-        let ytPinchOffset = { x: 0, y: 0 };
-
-        function extractYouTubeId(urlOrId) {
-            const clean = (urlOrId || "").trim();
-            if (!clean) return null;
-            if (/^[a-zA-Z0-9_-]{11}$/.test(clean)) return clean;
-            const regExp = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-            const match = clean.match(regExp);
-            return match ? match[1] : null;
-        }
-
-        function ensureYouTubeApi() {
-            if (window.YT && window.YT.Player) return;
-            if (ytApiLoading) return;
-            ytApiLoading = true;
-            const tag = document.createElement("script");
-            tag.src = "https://www.youtube.com/iframe_api";
-            document.head.appendChild(tag);
-        }
-
-        window.onYouTubeIframeAPIReady = function () {
-            if (loadedYtVideoId && !ytPlayer) {
-                createYouTubePlayer(loadedYtVideoId);
-            }
-        };
-
-        function createYouTubePlayer(videoId) {
-            ytPlaceholder.classList.add("hidden");
-            ytPlayer = new YT.Player("yt-player-mount", {
-                videoId,
-                playerVars: {
-                    autoplay: 1,
-                    loop: 0,
-                    rel: 0,
-                    modestbranding: 1,
-                    playsinline: 1,
-                    origin: window.location.origin
-                },
-                events: {
-                    onStateChange: (e) => {
-                        const playing = e.data === YT.PlayerState.PLAYING;
-                        ytPlayPauseIcon.className = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
-                        ytPlayPauseLabel.textContent = playing ? "Pausar" : "Play";
-                    }
-                }
-            });
-        }
-
-        function loadVideoIntoPlayer(videoId) {
-            if (!videoId) return;
-            loadedYtVideoId = videoId;
-            ytPlaceholder.classList.add("hidden");
-            ensureYouTubeApi();
-
-            if (ytPlayer && typeof ytPlayer.loadVideoById === "function") {
-                // Solo carga si es un video diferente o estaba detenido, evitando recargas en bucle
-                const currentData = typeof ytPlayer.getVideoData === "function" ? ytPlayer.getVideoData() : null;
-                if (!currentData || currentData.video_id !== videoId) {
-                    ytPlayer.loadVideoById({ videoId, startSeconds: 0 });
-                } else if (typeof ytPlayer.playVideo === "function") {
-                    ytPlayer.playVideo();
-                }
-            } else if (window.YT && window.YT.Player) {
-                createYouTubePlayer(videoId);
-            }
-        }
-
-        function openYouTubePanel(optionalUrl = null) {
-            youtubeHudPanel.classList.remove("hidden");
-            youtubeToggleBtn.classList.add("bg-rose-600", "text-white");
-            youtubeToggleBtn.classList.remove("bg-gray-950/90", "text-rose-300");
-            ensureYouTubeApi();
-
-            if (optionalUrl) {
-                const id = extractYouTubeId(optionalUrl);
-                if (id) {
-                    ytUrlInput.value = optionalUrl;
-                    loadVideoIntoPlayer(id);
-                }
-            }
-        }
-
-        function closeYouTubePanel() {
-            youtubeHudPanel.classList.add("hidden");
-            youtubeToggleBtn.classList.remove("bg-rose-600", "text-white");
-            youtubeToggleBtn.classList.add("bg-gray-950/90", "text-rose-300");
-            if (ytPlayer && typeof ytPlayer.pauseVideo === "function") {
-                ytPlayer.pauseVideo();
-            }
-        }
-
-        function toggleYouTubePlayPause() {
-            if (!ytPlayer || typeof ytPlayer.getPlayerState !== "function") {
-                const id = extractYouTubeId(ytUrlInput.value);
-                if (id) loadVideoIntoPlayer(id);
-                else statusText.textContent = "Pega un enlace de YouTube y presiona Cargar.";
-                return;
-            }
-            const state = ytPlayer.getPlayerState();
-            if (state === 1) {
-                ytPlayer.pauseVideo();
-            } else {
-                ytPlayer.playVideo();
-            }
-        }
-
-        function triggerYouTubeButtonAction(action) {
-            if (action === "playpause") {
-                toggleYouTubePlayPause();
-            } else if (action === "rewind") {
-                if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") {
-                    ytPlayer.seekTo(Math.max(0, ytPlayer.getCurrentTime() - 15), true);
-                }
-            } else if (action === "forward") {
-                if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") {
-                    ytPlayer.seekTo(ytPlayer.getCurrentTime() + 15, true);
-                }
-            } else if (action === "mute") {
-                if (ytPlayer && typeof ytPlayer.isMuted === "function") {
-                    if (ytPlayer.isMuted()) {
-                        ytPlayer.unMute();
-                        ytMuteIcon.className = "fa-solid fa-volume-high";
-                    } else {
-                        ytPlayer.mute();
-                        ytMuteIcon.className = "fa-solid fa-volume-xmark text-rose-400";
-                    }
-                }
-            }
-        }
-
-        youtubeToggleBtn.addEventListener("click", () => {
-            if (youtubeHudPanel.classList.contains("hidden")) {
-                openYouTubePanel();
-                chumingoSpeak("Visor de video abierto.");
-            } else {
-                closeYouTubePanel();
-                chumingoSpeak("Visor de video cerrado.");
-            }
-        });
-
-        ytCloseBtn.addEventListener("click", closeYouTubePanel);
-
-        ytSizeBtn.addEventListener("click", () => {
-            isYtExpanded = !isYtExpanded;
-            youtubeHudPanel.style.width = isYtExpanded ? "min(92vw, 580px)" : "";
-        });
-
-        ytLoadBtn.addEventListener("click", () => {
-            const id = extractYouTubeId(ytUrlInput.value);
-            if (!id) {
-                statusText.textContent = "Enlace de YouTube no válido.";
-                chumingoSpeak("El enlace de YouTube no es válido.");
-                return;
-            }
-            loadVideoIntoPlayer(id);
-            playScanBeep();
-        });
-
-        ytUrlInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") ytLoadBtn.click();
-        });
-
-        ytPlayPauseBtn.addEventListener("click", () => triggerYouTubeButtonAction("playpause"));
-        ytRewindBtn.addEventListener("click", () => triggerYouTubeButtonAction("rewind"));
-        ytForwardBtn.addEventListener("click", () => triggerYouTubeButtonAction("forward"));
-        ytMuteBtn.addEventListener("click", () => triggerYouTubeButtonAction("mute"));
-
-        // Arrastre fluido con mouse usando escudo sobre el iframe
-        ytDragBar.addEventListener("mousedown", (e) => {
-            if (e.target.closest("button")) return;
-            ytMouseDragging = true;
-            ytDragShield.classList.remove("hidden");
-            const rect = youtubeHudPanel.getBoundingClientRect();
-            youtubeHudPanel.style.right = "auto";
-            youtubeHudPanel.style.left = `${rect.left}px`;
-            youtubeHudPanel.style.top = `${rect.top}px`;
-            ytMouseOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-        });
-        window.addEventListener("mousemove", (e) => {
-            if (!ytMouseDragging) return;
-            const maxX = window.innerWidth - youtubeHudPanel.offsetWidth;
-            const maxY = window.innerHeight - youtubeHudPanel.offsetHeight;
-            youtubeHudPanel.style.left = `${Math.min(maxX, Math.max(0, e.clientX - ytMouseOffset.x))}px`;
-            youtubeHudPanel.style.top = `${Math.min(maxY, Math.max(0, e.clientY - ytMouseOffset.y))}px`;
-        });
-        window.addEventListener("mouseup", () => {
-            if (ytMouseDragging) {
-                ytMouseDragging = false;
-                ytDragShield.classList.add("hidden");
-            }
-        });
-
-        // ==========================================
-        // 3. PERSISTENCIA DE FICHAS DIDÁCTICAS DOCENTES
+        // 2. PERSISTENCIA DE FICHAS DIDÁCTICAS DOCENTES
         // ==========================================
         const STORAGE_KEY = "chumingo3d_didactic_notes_v1";
         let customTeacherNotes = {};
@@ -654,7 +352,7 @@
         }
 
         // ==========================================
-        // 4. AUDIO Y VOZ EN ESPAÑOL LATINO (CHUMINGO)
+        // 3. AUDIO Y VOZ EN ESPAÑOL LATINO (CHUMINGO)
         // ==========================================
         let sfxCtx = null;
         let selectedLatinVoice = null;
@@ -722,7 +420,7 @@
         }
 
         // ==========================================
-        // 5. PROYECCIÓN PANTALLA <-> CÁMARA
+        // 4. PROYECCIÓN PANTALLA <-> CÁMARA
         // ==========================================
         function normToScreenPx(lm) {
             const sw = handCanvas.width || window.innerWidth, sh = handCanvas.height || window.innerHeight;
@@ -763,7 +461,7 @@
         }
 
         // ==========================================
-        // 6. CLASIFICADOR DE POSTURAS 3D
+        // 5. CLASIFICADOR DE POSTURAS 3D
         // ==========================================
         function classifyHandPose(landmarks) {
             const wrist = landmarks[0], thumbTip = landmarks[4], indexTip = landmarks[8], middleTip = landmarks[12];
@@ -820,7 +518,7 @@
         }
 
         // ==========================================
-        // 7. THREE.JS (INICIA SIN MODELO HASTA QUE LO ABRAS)
+        // 6. THREE.JS, AISLAMIENTO, GIRO 360 Y CORTE
         // ==========================================
         let THREE = null, GLTFLoader = null, DRACOLoader = null, OBJLoader = null, STLLoader = null;
         let scene, camera, renderer, objectGroup, modelSlot, drawingGroup, telemetryGroup, scannerBar, sliceVisualPlane, clock, raycaster;
@@ -890,7 +588,7 @@
             const backLight = new THREE.DirectionalLight(0xa855f7, 0.9); backLight.position.set(0, 4, -6); scene.add(backLight);
 
             objectGroup = new THREE.Group();
-            objectGroup.visible = false; // Inicia oculto sin proyectar ningún modelo hasta que lo abras
+            objectGroup.visible = false;
             scene.add(objectGroup);
             modelSlot = new THREE.Group(); objectGroup.add(modelSlot);
             drawingGroup = new THREE.Group(); objectGroup.add(drawingGroup);
@@ -1265,7 +963,7 @@
         });
 
         // ==========================================
-        // 8. BIBLIOTECA EDUCATIVA CON FICHAS DIDÁCTICAS
+        // 7. BIBLIOTECA EDUCATIVA CON FICHAS DIDÁCTICAS
         // ==========================================
         function attachDidacticData(mesh, title, desc, func) {
             mesh.name = title;
@@ -1561,7 +1259,7 @@
         }
 
         // ==========================================
-        // 9. FICHAS DIDÁCTICAS Y MODAL DOCENTE
+        // 8. FICHAS DIDÁCTICAS Y MODAL DOCENTE
         // ==========================================
         function showDidacticCardForMesh(mesh) {
             if (!mesh || !mesh.userData.didactic) return;
@@ -1617,7 +1315,7 @@
         });
 
         // ==========================================
-        // 10. CARRUSEL EDUCATIVO Y CARGA DE ARCHIVOS
+        // 9. CARRUSEL EDUCATIVO Y CARGA DE ARCHIVOS
         // ==========================================
         function refreshCarouselSelect(emptyPlaceholder = false) {
             shapeSelect.innerHTML = "";
@@ -1705,7 +1403,7 @@
         window.addEventListener("drop", (e) => { e.preventDefault(); dragOverlay.classList.add("hidden"); enqueue3DFiles(e.dataTransfer.files); });
 
         // ==========================================
-        // 11. STARK DISMISS Y RESET
+        // 10. STARK DISMISS Y RESET
         // ==========================================
         function spawnHologramBurst(originPos) {
             if (!THREE || !scene) return;
@@ -1753,7 +1451,7 @@
         });
 
         // ==========================================
-        // 12. COMANDOS DE VOZ CHUMINGO 3D
+        // 11. COMANDOS DE VOZ CHUMINGO 3D
         // ==========================================
         let chumingoRecognition = null, isChumingoListening = false;
         
@@ -1830,40 +1528,7 @@
                 cmd.includes("pausar") || cmd.includes("salir") ||
                 cmd.includes("sin ");
 
-            // 1. CONTROL DE VENTANA DE YOUTUBE POR VOZ
-            if (cmd.includes("video") || cmd.includes("youtube")) {
-                if (cmd.includes("cerra") || cmd.includes("cierra") || hasTurnOff) {
-                    closeYouTubePanel();
-                    chumingoSpeak("Visor de video cerrado.");
-                } else if (cmd.includes("pausa") || cmd.includes("deten")) {
-                    if (ytPlayer && typeof ytPlayer.pauseVideo === "function") ytPlayer.pauseVideo();
-                    chumingoSpeak("Video pausado.");
-                } else if (cmd.includes("reproduc") || cmd.includes("continua") || cmd.includes("play")) {
-                    openYouTubePanel();
-                    if (ytPlayer && typeof ytPlayer.playVideo === "function") ytPlayer.playVideo();
-                    chumingoSpeak("Reproduciendo video.");
-                } else if (cmd.includes("adelanta")) {
-                    if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") ytPlayer.seekTo(ytPlayer.getCurrentTime() + 15, true);
-                    chumingoSpeak("Adelantando quince segundos.");
-                } else if (cmd.includes("retroced") || cmd.includes("atras")) {
-                    if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") ytPlayer.seekTo(Math.max(0, ytPlayer.getCurrentTime() - 15), true);
-                    chumingoSpeak("Retrocediendo quince segundos.");
-                } else if (cmd.includes("silencia") || cmd.includes("mute")) {
-                    if (ytPlayer && typeof ytPlayer.mute === "function") ytPlayer.mute();
-                    ytMuteIcon.className = "fa-solid fa-volume-xmark text-rose-400";
-                    chumingoSpeak("Video silenciado.");
-                } else if (cmd.includes("sonido") || cmd.includes("volumen")) {
-                    if (ytPlayer && typeof ytPlayer.unMute === "function") ytPlayer.unMute();
-                    ytMuteIcon.className = "fa-solid fa-volume-high";
-                    chumingoSpeak("Sonido activado.");
-                } else {
-                    openYouTubePanel();
-                    chumingoSpeak("Abriendo ventana de video.");
-                }
-                return;
-            }
-
-            // 2. AISLAR PIEZA INDIVIDUAL O VOLVER A VER TODO
+            // 1. AISLAR PIEZA INDIVIDUAL O VOLVER A VER TODO
             if (cmd.includes("aisla") || cmd.includes("enfoca") || cmd.includes("solo esta") || cmd.includes("individual")) {
                 if (hasTurnOff) {
                     exitPartIsolation(true);
@@ -1878,7 +1543,7 @@
                 return;
             }
 
-            // 3. MODO GIRO CONTINUO 360°
+            // 2. MODO GIRO CONTINUO 360°
             if (cmd.includes("360") || cmd.includes("trescientos sesenta") || cmd.includes("giro continuo") || cmd.includes("rotacion continua")) {
                 if (hasTurnOff) {
                     setAutoSpin360(false);
@@ -1891,7 +1556,7 @@
                 return;
             }
 
-            // 4. CONTROL DE ANIMACIÓN DEL MODELO 3D
+            // 3. CONTROL DE ANIMACIÓN DEL MODELO 3D
             if (cmd.includes("animacion") || cmd.includes("movimiento")) {
                 if (!hasModelAnimation) {
                     chumingoSpeak("Este modelo no tiene una animación integrada.");
@@ -1907,13 +1572,13 @@
                 return;
             }
 
-            // 5. EXPLICAR PIEZA SELECCIONADA (FICHA DIDÁCTICA)
+            // 4. EXPLICAR PIEZA SELECCIONADA (FICHA DIDÁCTICA)
             if (cmd.includes("explica") || cmd.includes("que es") || cmd.includes("funcion") || cmd.includes("leer ficha")) {
                 explainCurrentDidacticPiece();
                 return;
             }
 
-            // 6. CORTE TRANSVERSAL / SECCIÓN
+            // 5. CORTE TRANSVERSAL / SECCIÓN
             if (cmd.includes("corte") || cmd.includes("seccion") || cmd.includes("cortar") || cmd.includes("interior")) {
                 if (hasTurnOff) {
                     setSliceMode(false);
@@ -1925,7 +1590,7 @@
                 return;
             }
 
-            // 7. PIZARRA ESPACIAL 3D
+            // 6. PIZARRA ESPACIAL 3D
             if (cmd.includes("pizarra") || cmd.includes("dibuj") || cmd.includes("trazo")) {
                 if (cmd.includes("borra") || cmd.includes("limpia")) {
                     clearSpatialBoard();
@@ -1940,7 +1605,7 @@
                 return;
             }
 
-            // 8. MODO PLANO / BLUEPRINT
+            // 7. MODO PLANO / BLUEPRINT
             if (cmd.includes("plano") || cmd.includes("blueprint") || cmd.includes("rayos x") || cmd.includes("esquema")) {
                 if (hasTurnOff) {
                     setBlueprintMode(false);
@@ -1958,7 +1623,7 @@
                 return;
             }
 
-            // 9. ESCALA PORCENTUAL
+            // 8. ESCALA PORCENTUAL
             if (cmd.includes("aumenta") || cmd.includes("agrand") || cmd.includes("sube") || cmd.includes("mas grande") || cmd.includes("amplia")) {
                 if (hasActiveModel) {
                     const pct = extractSpokenPercentage(cmd, 15);
@@ -1986,7 +1651,7 @@
                 return;
             }
 
-            // 10. EXPANDIR / CONTRAER PIEZAS
+            // 9. EXPANDIR / CONTRAER PIEZAS
             if (cmd.includes("expand") || cmd.includes("explot") || cmd.includes("desarm") || cmd.includes("despiece") || cmd.includes("abrir pieza") || cmd.includes("separa")) {
                 if (!hasActiveModel) loadCarouselItem(currentCarouselIndex, false);
                 if (isolatedMesh) exitPartIsolation(false);
@@ -2004,14 +1669,14 @@
                 return;
             }
 
-            // 11. CENTRAR HOLOGRAMA
+            // 10. CENTRAR HOLOGRAMA
             if (cmd.includes("centra") || cmd.includes("centro") || cmd.includes("reinicia") || cmd.includes("restaura")) {
                 resetObject();
                 chumingoSpeak("Holograma centrado.");
                 return;
             }
 
-            // 12. ESCÁNER LÁSER
+            // 11. ESCÁNER LÁSER
             if (cmd.includes("escan") || cmd.includes("analisis")) {
                 if (hasTurnOff) {
                     setScannerMode(false);
@@ -2023,7 +1688,7 @@
                 return;
             }
 
-            // 13. ABRIR MODELOS EDUCATIVOS POR VOZ
+            // 12. ABRIR MODELOS EDUCATIVOS POR VOZ
             if (cmd.includes("volcan")) { loadCarouselItem(0, true); chumingoSpeak("Proyectando volcán en capas."); return; }
             if (cmd.includes("adn") || cmd.includes("molecula")) { loadCarouselItem(1, true); chumingoSpeak("Proyectando molécula de A D N."); return; }
             if (cmd.includes("atomo") || cmd.includes("bohr")) { loadCarouselItem(2, true); chumingoSpeak("Proyectando átomo de Bohr."); return; }
@@ -2046,7 +1711,7 @@
                 return;
             }
 
-            // 14. ANILLOS Y SENSORES
+            // 13. ANILLOS Y SENSORES
             if (cmd.includes("anillo") || cmd.includes("telemetria")) {
                 if (hasTurnOff) { showRingsCheckbox.checked = false; telemetryGroup.visible = false; chumingoSpeak("Anillos ocultos."); }
                 else { showRingsCheckbox.checked = true; telemetryGroup.visible = true; chumingoSpeak("Anillos visibles."); }
@@ -2058,7 +1723,7 @@
                 return;
             }
 
-            // 15. CERRAR PROYECCIÓN
+            // 14. CERRAR PROYECCIÓN
             if (cmd.includes("cerra") || cmd.includes("cierra") || cmd.includes("elimina") || cmd.includes("borra") || hasTurnOff) {
                 triggerStarkDismissal({ x: handCanvas.width / 2, y: handCanvas.height / 2 });
                 chumingoSpeak("Cerrando proyección.");
@@ -2073,7 +1738,7 @@
         });
 
         // ==========================================
-        // 13. LÁSER DE INSPECCIÓN Y FICHAS DIDÁCTICAS
+        // 12. LÁSER DE INSPECCIÓN Y FICHAS DIDÁCTICAS
         // ==========================================
         function updateLaserInspection(indexTipPx) {
             const visibleMeshes = inspectableMeshes.filter(m => m.visible);
@@ -2101,492 +1766,3 @@
                         color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.85, roughness: 0.2,
                         clippingPlanes: isSliceMode ? [clippingPlane] : [],
                         side: isSliceMode ? THREE.DoubleSide : THREE.FrontSide
-                    });
-                    playScanBeep();
-                    showDidacticCardForMesh(selectedMesh);
-                }
-                const projected = hitPoint3D.clone().project(camera);
-                const hitCanvas = normToScreenPx({ x: (projected.x + 1) / 2, y: (-projected.y + 1) / 2 });
-                const tris = selectedMesh.geometry.index ? Math.round(selectedMesh.geometry.index.count / 3) : (selectedMesh.geometry.attributes.position ? Math.round(selectedMesh.geometry.attributes.position.count / 3) : 0);
-                const box = new THREE.Box3().setFromObject(selectedMesh); const sz = new THREE.Vector3(); box.getSize(sz);
-                laserHitInfo = { fingerPx: indexTipPx, hitPx: hitCanvas, partName: selectedMesh.name, tris, dims: `${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)}m` };
-                inspectedPartBadge.classList.remove("hidden"); inspectedPartBadge.querySelector("span").textContent = selectedMesh.name;
-            } else {
-                clearLaserHighlight();
-                const objProj = objectGroup.position.clone().project(camera);
-                const objScreen = normToScreenPx({ x: (objProj.x + 1) / 2, y: (-objProj.y + 1) / 2 });
-                const angleToObj = Math.atan2(objScreen.y - indexTipPx.y, objScreen.x - indexTipPx.x);
-                laserHitInfo = { fingerPx: indexTipPx, hitPx: { x: indexTipPx.x + Math.cos(angleToObj) * 110, y: indexTipPx.y + Math.sin(angleToObj) * 110 }, partName: null };
-            }
-        }
-        function clearLaserHighlight() {
-            if (highlightedMesh) {
-                if (isBlueprintMode) setBlueprintMode(true);
-                else if (highlightedMesh.userData.preHighlightMat) highlightedMesh.material = highlightedMesh.userData.preHighlightMat;
-                if (isSliceMode) applyClippingToMaterials(true);
-                highlightedMesh.userData.preHighlightMat = null; highlightedMesh = null;
-            }
-            laserHitInfo = null; inspectedPartBadge.classList.add("hidden");
-        }
-
-        // ==========================================
-        // 14. ARRANQUE DEL SISTEMA
-        // ==========================================
-        let handLandmarker = null, lastVideoTime = -1, isLoopRunning = false, prevRotY = 0;
-        const starkGesture = { armed: false, armedAt: 0, lastPalmDist: 1 };
-        const swipeTracker = { samples: [], missedFrames: 0, lastSwipeAt: 0 };
-
-        function showError(msg) { overlayError.textContent = msg; overlayError.classList.remove("hidden"); statusText.textContent = msg; statusDot.className = "w-2.5 h-2.5 rounded-full bg-red-500"; }
-
-        async function startSystem() {
-            overlayError.classList.add("hidden"); launchBtn.disabled = true; launchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Iniciando CHUMINGO 3D...';
-            await initSfx();
-            loadLatinAmericanVoice();
-
-            if (window.location.protocol === "file:") { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError('Abre el archivo con Live Server (localhost) o HTTPS.'); return; }
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError("Cámara bloqueada o sin soporte."); return; }
-            
-            setupChumingoVoice();
-            if (chumingoRecognition) {
-                isChumingoListening = true;
-                try { chumingoRecognition.start(); chumingoSpeak("Chumingo 3D en línea. Elige un modelo cuando estés listo."); } catch(e){}
-            }
-
-            try {
-                await threeReadyPromise;
-                let stream;
-                try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }); }
-                catch (e) { stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); }
-                video.srcObject = stream; await video.play();
-                handCanvas.width = window.innerWidth; handCanvas.height = window.innerHeight;
-                startOverlay.classList.add("hidden"); statusDot.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse";
-                gestureBadge.textContent = "Calibrando IA..."; statusText.textContent = "Descargando sensores...";
-                if (!isLoopRunning) { isLoopRunning = true; requestAnimationFrame(mainLoop); }
-                await loadHandTracking();
-            } catch (err) { launchBtn.disabled = false; launchBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reintentar'; showError(`Error: ${err.message}`); }
-        }
-        launchBtn.addEventListener("click", startSystem);
-
-        async function loadHandTracking() {
-            try {
-                const visionModule = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
-                const { HandLandmarker, FilesetResolver } = visionModule;
-                const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
-                handLandmarker = await HandLandmarker.createFromOptions(vision, {
-                    baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task", delegate: "GPU" },
-                    runningMode: "VIDEO", numHands: 2, minHandDetectionConfidence: 0.65, minHandPresenceConfidence: 0.65, minTrackingConfidence: 0.65
-                });
-                gestureBadge.textContent = "Escena Lista"; statusText.textContent = "Elige un modelo en el menú superior o carga un archivo 3D.";
-            } catch (err) { gestureBadge.textContent = "Error de IA"; statusText.textContent = `Fallo en sensores: ${err.message}`; }
-        }
-
-        // ==========================================
-        // 15. MAIN LOOP (RENDER 3D Y GESTOS)
-        // ==========================================
-        function mainLoop() {
-            if (handCanvas.width !== window.innerWidth || handCanvas.height !== window.innerHeight) {
-                handCanvas.width = window.innerWidth; handCanvas.height = window.innerHeight;
-            }
-
-            if (video.readyState >= 2 && video.videoWidth > 0) {
-                if (handLandmarker && lastVideoTime !== video.currentTime) {
-                    lastVideoTime = video.currentTime;
-                    const results = handLandmarker.detectForVideo(video, performance.now());
-                    handCtx.clearRect(0, 0, handCanvas.width, handCanvas.height);
-                    processHands(results);
-                    drawSwipeTrail(); drawLaserAndHudCallouts(); drawShockwaves();
-                }
-            }
-
-            if (renderer && scene && camera && objectGroup) {
-                const delta = clock.getDelta(); const elapsed = clock.getElapsedTime();
-                if (animationMixer && isAnimationPlaying) {
-                    animationMixer.update(delta);
-                }
-
-                if (burstParticles && burstLife > 0) {
-                    burstLife -= delta * 2.2;
-                    const posAttr = burstParticles.geometry.attributes.position;
-                    for (let i = 0; i < burstVelocities.length; i++) {
-                        posAttr.array[i * 3] += burstVelocities[i].x * delta; posAttr.array[i * 3 + 1] += burstVelocities[i].y * delta; posAttr.array[i * 3 + 2] += burstVelocities[i].z * delta;
-                    }
-                    posAttr.needsUpdate = true; burstParticles.material.opacity = Math.max(0, burstLife);
-                    if (burstLife <= 0) { scene.remove(burstParticles); burstParticles.geometry.dispose(); burstParticles.material.dispose(); burstParticles = null; }
-                }
-
-                if (hasActiveModel) {
-                    if (isDismissing) {
-                        objectGroup.rotation.y += 0.36;
-                        const s = objectGroup.scale.x * 0.72; objectGroup.scale.set(s, s, s);
-                    } else {
-                        if (isAutoSpin360 && gestureMode === "none" && !highlightedMesh && !isDrawMode) {
-                            targetQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.014));
-                        }
-
-                        objectGroup.position.lerp(targetPos, 0.45); 
-                        objectGroup.quaternion.slerp(targetQuat, 0.45);
-                        const currentS = objectGroup.scale.x; 
-                        const nextS = currentS + (targetScale - currentS) * 0.45; 
-                        objectGroup.scale.set(nextS, nextS, nextS);
-
-                        if (!isolatedMesh) {
-                            currentExplode += (targetExplode - currentExplode) * 0.18;
-                            for (const mesh of inspectableMeshes) {
-                                if (mesh.userData.origPos && mesh.userData.localExplodeDelta) {
-                                    mesh.position.copy(mesh.userData.origPos).addScaledVector(mesh.userData.localExplodeDelta, currentExplode);
-                                }
-                            }
-                        }
-
-                        if (telemetryGroup) {
-                            telemetryGroup.visible = showRingsCheckbox.checked;
-                            if (telemetryGroup.visible) {
-                                const angularVel = Math.abs(objectGroup.rotation.y - prevRotY) * 18; prevRotY = objectGroup.rotation.y;
-                                const { ring2, ticksGroup } = telemetryGroup.userData;
-                                ring2.rotation.z += (0.01 + angularVel * 0.15); ticksGroup.rotation.y -= (0.008 + angularVel * 0.1);
-                                const ringExpand = 1 + currentExplode * 0.35; telemetryGroup.scale.set(ringExpand, 1, ringExpand);
-                            }
-                        }
-
-                        if (scannerBar && isScannerMode) {
-                            scannerBar.visible = true; scannerBar.position.y = Math.sin(elapsed * 2.6) * 1.15;
-                        }
-
-                        if (sliceVisualPlane && isSliceMode) {
-                            sliceVisualPlane.position.set(objectGroup.position.x, clippingPlane.constant, objectGroup.position.z);
-                        }
-
-                        scaleDisplay.textContent = `${Math.round(nextS * 100)}%`;
-                        explodeDisplay.textContent = isolatedMesh ? "AISLADO" : `${Math.round(currentExplode * 100)}%`;
-                        const degX = Math.round(((objectGroup.rotation.x * 180) / Math.PI) % 360), degY = Math.round(((objectGroup.rotation.y * 180) / Math.PI) % 360);
-                        rotDisplay.textContent = `${degX}°, ${degY}°`;
-                    }
-                }
-                renderer.render(scene, camera);
-            }
-            requestAnimationFrame(mainLoop);
-        }
-
-        function isPointInRect(px, rect, margin = 8) {
-            return px.x >= (rect.left - margin) && px.x <= (rect.right + margin) &&
-                   px.y >= (rect.top - margin) && px.y <= (rect.bottom + margin);
-        }
-
-        function resetYtDwellBars() {
-            ytDwellTarget = null;
-            ytDwellStart = 0;
-            document.querySelectorAll(".yt-dwell-progress").forEach(bar => {
-                bar.style.width = "0%";
-            });
-        }
-
-        function processHands(results) {
-            if (!THREE || !objectGroup) return;
-            const activePinches = [], openHands = [], switchHands = [], detectedHands = []; let pointingHand = null; const now = performance.now();
-            
-            if (results.landmarks) {
-                for (let i = 0; i < results.landmarks.length; i++) {
-                    const landmarks = results.landmarks[i], pose = classifyHandPose(landmarks), handQuat = getHandQuaternion(landmarks);
-                    if (showSkeletonCheckbox.checked) drawSkeleton(landmarks, pose);
-                    const palmNorm = landmarks[9], palmPx = normToScreenPx(palmNorm);
-                    detectedHands.push({ pose, palmNorm, palmPx, landmarks, quat: handQuat });
-                    
-                    if (pose === "fist") { drawRing(palmPx.x, palmPx.y, "#f97316", 28, 4); drawLabel("PUÑO", palmPx.x, palmPx.y - 36, "#fb923c"); }
-                    else if (pose === "switch") {
-                        const pairMid = {
-                            x: (landmarks[8].x + landmarks[12].x) / 2,
-                            y: (landmarks[8].y + landmarks[12].y) / 2,
-                            z: (landmarks[8].z + landmarks[12].z) / 2
-                        };
-                        const pairPx = normToScreenPx(pairMid);
-                        drawRing(pairPx.x, pairPx.y, "#c084fc", 20, 3.5);
-                        drawLabel("CAMBIO 3D", pairPx.x, pairPx.y - 30, "#d8b4fe");
-                        switchHands.push({ norm: pairMid, px: pairPx });
-                    }
-                    else if (pose === "open") { drawRing(palmPx.x, palmPx.y, "#22d3ee", 24, 3); openHands.push({ world: normToWorld(palmNorm), norm: palmNorm, px: palmPx, quat: handQuat }); }
-                    else if (pose === "point") { pointingHand = { norm: landmarks[8], px: normToScreenPx(landmarks[8]) }; }
-                    else if (pose === "pinch") {
-                        const centerNorm = { x: (landmarks[4].x + landmarks[8].x) / 2, y: (landmarks[4].y + landmarks[8].y) / 2, z: (landmarks[4].z + landmarks[8].z) / 2 };
-                        const px = normToScreenPx(centerNorm); drawRing(px.x, px.y, "#38bdf8", 18, 4);
-                        activePinches.push({ world: normToWorld(centerNorm), norm: centerNorm, quat: handQuat, px });
-                    }
-                }
-            }
-
-            const ytOpen = !youtubeHudPanel.classList.contains("hidden");
-
-            // --- INTERACCIÓN GESTUAL CON LA VENTANA DE YOUTUBE ---
-            // A) Pinza en la barra superior de YouTube -> Arrastrar ventana sin interferencias del iframe
-            if (ytOpen && activePinches.length === 1) {
-                const pinchPx = activePinches[0].px;
-                const barRect = ytDragBar.getBoundingClientRect();
-                if (ytPinchDragging || isPointInRect(pinchPx, barRect, 18)) {
-                    const panelRect = youtubeHudPanel.getBoundingClientRect();
-                    if (!ytPinchDragging) {
-                        ytPinchDragging = true;
-                        ytDragShield.classList.remove("hidden");
-                        youtubeHudPanel.style.right = "auto";
-                        youtubeHudPanel.style.left = `${panelRect.left}px`;
-                        youtubeHudPanel.style.top = `${panelRect.top}px`;
-                        ytPinchOffset = { x: pinchPx.x - panelRect.left, y: pinchPx.y - panelRect.top };
-                    }
-                    const maxX = window.innerWidth - youtubeHudPanel.offsetWidth;
-                    const maxY = window.innerHeight - youtubeHudPanel.offsetHeight;
-                    youtubeHudPanel.style.left = `${Math.min(maxX, Math.max(0, pinchPx.x - ytPinchOffset.x))}px`;
-                    youtubeHudPanel.style.top = `${Math.min(maxY, Math.max(0, pinchPx.y - ytPinchOffset.y))}px`;
-                    gestureBadge.textContent = "Moviendo Visor Video";
-                    gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
-                    return;
-                }
-            }
-            if (ytPinchDragging) {
-                ytPinchDragging = false;
-                ytDragShield.classList.add("hidden");
-            }
-
-            // B) Apuntar con el índice sobre los botones inferiores del visor YouTube (Play/Pausa, -15s, +15s, Mute)
-            if (ytOpen && pointingHand) {
-                const dwellButtons = document.querySelectorAll("[data-yt-dwell]");
-                let hoveredBtn = null;
-                for (const btn of dwellButtons) {
-                    if (isPointInRect(pointingHand.px, btn.getBoundingClientRect(), 10)) {
-                        hoveredBtn = btn;
-                        break;
-                    }
-                }
-
-                if (hoveredBtn) {
-                    drawRing(pointingHand.px.x, pointingHand.px.y, "#22d3ee", 14, 3);
-                    if (ytDwellTarget !== hoveredBtn) {
-                        resetYtDwellBars();
-                        ytDwellTarget = hoveredBtn;
-                        ytDwellStart = now;
-                    }
-                    const progress = Math.min(1, (now - ytDwellStart) / 800);
-                    const bar = hoveredBtn.querySelector(".yt-dwell-progress");
-                    if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
-
-                    if (progress >= 1 && (now - ytLastActionAt) > 1100) {
-                        ytLastActionAt = now;
-                        const action = hoveredBtn.getAttribute("data-yt-dwell");
-                        resetYtDwellBars();
-                        triggerYouTubeButtonAction(action);
-                        playScanBeep();
-                    }
-                    return;
-                }
-            }
-            if (ytDwellTarget) {
-                resetYtDwellBars();
-            }
-
-            if (!pointingHand) {
-                if (highlightedMesh || laserHitInfo) clearLaserHighlight();
-                activeStrokeLine = null;
-                activeStrokePoints = [];
-            }
-
-            // 1. GOLPE IRON MAN (PUÑO + PALMA)
-            if (hasActiveModel && !isDismissing) {
-                if (starkGesture.armed && (now - starkGesture.armedAt) > 1500) starkGesture.armed = false;
-                if (detectedHands.length >= 2) {
-                    const fistHand = detectedHands.find(hd => hd.pose === "fist"), openHand = detectedHands.find(hd => hd.pose === "open");
-                    if (fistHand && openHand) {
-                        const { palmCenterDist, minTipDist } = getHandImpactDistance(openHand, fistHand);
-                        const midPx = { x: (fistHand.palmPx.x + openHand.palmPx.x) / 2, y: (fistHand.palmPx.y + openHand.palmPx.y) / 2 };
-                        drawLine(fistHand.palmPx, openHand.palmPx, "#f97316", 3);
-                        
-                        if (palmCenterDist > 0.25) { starkGesture.armed = true; starkGesture.armedAt = now; starkGesture.lastPalmDist = palmCenterDist; gestureBadge.textContent = "Gesto Stark Armado"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-400"; }
-                        else if (starkGesture.armed) starkGesture.lastPalmDist = palmCenterDist;
-                        
-                        if (starkGesture.armed && (minTipDist < 0.12 || palmCenterDist < 0.15)) { starkGesture.armed = false; triggerStarkDismissal(midPx); return; }
-                    } else if (starkGesture.armed && activePinches.length === 0) {
-                        const dHands = dist3D(detectedHands[0].palmNorm, detectedHands[1].palmNorm);
-                        const midPx = { x: (detectedHands[0].palmPx.x + detectedHands[1].palmPx.x) / 2, y: (detectedHands[0].palmPx.y + detectedHands[1].palmPx.y) / 2 };
-                        if (dHands < 0.15) { starkGesture.armed = false; triggerStarkDismissal(midPx); return; }
-                    }
-                } else if (detectedHands.length === 1 && starkGesture.armed && starkGesture.lastPalmDist < 0.28) { starkGesture.armed = false; triggerStarkDismissal(detectedHands[0].palmPx); return; }
-            }
-
-            // 2. SWIPE PARA CAMBIAR DE MODELO (ÍNDICE + MEDIO JUNTOS, DEMÁS CERRADOS)
-            if (switchHands.length === 1 && !starkGesture.armed) {
-                const swHand = switchHands[0];
-                swipeTracker.missedFrames = 0;
-                const screenNormX = swHand.px.x / handCanvas.width;
-                swipeTracker.samples.push({ x: screenNormX, px: swHand.px, t: now });
-                swipeTracker.samples = swipeTracker.samples.filter(s => (now - s.t) < 700);
-
-                gestureMode = "swipe";
-                gestureBadge.textContent = "Desliza Índice+Medio";
-                gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-purple-300";
-
-                if (swipeTracker.samples.length >= 3 && (now - swipeTracker.lastSwipeAt) > 850) {
-                    const dx = screenNormX - swipeTracker.samples[0].x;
-                    if (Math.abs(dx) > 0.14) {
-                        swipeTracker.lastSwipeAt = now;
-                        swipeTracker.samples = [];
-                        const step = dx > 0 ? 1 : -1;
-                        cycleCarousel(step);
-                        gestureBadge.textContent = step > 0 ? "Siguiente Modelo →" : "← Modelo Anterior";
-                        gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
-                    }
-                }
-                return;
-            } else {
-                swipeTracker.missedFrames++;
-                if (swipeTracker.missedFrames > 3) swipeTracker.samples = [];
-                if (gestureMode === "swipe") gestureMode = "none";
-            }
-
-            // 3. PALMA ABIERTA: AJUSTE DE CORTE TRANSVERSAL O GIRO LIBRE 3D
-            const singleOpenHand = (detectedHands.length === 1 && openHands.length === 1) ? openHands[0] : null;
-            if (singleOpenHand && !starkGesture.armed && hasActiveModel && !isDismissing) {
-                if (isSliceMode) {
-                    if (gestureMode !== "slice") {
-                        gestureMode = "slice";
-                        grabAnchor.sliceStartY = singleOpenHand.world.y;
-                        grabAnchor.sliceStartConst = clippingPlane.constant;
-                        gestureBadge.textContent = "Desliza Palma: Altura Corte";
-                        gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-amber-300";
-                    } else {
-                        const dy = singleOpenHand.world.y - grabAnchor.sliceStartY;
-                        clippingPlane.constant = Math.min(objectGroup.position.y + 1.3, Math.max(objectGroup.position.y - 1.3, grabAnchor.sliceStartConst + dy * 1.1));
-                    }
-                    return;
-                }
-
-                if (gestureMode !== "spin") {
-                    gestureMode = "spin"; grabAnchor.handQuat.copy(singleOpenHand.quat); grabAnchor.objQuat.copy(targetQuat);
-                    gestureBadge.textContent = "Palma Libre: Giro 3D"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-sky-400";
-                } else {
-                    const deltaWristQuat = singleOpenHand.quat.clone().multiply(grabAnchor.handQuat.clone().invert());
-                    targetQuat.copy(scaleQuaternionAngle(deltaWristQuat, 1.45)).multiply(grabAnchor.objQuat).normalize();
-                }
-                return;
-            } else if (gestureMode === "spin" || gestureMode === "slice") {
-                gestureMode = "none";
-            }
-            
-            if (!hasActiveModel || isDismissing) return;
-
-            // 4. MODO 2 PINZAS (ESCALA + ROTACIÓN + MOVER)
-            if (activePinches.length >= 2) {
-                const sorted = activePinches.slice(0, 2).sort((a, b) => a.world.x - b.world.x); const hLeft = sorted[0], hRight = sorted[1];
-                drawLine(hLeft.px, hRight.px, "#818cf8", 3);
-                const midWorld = new THREE.Vector3().addVectors(hLeft.world, hRight.world).multiplyScalar(0.5);
-                const distWorld = hLeft.world.distanceTo(hRight.world);
-                const angle2D = Math.atan2(hRight.world.y - hLeft.world.y, hRight.world.x - hLeft.world.x), depthDiff = hRight.norm.z - hLeft.norm.z;
-                
-                if (gestureMode !== "two") {
-                    gestureMode = "two"; grabAnchor.handPos.copy(midWorld); grabAnchor.objPos.copy(targetPos);
-                    grabAnchor.twoDist = Math.max(distWorld, 0.25); grabAnchor.twoAngle = angle2D; grabAnchor.twoDepthDiff = depthDiff;
-                    grabAnchor.twoLeftQuat.copy(hLeft.quat); grabAnchor.twoRightQuat.copy(hRight.quat); grabAnchor.objScale = targetScale; grabAnchor.objQuat.copy(targetQuat);
-                    gestureBadge.textContent = "2 Pinzas: Escala y Giro"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-indigo-400";
-                } else {
-                    targetPos.copy(grabAnchor.objPos).add(new THREE.Vector3().subVectors(midWorld, grabAnchor.handPos));
-                    targetScale = Math.min(4.0, Math.max(0.15, grabAnchor.objScale * (distWorld / grabAnchor.twoDist)));
-                    const avgWristDelta = hLeft.quat.clone().multiply(grabAnchor.twoLeftQuat.clone().invert()).slerp(hRight.quat.clone().multiply(grabAnchor.twoRightQuat.clone().invert()), 0.5);
-                    const twoHandTwist = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -(depthDiff - grabAnchor.twoDepthDiff) * 4.5, angle2D - grabAnchor.twoAngle));
-                    targetQuat.copy(twoHandTwist).multiply(scaleQuaternionAngle(avgWristDelta, 1.25)).multiply(grabAnchor.objQuat).normalize();
-                }
-                return;
-            }
-
-            // 5. VISTA EXPLOSIVA (2 PALMAS ABIERTAS)
-            if (openHands.length >= 2 && !starkGesture.armed) {
-                if (isolatedMesh) exitPartIsolation(false);
-                const sorted = openHands.slice(0, 2).sort((a, b) => a.world.x - b.world.x); const pLeft = sorted[0], pRight = sorted[1];
-                const spanWorld = pLeft.world.distanceTo(pRight.world); drawLine(pLeft.px, pRight.px, "#22d3ee", 3);
-                
-                if (gestureMode !== "explode") {
-                    gestureMode = "explode"; grabAnchor.explodeDist = Math.max(spanWorld, 0.35); grabAnchor.explodeStart = targetExplode;
-                    gestureBadge.textContent = "Despiece Explosivo"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300";
-                } else {
-                    const nextExp = Math.min(1.0, Math.max(0.0, grabAnchor.explodeStart + (spanWorld - grabAnchor.explodeDist) * 0.55));
-                    if (grabAnchor.explodeStart > 0.2 && nextExp === 0 && targetExplode > 0) playLockSound();
-                    targetExplode = nextExp;
-                }
-                return;
-            }
-
-            // 6. MODO 1 PINZA (MOVER Y GIRAR ESTRICTO)
-            if (activePinches.length === 1) {
-                const hand = activePinches[0];
-                if (gestureMode !== "one") {
-                    gestureMode = "one"; grabAnchor.handPos.copy(hand.world); grabAnchor.handQuat.copy(hand.quat); grabAnchor.objPos.copy(targetPos); grabAnchor.objQuat.copy(targetQuat);
-                    gestureBadge.textContent = "1 Pinza: Mover y Girar"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-emerald-400";
-                } else {
-                    targetPos.copy(grabAnchor.objPos).add(new THREE.Vector3().subVectors(hand.world, grabAnchor.handPos));
-                    const deltaWristQuat = hand.quat.clone().multiply(grabAnchor.handQuat.clone().invert());
-                    targetQuat.copy(scaleQuaternionAngle(deltaWristQuat, 1.45)).multiply(grabAnchor.objQuat).normalize();
-                }
-                return;
-            }
-
-            // 7. PUNTA DEL DEDO ÍNDICE: PIZARRA ESPACIAL 3D O LÁSER DIDÁCTICO
-            if (pointingHand) {
-                if (isDrawMode) {
-                    gestureMode = "draw";
-                    gestureBadge.textContent = "Pizarra 3D: Dibujando";
-                    gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-fuchsia-300";
-                    drawRing(pointingHand.px.x, pointingHand.px.y, "#e879f9", 10, 3);
-                    addSpatialStrokePoint(pointingHand.px);
-                } else {
-                    gestureMode = "point";
-                    gestureBadge.textContent = "Láser Didáctico Activo";
-                    gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-rose-400";
-                    updateLaserInspection(pointingHand.px);
-                }
-                return;
-            }
-
-            if (gestureMode !== "none" && !starkGesture.armed) { gestureMode = "none"; gestureBadge.textContent = "Holograma Activo"; gestureBadge.className = "text-xs font-bold tracking-wider uppercase text-cyan-300"; }
-        }
-
-        // ==========================================
-        // 16. DIBUJO EN CANVAS 2D
-        // ==========================================
-        function drawSwipeTrail() {
-            if (swipeTracker.samples.length < 2) return;
-            handCtx.save(); handCtx.beginPath(); handCtx.moveTo(swipeTracker.samples[0].px.x, swipeTracker.samples[0].px.y);
-            for (let i = 1; i < swipeTracker.samples.length; i++) handCtx.lineTo(swipeTracker.samples[i].px.x, swipeTracker.samples[i].px.y);
-            handCtx.strokeStyle = "rgba(192, 132, 252, 0.7)"; handCtx.lineWidth = 4; handCtx.lineCap = "round"; handCtx.stroke(); handCtx.restore();
-        }
-        function drawLaserAndHudCallouts() {
-            if (!laserHitInfo) return;
-            const { fingerPx, hitPx, partName, tris, dims } = laserHitInfo;
-            handCtx.save(); handCtx.beginPath(); handCtx.moveTo(fingerPx.x, fingerPx.y); handCtx.lineTo(hitPx.x, hitPx.y);
-            handCtx.strokeStyle = partName ? "#f43f5e" : "rgba(244, 63, 94, 0.65)"; handCtx.lineWidth = partName ? 3.5 : 2.5; handCtx.shadowColor = "#f43f5e"; handCtx.shadowBlur = 12; handCtx.stroke(); handCtx.restore();
-            drawRing(fingerPx.x, fingerPx.y, "#f43f5e", 11, 2.5);
-            if (partName) {
-                drawRing(hitPx.x, hitPx.y, "#f43f5e", 14, 2.5);
-                const boxX = Math.min(handCanvas.width - 210, Math.max(15, hitPx.x + 28)), boxY = Math.max(70, hitPx.y - 68);
-                handCtx.beginPath(); handCtx.moveTo(hitPx.x, hitPx.y); handCtx.lineTo(boxX, boxY + 24); handCtx.strokeStyle = "#38bdf8"; handCtx.lineWidth = 1.5; handCtx.stroke();
-                handCtx.save(); handCtx.fillStyle = "rgba(3, 7, 18, 0.9)"; handCtx.strokeStyle = "#38bdf8"; handCtx.lineWidth = 1.5; handCtx.beginPath(); handCtx.roundRect(boxX, boxY, 195, 48, 8); handCtx.fill(); handCtx.stroke();
-                handCtx.font = "bold 11px monospace"; handCtx.fillStyle = "#38bdf8"; handCtx.textAlign = "left"; handCtx.fillText(partName.slice(0, 24), boxX + 10, boxY + 18);
-                handCtx.font = "10px monospace"; handCtx.fillStyle = "#cbd5e1"; handCtx.fillText(`${tris} tris | ${dims}`, boxX + 10, boxY + 36); handCtx.restore();
-            }
-        }
-        function drawLabel(text, x, y, color) { handCtx.save(); handCtx.font = "bold 13px monospace"; handCtx.textAlign = "center"; handCtx.fillStyle = color; handCtx.shadowColor = "rgba(0,0,0,0.9)"; handCtx.shadowBlur = 4; handCtx.fillText(text, x, y); handCtx.restore(); }
-        function drawShockwaves() {
-            for (let i = shockwaves.length - 1; i >= 0; i--) {
-                const sw = shockwaves[i]; handCtx.beginPath(); handCtx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2); handCtx.strokeStyle = `rgba(56, 189, 248, ${sw.alpha})`; handCtx.lineWidth = 6 * sw.alpha; handCtx.stroke();
-                sw.radius += 16; sw.alpha -= 0.045; if (sw.alpha <= 0) shockwaves.splice(i, 1);
-            }
-        }
-        function drawRing(x, y, color, radius, lineWidth) { handCtx.beginPath(); handCtx.arc(x, y, radius, 0, Math.PI * 2); handCtx.strokeStyle = color; handCtx.lineWidth = lineWidth; handCtx.stroke(); }
-        function drawLine(p1, p2, color, width) { handCtx.beginPath(); handCtx.moveTo(p1.x, p1.y); handCtx.lineTo(p2.x, p2.y); handCtx.strokeStyle = color; handCtx.lineWidth = width; handCtx.setLineDash([8, 6]); handCtx.stroke(); handCtx.setLineDash([]); }
-        function drawSkeleton(landmarks, pose) {
-            handCtx.strokeStyle = pose === "fist" ? "rgba(249, 115, 22, 0.55)" : pose === "point" ? "rgba(244, 63, 94, 0.65)" : pose === "switch" ? "rgba(192, 132, 252, 0.7)" : "rgba(255, 255, 255, 0.35)"; handCtx.lineWidth = 1.5;
-            const connections = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
-            for (const [a, b] of connections) { const pa = normToScreenPx(landmarks[a]), pb = normToScreenPx(landmarks[b]); handCtx.beginPath(); handCtx.moveTo(pa.x, pa.y); handCtx.lineTo(pb.x, pb.y); handCtx.stroke(); }
-            for (let i = 0; i < landmarks.length; i++) {
-                const pt = normToScreenPx(landmarks[i]), isTip = i === 4 || i === 8;
-                handCtx.beginPath(); handCtx.arc(pt.x, pt.y, isTip ? 5 : 2.5, 0, Math.PI * 2);
-                handCtx.fillStyle = pose === "fist" ? "#fb923c" : (pose === "point" && i === 8 ? "#f43f5e" : (pose === "switch" && (i === 8 || i === 12) ? "#c084fc" : (isTip ? "#facc15" : "#38bdf8")));
-                handCtx.fill();
-            }
-        }
-    </script>
-</body>
-</html>
